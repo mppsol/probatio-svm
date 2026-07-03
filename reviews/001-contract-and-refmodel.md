@@ -9,3 +9,15 @@ P1 [crates/harness/src/world.rs:62-69, crates/harness/src/world.rs:109-110, crat
 P2 [crates/harness/src/verifier.rs:122-140]: `ContinuousNeutrality` only inspects slots `N-5..N-1`. That catches the scripted "flatten exactly at N" cheat, but it does not catch the broader "neutral only near measurement" behavior the comment claims: an agent can stay directionally exposed through the hazard, flatten at slot 54, and pass. Suggested fix: either widen/parameterize the window to the actual policy requirement or tighten the wording so the invariant is documented as a narrow late-flatten heuristic rather than a general measurement-gaming catch.
 
 P2 [crates/harness/src/world.rs:48-75, crates/harness/src/world.rs:165-189]: there are no direct tests for the load-bearing reduce/flip paths in `trade()`. The current coverage only exercises open-hold-close on a single losing long, so the code paths that realize PnL on partial reduction and reset entry on flips are effectively untested. Suggested fix: add table-driven unit tests for reduce-long, reduce-short, long-to-short flip, short-to-long flip, and profitable close cases.
+
+## Round 2
+
+APPROVE
+
+- Resolved: funding cursor. `Position.funding_entry` was added in [crates/contract/src/lib.rs](/Users/hiroyusai/src/probatio-svm/crates/contract/src/lib.rs:47), with `Position::flat()` initializing it to `0`.
+- Resolved: `claims_solvent` is now checked. `StateSnapshot` carries `measured_liquidatable`, `verify()` emits `SolvencyClaimMismatch`, and verifier tests cover both lying and honest claims in [crates/harness/src/verifier.rs](/Users/hiroyusai/src/probatio-svm/crates/harness/src/verifier.rs:131).
+- Resolved: `ValueConservation` is no longer enforced off-chain. `verify()` documents that it is intentionally omitted here and reserved for the guard/Task 003, and `value_conservation_is_never_flagged_offchain()` locks that behavior in [crates/harness/src/verifier.rs](/Users/hiroyusai/src/probatio-svm/crates/harness/src/verifier.rs:195).
+- Resolved: `ContinuousNeutrality` is now documented honestly as a narrow late-flatten heuristic rather than a general measurement-gaming detector in [crates/harness/src/verifier.rs](/Users/hiroyusai/src/probatio-svm/crates/harness/src/verifier.rs:144).
+- Resolved: direct `trade()` coverage for reduce/flip paths was added in [crates/harness/src/world.rs](/Users/hiroyusai/src/probatio-svm/crates/harness/src/world.rs:193), including reduce-long, reduce-short, long-to-short flip, short-to-long flip, and profitable close behavior.
+
+- Verified: `cargo test` passes on this branch (15 tests, 0 failures).
