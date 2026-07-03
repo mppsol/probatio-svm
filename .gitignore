@@ -3,3 +3,5 @@
 .DS_Store
 /tmp
 codex-out.md
+report.json
+**/report.json
