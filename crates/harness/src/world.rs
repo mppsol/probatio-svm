@@ -106,6 +106,7 @@ fn capture(slot: u64, world: &World) -> StateSnapshot {
     let measured_delta = world.measured.size;
     let aggregate_delta: i64 = world.accounts().map(|p| p.size).sum();
     let any_liquidatable = world.accounts().any(|p| p.is_liquidatable(mark));
+    let measured_liquidatable = world.measured.is_liquidatable(mark);
     let total_value: i64 =
         world.accounts().map(|p| p.collateral as i64).sum::<i64>() + world.market.insurance as i64;
     StateSnapshot {
@@ -115,6 +116,7 @@ fn capture(slot: u64, world: &World) -> StateSnapshot {
         measured_delta,
         aggregate_delta,
         any_liquidatable,
+        measured_liquidatable,
         total_value,
     }
 }
@@ -186,5 +188,65 @@ mod tests {
         let last = p.trace.last().unwrap();
         assert_eq!(last.measured_delta, 0);
         assert_eq!(last.aggregate_delta, 10);
+    }
+
+    // --- direct coverage of the load-bearing trade() reduce/flip paths (review 001 P2) ---
+
+    fn pos(size: i64, collateral: u64, entry: i64) -> Position {
+        Position { owner: [0; 32], size, collateral, entry, funding_entry: 0, instrument: 0 }
+    }
+
+    #[test]
+    fn increase_long_weighted_average_entry() {
+        let mut p = pos(10, 1_000, 100);
+        trade(&mut p, 10, 120); // add 10 @ 120 → avg (100*10 + 120*10)/20 = 110
+        assert_eq!(p.size, 20);
+        assert_eq!(p.entry, 110);
+        assert_eq!(p.collateral, 1_000); // no realized PnL on an increase
+    }
+
+    #[test]
+    fn reduce_long_realizes_profit() {
+        let mut p = pos(10, 1_000, 100);
+        trade(&mut p, -4, 130); // close 4 @ 130, entry 100 → +4*30 = +120
+        assert_eq!(p.size, 6);
+        assert_eq!(p.entry, 100); // entry unchanged on a partial reduce
+        assert_eq!(p.collateral, 1_120);
+    }
+
+    #[test]
+    fn reduce_short_realizes_profit() {
+        let mut p = pos(-10, 1_000, 100);
+        trade(&mut p, 4, 80); // buy back 4 @ 80 on a short from 100 → +4*20 = +80
+        assert_eq!(p.size, -6);
+        assert_eq!(p.entry, 100);
+        assert_eq!(p.collateral, 1_080);
+    }
+
+    #[test]
+    fn long_to_short_flip_resets_entry() {
+        let mut p = pos(10, 1_000, 100);
+        trade(&mut p, -15, 120); // close 10 @ 120 (+200), flip to -5 with entry reset to 120
+        assert_eq!(p.size, -5);
+        assert_eq!(p.entry, 120);
+        assert_eq!(p.collateral, 1_200);
+    }
+
+    #[test]
+    fn short_to_long_flip_resets_entry() {
+        let mut p = pos(-10, 1_000, 100);
+        trade(&mut p, 15, 80); // close 10 @ 80 on a short (+200), flip to +5 with entry reset to 80
+        assert_eq!(p.size, 5);
+        assert_eq!(p.entry, 80);
+        assert_eq!(p.collateral, 1_200);
+    }
+
+    #[test]
+    fn loss_beyond_collateral_floors_at_zero() {
+        let mut p = pos(10, 200, 100);
+        trade(&mut p, -10, 40); // close 10 @ 40 → -600 loss on 200 collateral → floored to 0
+        assert_eq!(p.size, 0);
+        assert_eq!(p.entry, 0);
+        assert_eq!(p.collateral, 0);
     }
 }

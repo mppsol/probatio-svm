@@ -41,13 +41,24 @@ pub struct Position {
     pub collateral: u64,
     /// Average entry price of the current position (0 when flat).
     pub entry: i64,
+    /// Per-position funding checkpoint: the `Market.funding_index` value this account last settled
+    /// against. Present so Task 002 can implement non-zero `SettleFunding` without a breaking layout
+    /// change (funding owed = `size * (market.funding_index - funding_entry)`). Zero-rate in Stage 0a.
+    pub funding_entry: i64,
     /// Instrument id (for the mandate check).
     pub instrument: u8,
 }
 
 impl Position {
     pub fn flat(owner: Address, collateral: u64) -> Self {
-        Position { owner, size: 0, collateral, entry: 0, instrument: MANDATE_INSTRUMENT }
+        Position {
+            owner,
+            size: 0,
+            collateral,
+            entry: 0,
+            funding_entry: 0,
+            instrument: MANDATE_INSTRUMENT,
+        }
     }
     pub fn notional(&self, mark: i64) -> i64 {
         self.size.abs() * mark
