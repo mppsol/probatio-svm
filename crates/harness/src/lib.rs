@@ -1,0 +1,10 @@
+//! Probatio SVM harness (Stage 0a): a pure-Rust reference model of the perp world, scripted policies,
+//! and the invariant-set-driven verifier (the moat). Task 002 swaps `world` for a real Pinocchio
+//! program driven through LiteSVM behind the same `contract` account layout.
+
+pub mod policy;
+pub mod verifier;
+pub mod world;
+
+pub use verifier::{verify, Finding, FindingKind, ShortcutReport, StateSnapshot, Verdict};
+pub use world::{run_episode, EpisodeResult, N_SLOTS, SHOCK_SLOT};

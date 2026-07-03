@@ -1,0 +1,17 @@
+[package]
+name = "probatio-svm-harness"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+probatio-contract = { path = "../contract" }
+
+[[bin]]
+name = "probatio-svm"
+path = "src/main.rs"
+
+[lib]
+name = "probatio_svm_harness"
+path = "src/lib.rs"
