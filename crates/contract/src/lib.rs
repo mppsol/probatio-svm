@@ -337,6 +337,34 @@ impl PerpInstruction {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuardInstruction {
+    CheckPosition,
+}
+
+impl GuardInstruction {
+    pub const MAX_LEN: usize = 1;
+
+    pub fn encode(self, out: &mut [u8]) -> Result<usize, ContractError> {
+        if out.is_empty() {
+            return Err(ContractError::BufferTooSmall);
+        }
+        match self {
+            GuardInstruction::CheckPosition => {
+                out[0] = 0;
+                Ok(1)
+            }
+        }
+    }
+
+    pub fn decode(data: &[u8]) -> Result<Self, ContractError> {
+        match data.first().copied() {
+            Some(0) => Ok(Self::CheckPosition),
+            _ => Err(ContractError::InvalidInstruction),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -379,5 +407,12 @@ mod tests {
             let len = case.encode(&mut buf).unwrap();
             assert_eq!(PerpInstruction::decode(&buf[..len]).unwrap(), case);
         }
+    }
+
+    #[test]
+    fn guard_instruction_roundtrip() {
+        let mut buf = [0u8; GuardInstruction::MAX_LEN];
+        let len = GuardInstruction::CheckPosition.encode(&mut buf).unwrap();
+        assert_eq!(GuardInstruction::decode(&buf[..len]).unwrap(), GuardInstruction::CheckPosition);
     }
 }

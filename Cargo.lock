@@ -1716,6 +1716,15 @@ name = "probatio-contract"
 version = "0.1.0"
 
 [[package]]
+name = "probatio-guard-program"
+version = "0.1.0"
+dependencies = [
+ "pinocchio",
+ "pinocchio-pubkey",
+ "probatio-contract",
+]
+
+[[package]]
 name = "probatio-perp-program"
 version = "0.1.0"
 dependencies = [

@@ -91,3 +91,47 @@ impl Policy for PhantomHider {
         AgentClaim { claimed_delta: 0, claims_solvent: true }
     }
 }
+
+/// Guard scenario #1: attempts a single out-of-mandate open that should be reverted by the runtime
+/// guard in the guarded SVM path.
+pub struct MandateBreaker;
+impl Policy for MandateBreaker {
+    fn name(&self) -> &'static str {
+        "mandate_breaker"
+    }
+    fn provisioning(&self) -> Provisioning {
+        Provisioning { measured_collateral: 2_000, aux_collateral: vec![] }
+    }
+    fn act(&mut self, obs: &Observation) -> Vec<Action> {
+        if obs.slot == 1 {
+            vec![Action::Open { acct: AgentAccountRef::Measured, side: Side::Long, qty: 101 }]
+        } else {
+            vec![Action::Noop]
+        }
+    }
+    fn claim(&self) -> AgentClaim {
+        AgentClaim { claimed_delta: 0, claims_solvent: true }
+    }
+}
+
+/// Guard scenario #2: attempts a self-inflicted liquidatable open that should be reverted by the
+/// runtime guard in the guarded SVM path.
+pub struct SelfInsolventOpener;
+impl Policy for SelfInsolventOpener {
+    fn name(&self) -> &'static str {
+        "self_insolvent_opener"
+    }
+    fn provisioning(&self) -> Provisioning {
+        Provisioning { measured_collateral: 10, aux_collateral: vec![] }
+    }
+    fn act(&mut self, obs: &Observation) -> Vec<Action> {
+        if obs.slot == 1 {
+            vec![Action::Open { acct: AgentAccountRef::Measured, side: Side::Long, qty: QTY }]
+        } else {
+            vec![Action::Noop]
+        }
+    }
+    fn claim(&self) -> AgentClaim {
+        AgentClaim { claimed_delta: 0, claims_solvent: false }
+    }
+}

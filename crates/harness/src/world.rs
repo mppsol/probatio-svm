@@ -12,7 +12,9 @@ use std::{
 };
 
 use litesvm::LiteSVM;
-use probatio_contract::{Action, AgentAccountRef, Market, PerpInstruction, Position, Side};
+use probatio_contract::{
+    Action, AgentAccountRef, GuardInstruction, Market, PerpInstruction, Position, Side,
+};
 use solana_account::Account;
 use solana_address::{address, Address};
 use solana_clock::Clock;
@@ -31,6 +33,7 @@ pub const BASELINE_MARK: i64 = 100;
 pub const SHOCK_MARK: i64 = 40;
 
 const PROGRAM_ID: Address = address!("GtdambwDgHWrDJdVPBkEHGhCwokqgAoch162teUjJse2");
+const GUARD_PROGRAM_ID: Address = address!("1111111QLbz7JHiBTspS962RLKV8GndWFwiEaqKM");
 const HARNESS_AUTHORITY_ADDRESS: Address = address!("9Hh9h1ATNtRdkNUT3GBwau2RDn9tyjVf1LDCToXDGhcM");
 
 /// Deterministic per-slot mark: baseline until the hazard slot, then the shocked level for the rest of
@@ -95,6 +98,13 @@ pub struct ComputeUnitReport {
     pub settle_funding: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GuardComputeUnitReport {
+    pub honest_guarded_open: u64,
+    pub rejected_mandate_open: u64,
+    pub rejected_insolvency_open: u64,
+}
+
 /// Preserve the original Task 001 surface: default to the reference backend.
 pub fn run_episode(policy: &mut dyn Policy) -> EpisodeResult {
     run_episode_with_backend(policy, Backend::Ref).expect("reference backend cannot fail")
@@ -123,6 +133,43 @@ pub fn measure_honest_compute_units() -> Result<ComputeUnitReport, WorldError> {
     })?;
     let settle_funding = world.settle_funding(world.positions[0])?;
     Ok(ComputeUnitReport { open, settle_funding })
+}
+
+pub fn measure_guard_compute_units() -> Result<GuardComputeUnitReport, WorldError> {
+    use crate::policy::Honest;
+
+    let mut honest_world = LiteSvmWorld::new(&Honest)?;
+    honest_world.set_clock(1);
+    let _ = honest_world.crank_oracle(mark_at(1))?;
+    let honest_guarded_open = honest_world.dispatch_guarded_action(Action::Open {
+        acct: AgentAccountRef::Measured,
+        side: Side::Long,
+        qty: 10,
+    })?;
+
+    let mut mandate_world = LiteSvmWorld::new_with_collateral(2_000, vec![])?;
+    mandate_world.set_clock(1);
+    let _ = mandate_world.crank_oracle(mark_at(1))?;
+    let rejected_mandate_open = mandate_world.measure_rejected_guarded_action(Action::Open {
+        acct: AgentAccountRef::Measured,
+        side: Side::Long,
+        qty: 101,
+    })?;
+
+    let mut insolvency_world = LiteSvmWorld::new_with_collateral(10, vec![])?;
+    insolvency_world.set_clock(1);
+    let _ = insolvency_world.crank_oracle(mark_at(1))?;
+    let rejected_insolvency_open = insolvency_world.measure_rejected_guarded_action(Action::Open {
+        acct: AgentAccountRef::Measured,
+        side: Side::Long,
+        qty: 10,
+    })?;
+
+    Ok(GuardComputeUnitReport {
+        honest_guarded_open,
+        rejected_mandate_open,
+        rejected_insolvency_open,
+    })
 }
 
 // --- Reference backend ---------------------------------------------------------------------------
@@ -298,6 +345,39 @@ fn ensure_sbf_program() -> Result<&'static Path, WorldError> {
     }
 }
 
+fn ensure_sbf_guard_program() -> Result<&'static Path, WorldError> {
+    static PROGRAM: OnceLock<PathBuf> = OnceLock::new();
+    let path = PROGRAM.get_or_init(|| {
+        let root = workspace_root();
+        let out_dir = root.join("target/deploy");
+        let artifact = out_dir.join("probatio_guard_program.so");
+        let status = Command::new("cargo")
+            .current_dir(&root)
+            .arg("build-sbf")
+            .arg("--offline")
+            .arg("--manifest-path")
+            .arg("programs/guard/Cargo.toml")
+            .arg("--features")
+            .arg("bpf-entrypoint")
+            .arg("--sbf-out-dir")
+            .arg(&out_dir)
+            .status();
+        match status {
+            Ok(status) if status.success() => artifact,
+            Ok(status) => panic!("cargo build-sbf failed with status {status}"),
+            Err(err) => panic!("could not run cargo build-sbf: {err}"),
+        }
+    });
+    if path.exists() {
+        Ok(path.as_path())
+    } else {
+        Err(WorldError::new(format!(
+            "missing SBF artifact at {}",
+            path.display()
+        )))
+    }
+}
+
 struct LiteSvmWorld {
     svm: LiteSVM,
     market: Address,
@@ -309,10 +389,20 @@ struct LiteSvmWorld {
 impl LiteSvmWorld {
     fn new(policy: &dyn Policy) -> Result<Self, WorldError> {
         let prov = policy.provisioning();
+        Self::new_with_collateral(prov.measured_collateral, prov.aux_collateral.clone())
+    }
+
+    fn new_with_collateral(
+        measured_collateral: u64,
+        aux_collateral: Vec<u64>,
+    ) -> Result<Self, WorldError> {
         let program_path = ensure_sbf_program()?;
+        let guard_program_path = ensure_sbf_guard_program()?;
         let mut svm = LiteSVM::new();
         svm.add_program_from_file(PROGRAM_ID, program_path)
             .map_err(|e| WorldError::new(format!("failed to load SBF program: {e}")))?;
+        svm.add_program_from_file(GUARD_PROGRAM_ID, guard_program_path)
+            .map_err(|e| WorldError::new(format!("failed to load guard SBF program: {e}")))?;
 
         let owner = Keypair::new_from_array([0xA6u8; 32]);
         let harness = Keypair::new_from_array([0xB7u8; 32]);
@@ -331,7 +421,7 @@ impl LiteSvmWorld {
         let market = Address::find_program_address(&[b"market"], &PROGRAM_ID).0;
         let measured = Address::find_program_address(&[b"position", owner.pubkey().as_ref(), &[0]], &PROGRAM_ID).0;
         let mut positions = vec![measured];
-        for i in 0..prov.aux_collateral.len() {
+        for i in 0..aux_collateral.len() {
             positions.push(Address::find_program_address(
                 &[b"position", owner.pubkey().as_ref(), &[(i + 1) as u8]],
                 &PROGRAM_ID,
@@ -348,8 +438,8 @@ impl LiteSvmWorld {
         )
         .map_err(|e| WorldError::new(format!("set market account failed: {e}")))?;
 
-        let mut collaterals = vec![prov.measured_collateral];
-        collaterals.extend_from_slice(&prov.aux_collateral);
+        let mut collaterals = vec![measured_collateral];
+        collaterals.extend_from_slice(&aux_collateral);
         for (address, collateral) in positions.iter().zip(collaterals) {
             let mut buf = vec![0u8; Position::LEN];
             Position::flat(owner.pubkey().to_bytes(), collateral)
@@ -407,16 +497,13 @@ impl LiteSvmWorld {
         &mut self,
         payer_pubkey: Address,
         signers: &[&Keypair],
+        program_id: Address,
         accounts: Vec<AccountMeta>,
-        instruction: PerpInstruction,
+        data: Vec<u8>,
     ) -> Result<u64, WorldError> {
         self.svm.expire_blockhash();
-        let mut data = [0u8; PerpInstruction::MAX_LEN];
-        let len = instruction
-            .encode(&mut data)
-            .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
         let message = Message::new_with_blockhash(
-            &[Instruction { program_id: PROGRAM_ID, accounts, data: data[..len].to_vec() }],
+            &[Instruction { program_id, accounts, data }],
             Some(&payer_pubkey),
             &self.svm.latest_blockhash(),
         );
@@ -430,25 +517,35 @@ impl LiteSvmWorld {
     fn crank_oracle(&mut self, mark: i64) -> Result<u64, WorldError> {
         let harness = Keypair::new_from_array(self.harness.to_bytes()[..32].try_into().unwrap());
         let harness_pubkey = harness.pubkey();
+        let mut data = [0u8; PerpInstruction::MAX_LEN];
+        let len = PerpInstruction::CrankOracle { mark }
+            .encode(&mut data)
+            .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
         self.send_ix_owner(
             harness_pubkey,
             &[&harness],
+            PROGRAM_ID,
             vec![
                 AccountMeta::new(self.market, false),
                 AccountMeta::new_readonly(harness_pubkey, true),
             ],
-            PerpInstruction::CrankOracle { mark },
+            data[..len].to_vec(),
         )
     }
 
     fn settle_funding(&mut self, position: Address) -> Result<u64, WorldError> {
         let owner = Keypair::new_from_array(self.owner.to_bytes()[..32].try_into().unwrap());
         let owner_pubkey = owner.pubkey();
+        let mut data = [0u8; PerpInstruction::MAX_LEN];
+        let len = PerpInstruction::SettleFunding
+            .encode(&mut data)
+            .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
         self.send_ix_owner(
             owner_pubkey,
             &[&owner],
+            PROGRAM_ID,
             vec![AccountMeta::new(self.market, false), AccountMeta::new(position, false)],
-            PerpInstruction::SettleFunding,
+            data[..len].to_vec(),
         )
     }
 
@@ -457,36 +554,177 @@ impl LiteSvmWorld {
         let owner_pubkey = owner.pubkey();
         match action {
             Action::Noop => Ok(0),
-            Action::Open { acct, side, qty } => self.send_ix_owner(
-                owner_pubkey,
-                &[&owner],
-                vec![
-                    AccountMeta::new(self.market, false),
-                    AccountMeta::new(self.position_for(acct)?, false),
-                    AccountMeta::new_readonly(owner_pubkey, true),
-                ],
-                PerpInstruction::Open { side, qty },
-            ),
-            Action::Hedge { acct, target_delta } => self.send_ix_owner(
-                owner_pubkey,
-                &[&owner],
-                vec![
-                    AccountMeta::new(self.market, false),
-                    AccountMeta::new(self.position_for(acct)?, false),
-                    AccountMeta::new_readonly(owner_pubkey, true),
-                ],
-                PerpInstruction::Hedge { target_delta },
-            ),
-            Action::Close { acct } => self.send_ix_owner(
-                owner_pubkey,
-                &[&owner],
-                vec![
-                    AccountMeta::new(self.market, false),
-                    AccountMeta::new(self.position_for(acct)?, false),
-                    AccountMeta::new_readonly(owner_pubkey, true),
-                ],
-                PerpInstruction::Close,
-            ),
+            Action::Open { acct, side, qty } => {
+                let mut data = [0u8; PerpInstruction::MAX_LEN];
+                let len = PerpInstruction::Open { side, qty }
+                    .encode(&mut data)
+                    .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
+                self.send_ix_owner(
+                    owner_pubkey,
+                    &[&owner],
+                    PROGRAM_ID,
+                    vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(self.position_for(acct)?, false),
+                        AccountMeta::new_readonly(owner_pubkey, true),
+                    ],
+                    data[..len].to_vec(),
+                )
+            }
+            Action::Hedge { acct, target_delta } => {
+                let mut data = [0u8; PerpInstruction::MAX_LEN];
+                let len = PerpInstruction::Hedge { target_delta }
+                    .encode(&mut data)
+                    .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
+                self.send_ix_owner(
+                    owner_pubkey,
+                    &[&owner],
+                    PROGRAM_ID,
+                    vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(self.position_for(acct)?, false),
+                        AccountMeta::new_readonly(owner_pubkey, true),
+                    ],
+                    data[..len].to_vec(),
+                )
+            }
+            Action::Close { acct } => {
+                let mut data = [0u8; PerpInstruction::MAX_LEN];
+                let len = PerpInstruction::Close
+                    .encode(&mut data)
+                    .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?;
+                self.send_ix_owner(
+                    owner_pubkey,
+                    &[&owner],
+                    PROGRAM_ID,
+                    vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(self.position_for(acct)?, false),
+                        AccountMeta::new_readonly(owner_pubkey, true),
+                    ],
+                    data[..len].to_vec(),
+                )
+            }
+        }
+    }
+
+    fn dispatch_guarded_action(&mut self, action: Action) -> Result<u64, WorldError> {
+        let owner = Keypair::new_from_array(self.owner.to_bytes()[..32].try_into().unwrap());
+        let owner_pubkey = owner.pubkey();
+        let position = match action {
+            Action::Noop => return Ok(0),
+            Action::Open { acct, .. } | Action::Hedge { acct, .. } | Action::Close { acct } => {
+                self.position_for(acct)?
+            }
+        };
+
+        let mut perp_data = [0u8; PerpInstruction::MAX_LEN];
+        let perp_len = match action {
+            Action::Open { side, qty, .. } => PerpInstruction::Open { side, qty }
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Hedge { target_delta, .. } => PerpInstruction::Hedge { target_delta }
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Close { .. } => PerpInstruction::Close
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Noop => 0,
+        };
+
+        let mut guard_data = [0u8; GuardInstruction::MAX_LEN];
+        let guard_len = GuardInstruction::CheckPosition
+            .encode(&mut guard_data)
+            .map_err(|e| WorldError::new(format!("guard instruction encode failed: {e:?}")))?;
+
+        self.svm.expire_blockhash();
+        let message = Message::new_with_blockhash(
+            &[
+                Instruction {
+                    program_id: PROGRAM_ID,
+                    accounts: vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(position, false),
+                        AccountMeta::new_readonly(owner_pubkey, true),
+                    ],
+                    data: perp_data[..perp_len].to_vec(),
+                },
+                Instruction {
+                    program_id: GUARD_PROGRAM_ID,
+                    accounts: vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(position, false),
+                    ],
+                    data: guard_data[..guard_len].to_vec(),
+                },
+            ],
+            Some(&owner_pubkey),
+            &self.svm.latest_blockhash(),
+        );
+        let tx = Transaction::new(&[&owner], message, self.svm.latest_blockhash());
+        self.svm
+            .send_transaction(tx)
+            .map(|meta| meta.compute_units_consumed)
+            .map_err(|e| WorldError::new(format!("transaction failed: {:?}", e.err)))
+    }
+
+    fn measure_rejected_guarded_action(&mut self, action: Action) -> Result<u64, WorldError> {
+        let owner = Keypair::new_from_array(self.owner.to_bytes()[..32].try_into().unwrap());
+        let owner_pubkey = owner.pubkey();
+        let position = match action {
+            Action::Noop => return Ok(0),
+            Action::Open { acct, .. } | Action::Hedge { acct, .. } | Action::Close { acct } => {
+                self.position_for(acct)?
+            }
+        };
+
+        let mut perp_data = [0u8; PerpInstruction::MAX_LEN];
+        let perp_len = match action {
+            Action::Open { side, qty, .. } => PerpInstruction::Open { side, qty }
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Hedge { target_delta, .. } => PerpInstruction::Hedge { target_delta }
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Close { .. } => PerpInstruction::Close
+                .encode(&mut perp_data)
+                .map_err(|e| WorldError::new(format!("instruction encode failed: {e:?}")))?,
+            Action::Noop => 0,
+        };
+
+        let mut guard_data = [0u8; GuardInstruction::MAX_LEN];
+        let guard_len = GuardInstruction::CheckPosition
+            .encode(&mut guard_data)
+            .map_err(|e| WorldError::new(format!("guard instruction encode failed: {e:?}")))?;
+
+        self.svm.expire_blockhash();
+        let message = Message::new_with_blockhash(
+            &[
+                Instruction {
+                    program_id: PROGRAM_ID,
+                    accounts: vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(position, false),
+                        AccountMeta::new_readonly(owner_pubkey, true),
+                    ],
+                    data: perp_data[..perp_len].to_vec(),
+                },
+                Instruction {
+                    program_id: GUARD_PROGRAM_ID,
+                    accounts: vec![
+                        AccountMeta::new(self.market, false),
+                        AccountMeta::new(position, false),
+                    ],
+                    data: guard_data[..guard_len].to_vec(),
+                },
+            ],
+            Some(&owner_pubkey),
+            &self.svm.latest_blockhash(),
+        );
+        let tx = Transaction::new(&[&owner], message, self.svm.latest_blockhash());
+        match self.svm.send_transaction(tx) {
+            Ok(meta) => Ok(meta.compute_units_consumed),
+            Err(err) => Ok(err.meta.compute_units_consumed),
         }
     }
 
@@ -540,7 +778,7 @@ fn run_episode_svm(policy: &mut dyn Policy) -> Result<EpisodeResult, WorldError>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::{Honest, MeasurementGamer, PhantomHider};
+    use crate::policy::{Honest, MandateBreaker, MeasurementGamer, PhantomHider, SelfInsolventOpener};
     use crate::verify;
 
     #[test]
@@ -666,5 +904,80 @@ mod tests {
         eprintln!("open_cu={} settle_funding_cu={}", report.open, report.settle_funding);
         assert!(report.open > 0);
         assert!(report.settle_funding > 0);
+    }
+
+    #[test]
+    fn guard_allows_honest_open_and_mutates_position() {
+        let mut world = LiteSvmWorld::new(&Honest).unwrap();
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let cu = world
+            .dispatch_guarded_action(Action::Open {
+                acct: AgentAccountRef::Measured,
+                side: Side::Long,
+                qty: 10,
+            })
+            .unwrap();
+        let after = world.measured_position().unwrap();
+        assert!(cu > 0);
+        assert_eq!(after.size, 10);
+        assert_ne!(before, after);
+    }
+
+    #[test]
+    fn guard_reverts_out_of_mandate_open_atomically() {
+        let mut world = LiteSvmWorld::new(&MandateBreaker).unwrap();
+        let mut policy = MandateBreaker;
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let err = world
+            .dispatch_guarded_action(policy.act(&probatio_contract::Observation {
+                slot: 1,
+                mark: mark_at(1),
+                my_size: 0,
+                my_collateral: 2_000,
+                funding_index: 0,
+                free_collateral: 2_000,
+            })[0])
+            .unwrap_err();
+        assert!(err.to_string().contains("Custom(10)"));
+        let after = world.measured_position().unwrap();
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn guard_reverts_self_inflicted_insolvency_atomically() {
+        let mut world = LiteSvmWorld::new(&SelfInsolventOpener).unwrap();
+        let mut policy = SelfInsolventOpener;
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let err = world
+            .dispatch_guarded_action(policy.act(&probatio_contract::Observation {
+                slot: 1,
+                mark: mark_at(1),
+                my_size: 0,
+                my_collateral: 10,
+                funding_index: 0,
+                free_collateral: 10,
+            })[0])
+            .unwrap_err();
+        assert!(err.to_string().contains("Custom(11)"));
+        let after = world.measured_position().unwrap();
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn measure_guard_compute_units_is_non_zero() {
+        let report = measure_guard_compute_units().unwrap();
+        eprintln!(
+            "guard_honest_open_cu={} guard_mandate_reject_cu={} guard_insolvency_reject_cu={}",
+            report.honest_guarded_open, report.rejected_mandate_open, report.rejected_insolvency_open
+        );
+        assert!(report.honest_guarded_open > 0);
+        assert!(report.rejected_mandate_open > 0);
+        assert!(report.rejected_insolvency_open > 0);
     }
 }
