@@ -1739,6 +1739,7 @@ version = "0.1.0"
 dependencies = [
  "litesvm",
  "probatio-contract",
+ "serde_json",
  "solana-account",
  "solana-address 2.2.0",
  "solana-clock",
