@@ -240,14 +240,14 @@ impl Side {
 /// Which provisioned agent account an action targets. The harness provisions every account an agent
 /// can reference (capability boundary, `STAGE0_DESIGN.md` §4): an out-of-range `Aux` is a safe no-op,
 /// never unverifiable exposure.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AgentAccountRef {
     Measured,
     Aux(usize),
 }
 
 /// An agent intent, translated into position changes by the world.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Noop,
     Open { acct: AgentAccountRef, side: Side, qty: u64 },

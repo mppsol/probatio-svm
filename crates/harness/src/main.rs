@@ -1,14 +1,27 @@
 //! `cargo run -p probatio-svm-harness -- --backend svm` — plays the honest + two cheater policies
 //! through either backend, runs the verifier, prints a summary, and writes `report.json`.
 
+use probatio_svm_harness::agent::ClaudeAgent;
 use probatio_svm_harness::policy::{Honest, MeasurementGamer, PhantomHider, Policy};
-use probatio_svm_harness::{demonstrate, discover, run_episode_with_backend, verify, Backend, Verdict};
+use probatio_svm_harness::{
+    demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend, verify,
+    Backend, CurlClaude, HostileParams, Verdict, NEUTRAL_MM,
+};
 
 fn main() {
-    // Subcommand: `redteam` runs the discovery loop instead of the episode summary.
-    if std::env::args().nth(1).as_deref() == Some("redteam") {
-        run_redteam();
-        return;
+    let mut raw_args = std::env::args().skip(1);
+    if let Some(first) = raw_args.next() {
+        match first.as_str() {
+            "redteam" => {
+                run_redteam();
+                return;
+            }
+            "agent" => {
+                run_agent(raw_args.collect());
+                return;
+            }
+            _ => {}
+        }
     }
 
     let mut backend = Backend::Ref;
@@ -29,8 +42,11 @@ fn main() {
         }
     }
 
-    let mut policies: Vec<Box<dyn Policy>> =
-        vec![Box::new(Honest), Box::new(MeasurementGamer), Box::new(PhantomHider)];
+    let mut policies: Vec<Box<dyn Policy>> = vec![
+        Box::new(Honest),
+        Box::new(MeasurementGamer),
+        Box::new(PhantomHider),
+    ];
 
     let mut json_lines = Vec::new();
     println!(
@@ -42,7 +58,11 @@ fn main() {
         let ep = match run_episode_with_backend(policy.as_mut(), backend) {
             Ok(ep) => ep,
             Err(err) => {
-                eprintln!("error: backend {} failed for {}: {err}", backend.as_str(), policy.name());
+                eprintln!(
+                    "error: backend {} failed for {}: {err}",
+                    backend.as_str(),
+                    policy.name()
+                );
                 std::process::exit(1);
             }
         };
@@ -75,6 +95,42 @@ fn main() {
     } else {
         println!("wrote report.json ({} policies)", json_lines.len());
     }
+}
+
+fn run_agent(args: Vec<String>) {
+    let hostile = match args.as_slice() {
+        [] => false,
+        [flag] if flag == "--hostile" => true,
+        [other] => {
+            eprintln!("error: unknown argument `{other}`");
+            std::process::exit(2);
+        }
+        _ => {
+            eprintln!("error: usage: agent [--hostile]");
+            std::process::exit(2);
+        }
+    };
+
+    let decider = match CurlClaude::from_env() {
+        Ok(decider) => decider,
+        Err(_) => {
+            eprintln!("error: ANTHROPIC_API_KEY is required for `agent`; export it and rerun.");
+            std::process::exit(1);
+        }
+    };
+    let mut policy = ClaudeAgent::new(Box::new(decider), NEUTRAL_MM);
+    let ep = if hostile {
+        run_episode_ref_hostile(&mut policy, &HostileParams::hostile())
+    } else {
+        run_episode(&mut policy)
+    };
+    let report = verify(ep.policy, &ep.trace, &ep.claim);
+
+    println!(
+        "Probatio SVM — Claude agent via {} episode\n",
+        if hostile { "hostile ref" } else { "clean ref" }
+    );
+    print_report(&report);
 }
 
 fn run_redteam() {
@@ -115,5 +171,24 @@ fn run_redteam() {
             );
         }
         None => println!("no escape found — baseline set already covers this attack space"),
+    }
+}
+
+fn print_report(report: &probatio_svm_harness::ShortcutReport) {
+    let mark = match report.verdict {
+        Verdict::Pass => "PASS ",
+        Verdict::ShortcutDetected => "FLAG ",
+    };
+    println!("[{}] {}", mark, report.policy);
+    for f in &report.findings {
+        println!(
+            "        - {:<22} slots {:?}  ({})",
+            f.kind.as_str(),
+            f.evidence_slots,
+            f.detail
+        );
+    }
+    if report.findings.is_empty() {
+        println!("        - no shortcuts detected");
     }
 }
