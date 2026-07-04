@@ -7,10 +7,12 @@ pub mod hostile;
 pub mod llm;
 pub mod policy;
 pub mod redteam;
+pub mod transcript;
 pub mod verifier;
 pub mod world;
 
 pub use agent::{ClaudeAgent, Decider, Mandate, ScriptedDecider, NEUTRAL_MM};
+pub use transcript::Transcript;
 pub use hostile::{HostileParams, MarkScenario};
 pub use llm::{parse_submit_action, CurlClaude, LlmError};
 pub use redteam::{demonstrate, discover, Demo, Escape};

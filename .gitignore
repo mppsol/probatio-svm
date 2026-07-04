@@ -5,3 +5,6 @@
 codex-out.md
 report.json
 **/report.json
+
+# live gallery transcripts are user-generated (need a key); the scripted sample is committed
+gallery/neutral_mm-*.json
