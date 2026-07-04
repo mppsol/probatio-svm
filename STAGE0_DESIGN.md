@@ -174,6 +174,23 @@ vault CPIs into (or that wraps the settlement ix); it reads the same `Position`/
 - This is the split that maps to the business: **guard = OSS/deployable**, **deep catalog = private
   solinv**.
 
+**SHIPPED (Task 003, wiring B) + honesty note.** The guard is built and enforces two tx-level invariants
+(`MandateDeviation`, `SelfInflictedInsolvency`), reusing `Position::within_mandate()` /
+`is_liquidatable()` so guard and verifier share one definition. It reverts a violating tx **atomically
+in-block** (tests read the account back and assert `before == after`). CU: honest guarded open 714,
+mandate reject 508, insolvency reject 713. Wiring is **(B) same-tx composition** `[perp, guard]`, NOT CPI.
+Be honest about what that does and doesn't prove:
+- ✅ Proves the **atomic-revert mechanism**: if the guard ix is present and the post-state is bad, the
+  whole tx (including the perp mutation) rolls back in-block.
+- ⚠️ Does **NOT** prove tamper-proof **enforcement**: the guard is a separate instruction the caller
+  appends, so an agent that simply omits it bypasses the guard. Pitch it as *"atomic in-block revert"*,
+  never *"agents cannot cheat"*. Unbypassable enforcement needs the **CPI promotion** — the perp
+  unconditionally CPIs the guard (or the guard owns the settlement authority) — tracked as a Task 004
+  candidate (which also adds the account-ownership validation the read-only guard currently omits).
+- Note: passive, oracle-driven insolvency (cheater #1 after the shock) is deliberately NOT guard-blockable
+  — no agent tx causes it — that stays the **off-chain verifier's** job. Guard blocks bad *actions*;
+  verifier catches bad *states/behaviors*.
+
 ## 8. Red-team discovery loop (solinv DNA, layer B)
 
 One parametric `ParamAttack` policy spans the shortcut space; deterministic `discover()` finds the
