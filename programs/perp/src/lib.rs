@@ -19,7 +19,7 @@ pinocchio::default_allocator!();
 #[cfg(feature = "bpf-entrypoint")]
 #[panic_handler]
 fn panic_handler(_: &core::panic::PanicInfo<'_>) -> ! {
-    unsafe { pinocchio::syscalls::abort() }
+    loop {}
 }
 
 #[cfg(feature = "bpf-entrypoint")]
