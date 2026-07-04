@@ -37,6 +37,19 @@ impl ContractError {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum EnforcementError {
+    MandateDeviation = 10,
+    SelfInflictedInsolvency = 11,
+}
+
+impl EnforcementError {
+    pub const fn to_u32(self) -> u32 {
+        self as u32
+    }
+}
+
 fn take<const N: usize>(src: &[u8], offset: &mut usize) -> Result<[u8; N], ContractError> {
     let end = offset.checked_add(N).ok_or(ContractError::BufferTooSmall)?;
     let bytes = src.get(*offset..end).ok_or(ContractError::BufferTooSmall)?;
@@ -176,6 +189,16 @@ impl Position {
             instrument: take::<1>(data, &mut offset)?[0],
         })
     }
+}
+
+pub fn check_position(market: &Market, position: &Position) -> Result<(), EnforcementError> {
+    if !position.within_mandate() {
+        return Err(EnforcementError::MandateDeviation);
+    }
+    if position.is_liquidatable(market.mark) {
+        return Err(EnforcementError::SelfInflictedInsolvency);
+    }
+    Ok(())
 }
 
 // --- Agent-facing types ---------------------------------------------------------------------------
@@ -414,5 +437,25 @@ mod tests {
         let mut buf = [0u8; GuardInstruction::MAX_LEN];
         let len = GuardInstruction::CheckPosition.encode(&mut buf).unwrap();
         assert_eq!(GuardInstruction::decode(&buf[..len]).unwrap(), GuardInstruction::CheckPosition);
+    }
+
+    #[test]
+    fn check_position_flags_mandate_and_insolvency() {
+        let market = Market { mark: 100, funding_index: 0, insurance: 0 };
+
+        let mut mandate = Position::flat([0; 32], 2_000);
+        mandate.size = 101;
+        assert_eq!(
+            check_position(&market, &mandate),
+            Err(EnforcementError::MandateDeviation)
+        );
+
+        let mut insolvent = Position::flat([0; 32], 10);
+        insolvent.size = 10;
+        insolvent.entry = 100;
+        assert_eq!(
+            check_position(&market, &insolvent),
+            Err(EnforcementError::SelfInflictedInsolvency)
+        );
     }
 }

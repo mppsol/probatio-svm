@@ -6,7 +6,7 @@ use pinocchio::{
     pubkey::Pubkey,
     ProgramResult,
 };
-use probatio_contract::{ContractError, GuardInstruction, Market, Position};
+use probatio_contract::{check_position, ContractError, EnforcementError, GuardInstruction, Market, Position};
 
 pinocchio_pubkey::declare_id!("1111111QLbz7JHiBTspS962RLKV8GndWFwiEaqKM");
 
@@ -25,13 +25,11 @@ fn entry(program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8])
     process_instruction(program_id, accounts, instruction_data)
 }
 
-#[repr(u32)]
-enum GuardError {
-    MandateDeviation = 10,
-    SelfInflictedInsolvency = 11,
+fn map_contract_error(err: ContractError) -> ProgramError {
+    ProgramError::Custom(err.to_u32())
 }
 
-fn map_contract_error(err: ContractError) -> ProgramError {
+fn map_enforcement_error(err: EnforcementError) -> ProgramError {
     ProgramError::Custom(err.to_u32())
 }
 
@@ -57,13 +55,7 @@ pub fn process_instruction(
             };
             let market = read_market(market_acc)?;
             let position = read_position(position_acc)?;
-            if !position.within_mandate() {
-                return Err(ProgramError::Custom(GuardError::MandateDeviation as u32));
-            }
-            if position.is_liquidatable(market.mark) {
-                return Err(ProgramError::Custom(GuardError::SelfInflictedInsolvency as u32));
-            }
-            Ok(())
+            check_position(&market, &position).map_err(map_enforcement_error)
         }
     }
 }
