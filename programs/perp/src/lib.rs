@@ -6,7 +6,9 @@ use pinocchio::{
     pubkey::{pubkey_eq, Pubkey},
     ProgramResult,
 };
-use probatio_contract::{ContractError, Market, PerpInstruction, Position, Side};
+use probatio_contract::{
+    check_position, ContractError, EnforcementError, Market, PerpInstruction, Position, Side,
+};
 
 pinocchio_pubkey::declare_id!("GtdambwDgHWrDJdVPBkEHGhCwokqgAoch162teUjJse2");
 pub const HARNESS_AUTHORITY: Pubkey =
@@ -28,6 +30,10 @@ fn entry(program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8])
 }
 
 fn map_contract_error(err: ContractError) -> ProgramError {
+    ProgramError::Custom(err.to_u32())
+}
+
+fn map_enforcement_error(err: EnforcementError) -> ProgramError {
     ProgramError::Custom(err.to_u32())
 }
 
@@ -162,6 +168,7 @@ pub fn process_instruction(
                 Side::Short => -(qty as i64),
             };
             trade(&mut position, delta, market.mark)?;
+            check_position(&market, &position).map_err(map_enforcement_error)?;
             write_position(position_acc, position)
         }
         PerpInstruction::Hedge { target_delta } => {
@@ -175,6 +182,7 @@ pub fn process_instruction(
                 .checked_sub(position.size)
                 .ok_or(ProgramError::ArithmeticOverflow)?;
             trade(&mut position, delta, market.mark)?;
+            check_position(&market, &position).map_err(map_enforcement_error)?;
             write_position(position_acc, position)
         }
         PerpInstruction::Close => {
@@ -186,6 +194,7 @@ pub fn process_instruction(
             require_position_owner(&position, owner_acc)?;
             let delta = -position.size;
             trade(&mut position, delta, market.mark)?;
+            check_position(&market, &position).map_err(map_enforcement_error)?;
             write_position(position_acc, position)
         }
         PerpInstruction::CrankOracle { mark } => {

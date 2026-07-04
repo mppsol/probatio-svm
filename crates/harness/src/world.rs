@@ -95,6 +95,7 @@ pub struct EpisodeResult {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ComputeUnitReport {
     pub open: u64,
+    pub hedge: u64,
     pub settle_funding: u64,
 }
 
@@ -131,8 +132,12 @@ pub fn measure_honest_compute_units() -> Result<ComputeUnitReport, WorldError> {
         side: Side::Long,
         qty: 10,
     })?;
+    let hedge = world.dispatch_action(Action::Hedge {
+        acct: AgentAccountRef::Measured,
+        target_delta: 8,
+    })?;
     let settle_funding = world.settle_funding(world.positions[0])?;
-    Ok(ComputeUnitReport { open, settle_funding })
+    Ok(ComputeUnitReport { open, hedge, settle_funding })
 }
 
 pub fn measure_guard_compute_units() -> Result<GuardComputeUnitReport, WorldError> {
@@ -901,9 +906,76 @@ mod tests {
     #[test]
     fn measure_honest_compute_units_is_non_zero() {
         let report = measure_honest_compute_units().unwrap();
-        eprintln!("open_cu={} settle_funding_cu={}", report.open, report.settle_funding);
+        eprintln!(
+            "open_cu={} hedge_cu={} settle_funding_cu={}",
+            report.open, report.hedge, report.settle_funding
+        );
         assert!(report.open > 0);
+        assert!(report.hedge > 0);
         assert!(report.settle_funding > 0);
+    }
+
+    #[test]
+    fn inline_enforcement_allows_honest_open_without_guard_ix() {
+        let mut world = LiteSvmWorld::new(&Honest).unwrap();
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let cu = world
+            .dispatch_action(Action::Open {
+                acct: AgentAccountRef::Measured,
+                side: Side::Long,
+                qty: 10,
+            })
+            .unwrap();
+        let after = world.measured_position().unwrap();
+        assert!(cu > 0);
+        assert_eq!(after.size, 10);
+        assert_ne!(before, after);
+    }
+
+    #[test]
+    fn inline_enforcement_blocks_out_of_mandate_open_without_guard_ix() {
+        let mut world = LiteSvmWorld::new(&MandateBreaker).unwrap();
+        let mut policy = MandateBreaker;
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let err = world
+            .dispatch_action(policy.act(&probatio_contract::Observation {
+                slot: 1,
+                mark: mark_at(1),
+                my_size: 0,
+                my_collateral: 2_000,
+                funding_index: 0,
+                free_collateral: 2_000,
+            })[0])
+            .unwrap_err();
+        assert!(err.to_string().contains("Custom(10)"));
+        let after = world.measured_position().unwrap();
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn inline_enforcement_blocks_self_inflicted_insolvency_without_guard_ix() {
+        let mut world = LiteSvmWorld::new(&SelfInsolventOpener).unwrap();
+        let mut policy = SelfInsolventOpener;
+        world.set_clock(1);
+        let _ = world.crank_oracle(mark_at(1)).unwrap();
+        let before = world.measured_position().unwrap();
+        let err = world
+            .dispatch_action(policy.act(&probatio_contract::Observation {
+                slot: 1,
+                mark: mark_at(1),
+                my_size: 0,
+                my_collateral: 10,
+                funding_index: 0,
+                free_collateral: 10,
+            })[0])
+            .unwrap_err();
+        assert!(err.to_string().contains("Custom(11)"));
+        let after = world.measured_position().unwrap();
+        assert_eq!(before, after);
     }
 
     #[test]
