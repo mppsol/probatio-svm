@@ -8,5 +8,11 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["psyto <saito.hiroyuki@gmail.com>"]
 
+# Offline-build shim. `num_cpus` (pulled transitively by the litesvm/solana stack) declares
+# `hermit-abi` as a dependency, but it is ONLY compiled under `target_os = "hermit"` — never on the
+# host or BPF targets this project builds. hermit-abi 0.5.2 is not in the local cargo cache, so an
+# offline resolve fails on the (never-compiled) source. This local no-op stub lets `--offline` resolve.
+# Functionally safe on every target we use; drop it once the real crate is cached / builds are online.
+# See vendor/hermit-abi/README.md.
 [patch.crates-io]
 hermit-abi = { path = "vendor/hermit-abi" }

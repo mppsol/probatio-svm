@@ -4,8 +4,9 @@
 //! off-chain verifier — plus the agent-facing intent types. This is the load-bearing contract
 //! (see `AGENTS.md`): a drift here breaks the program, the guard, and the verifier at once.
 //!
-//! Stage 0a keeps this dependency-free (pure `std`) so the harness builds offline. Task 002 adds the
-//! on-chain (de)serialization (borsh / manual pack) without changing the field layout.
+//! Dependency-free and `#![no_std]` so it compiles for the Solana BPF target and the host harness
+//! alike. Fixed-offset little-endian `encode`/`decode` provide the on-chain (de)serialization without
+//! changing the Stage 0a field layout.
 
 /// A 32-byte account address (Solana `Pubkey` on-chain; opaque bytes here so the shared crate stays
 /// free of `solana-program`).
