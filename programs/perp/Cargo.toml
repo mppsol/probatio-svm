@@ -1,0 +1,18 @@
+[package]
+name = "probatio-perp-program"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+bpf-entrypoint = []
+
+[dependencies]
+pinocchio = "0.9.3"
+pinocchio-pubkey = { version = "0.3.0", features = ["const"] }
+probatio-contract = { path = "../../crates/contract" }

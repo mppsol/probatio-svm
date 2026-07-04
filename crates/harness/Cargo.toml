@@ -7,6 +7,15 @@ authors.workspace = true
 
 [dependencies]
 probatio-contract = { path = "../contract" }
+litesvm = "0.13.0"
+solana-account = "3.4.0"
+solana-address = "=2.2.0"
+solana-clock = "3.0.1"
+solana-instruction = "=3.2.0"
+solana-keypair = "=3.1.0"
+solana-message = "=3.1.0"
+solana-signer = "3.0.0"
+solana-transaction = { version = "3.1.0", features = ["verify"] }
 
 [[bin]]
 name = "probatio-svm"

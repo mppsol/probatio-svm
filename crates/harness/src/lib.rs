@@ -7,4 +7,7 @@ pub mod verifier;
 pub mod world;
 
 pub use verifier::{verify, Finding, FindingKind, ShortcutReport, StateSnapshot, Verdict};
-pub use world::{run_episode, EpisodeResult, N_SLOTS, SHOCK_SLOT};
+pub use world::{
+    measure_honest_compute_units, run_episode, run_episode_with_backend, Backend, ComputeUnitReport,
+    EpisodeResult, N_SLOTS, SHOCK_SLOT,
+};
