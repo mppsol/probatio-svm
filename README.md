@@ -101,12 +101,17 @@ STAGE0_DESIGN.md  the design + honest scope notes + roadmap
 
 ## Honest limitations
 
-- **Coverage, not mechanism, is the open frontier.** The scripted `measurement_gamer` / `phantom_hider`
-  policies prove the machinery works; they do **not** prove the invariant set catches *unknown* economic
-  exploits. Generality comes from the **red-team discovery loop** (roadmap, not yet built), which is the
-  real moat.
-- **Episodes are still clean.** One deterministic oracle drop, no slippage / MEV / adversarial ordering.
-  Certifying robustness against realistic mainnet conditions needs "hostile episodes" (roadmap).
+- **Coverage.** The scripted policies prove the machinery works; a **red-team discovery loop** (shipped)
+  mechanically searches for shortcuts the invariant set misses and promotes fixes — it already found and
+  closed a near-neutral claim bypass. Exhaustive coverage of *unknown* economic exploits remains open.
+- **Hostile-episode audit (shipped).** Episodes can now carry slippage, a lagged multi-shock oracle path,
+  and deterministic noise. Finding: the misrepresentation invariants are **price-noise invariant for a
+  fixed action sequence** (delta is position size, not price) — but a **price-reactive** policy (and a
+  future LLM agent) changes its actions with price, so that invariance does not extend to it; that is the
+  explicit boundary, and why price-reactive agents need per-episode certification. Solvency is
+  **stress-relative**: the episode must declare the stress it certifies against.
+- **Not a realtime monitor.** Probatio is a pre-deployment proving ground (offline replay), so verifier
+  latency under mainnet block times / MEV is out of frame by design.
 - **Third-party enforcement needs CPI.** The perp enforces *its own* accounts unbypassably (inline). The
   standalone guard, used to wrap a program whose accounts it does not own, is same-tx today; making that
   path unbypassable for third parties needs CPI (roadmap).
@@ -116,11 +121,14 @@ STAGE0_DESIGN.md  the design + honest scope notes + roadmap
 
 ## Roadmap
 
-- **Red-team discovery loop** — search the shortcut space, promote newly-found classes into invariants
-  (the coverage moat; [[solinv]] DNA).
-- **Hostile episodes** — inject slippage, oracle lag, adversarial ordering to test robustness.
+- ✅ **Red-team discovery loop** — searches the shortcut space, promotes newly-found classes into
+  invariants (the coverage moat; [[solinv]] DNA).
+- ✅ **Hostile episodes** — slippage, lagged multi-shock oracle, deterministic noise; verifier robustness
+  audit.
+- **LLM agent** behind the `Policy` trait — a real (price-reactive) agent to certify per-episode; the
+  natural next step from the hostile-episode boundary.
 - **CPI guard promotion** — unbypassable enforcement for third-party-owned accounts.
-- LLM agent behind the `Policy` trait; pitch video (certify PASS / catch FLAG / enforce revert).
+- Pitch video (certify PASS / catch FLAG / enforce revert).
 
 ## Built with cross-review
 
