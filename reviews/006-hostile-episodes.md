@@ -24,3 +24,23 @@ P2 status: NOT RESOLVED
 Round 2 notes
 - `cargo test --offline` is green: 39 harness tests passed, plus the rest of the workspace tests.
 - I did not find any verdict regression in existing policies beyond the intended hostile-only `StressBoundary` insolvency case.
+
+## Round 3 — CC self-verification (headless Codex review unavailable)
+
+The headless `codex exec` reviewer repeatedly failed on this round (exit 1 + stale processes), so the two
+round-2 items were verified by CC directly. Recorded honestly as self-verification, not a Codex approval.
+The substantive adversarial passes (R1: price-invariance overclaim + noise overflow; R2: brief overclaim
++ reproduced debug panic) were done by Codex and are what made this task correct.
+
+- P1 RESOLVED: `docs/tasks/006-hostile-episodes.md` key-insight and honest-framing sections are now
+  scoped ("For a fixed action sequence", "for slot-scripted (fixed-action) policies", "explicitly
+  scoped ... acknowledged boundary"). `grep` finds no remaining unscoped "act on slots / price-noise
+  invariant" claim. Consistent with the code/tests (`MarkReactiveGamer` +
+  `price_reactive_policy_is_not_price_invariant`).
+- P2 RESOLVED: `noise()` computed in i128 → TOTAL. Verified with a standalone program that for
+  `slot ∈ {1e12, u64::MAX, 5}` and `amp = i64::MAX` it does not panic and the result stays within
+  `[-amp, amp]`. The i128 intermediate cannot overflow (`amp ≤ i64::MAX`), the modulo dividend is
+  non-negative, and the result lies in `[-amp, amp] ⊆ i64` so the final cast is lossless.
+- `cargo test --offline`: 39 green.
+
+Follow-up: re-run a proper Codex pass on this diff when the headless tool is stable; no blocking issue expected.
