@@ -1,6 +1,11 @@
 //! Anthropic Messages API client via `curl`, isolated behind the `Decider` seam.
 
-use std::{env, fmt, process::Command};
+use std::{
+    env,
+    fmt,
+    io::Write,
+    process::{Command, Stdio},
+};
 
 use probatio_contract::{Action, AgentAccountRef, Observation, Side};
 use serde_json::{json, Value};
@@ -14,6 +19,7 @@ const DEFAULT_MODEL: &str = "claude-opus-4-8";
 #[derive(Debug)]
 pub enum LlmError {
     MissingApiKey,
+    InvalidApiKey,
     CurlFailed(String),
     InvalidJson(String),
     MissingToolUse,
@@ -24,6 +30,9 @@ impl fmt::Display for LlmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LlmError::MissingApiKey => f.write_str("ANTHROPIC_API_KEY is not set"),
+            LlmError::InvalidApiKey => {
+                f.write_str("ANTHROPIC_API_KEY contains control characters (newline/tab)")
+            }
             LlmError::CurlFailed(msg) => write!(f, "curl request failed: {msg}"),
             LlmError::InvalidJson(msg) => write!(f, "invalid json: {msg}"),
             LlmError::MissingToolUse => f.write_str("response did not include a tool_use block"),
@@ -41,29 +50,47 @@ pub struct CurlClaude {
 
 impl CurlClaude {
     pub fn from_env() -> Result<Self, LlmError> {
-        let api_key = env::var("ANTHROPIC_API_KEY").map_err(|_| LlmError::MissingApiKey)?;
+        let raw = env::var("ANTHROPIC_API_KEY").map_err(|_| LlmError::MissingApiKey)?;
+        let api_key = validate_api_key(&raw)?;
         let model = env::var("PROBATIO_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
         Ok(Self { api_key, model })
     }
 
     fn decide_once(&self, obs: &Observation, mandate: &str) -> Result<Action, LlmError> {
         let body = build_request_body(&self.model, mandate, obs);
-        let output = Command::new("curl")
+        // Pass the API key via a curl config file on stdin (`--config -`) so it never appears in argv
+        // (visible in `ps`). The request body stays an inline `--data` arg — it is not sensitive.
+        let config = format!("header = \"x-api-key: {}\"\n", escape_curl_config(&self.api_key));
+        let mut child = Command::new("curl")
             .args([
                 "--silent",
                 "--show-error",
                 "--fail-with-body",
+                "--config",
+                "-",
                 API_URL,
                 "--header",
                 "content-type: application/json",
-                "--header",
-                &format!("x-api-key: {}", self.api_key),
                 "--header",
                 &format!("anthropic-version: {API_VERSION}"),
                 "--data",
                 &body,
             ])
-            .output()
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|err| LlmError::CurlFailed(err.to_string()))?;
+
+        child
+            .stdin
+            .take()
+            .ok_or_else(|| LlmError::CurlFailed("could not open curl stdin".to_string()))?
+            .write_all(config.as_bytes())
+            .map_err(|err| LlmError::CurlFailed(err.to_string()))?;
+
+        let output = child
+            .wait_with_output()
             .map_err(|err| LlmError::CurlFailed(err.to_string()))?;
 
         if !output.status.success() {
@@ -135,8 +162,7 @@ fn build_request_body(model: &str, mandate: &str, obs: &Observation) -> String {
                     },
                     "required": ["action"],
                     "additionalProperties": false
-                },
-                "strict": true
+                }
             }
         ],
         "tool_choice": {
@@ -227,6 +253,27 @@ pub fn parse_submit_action(tool_input_json: &str) -> Result<Action, LlmError> {
     }
 }
 
+/// Trim surrounding whitespace (env vars commonly carry a trailing newline) and reject a key that
+/// still contains any control character. A newline/CR would break the single-line curl config AND is
+/// invalid in an HTTP header value (header-injection guard); tabs/other control chars are likewise
+/// rejected rather than silently escaped (review 008).
+fn validate_api_key(raw: &str) -> Result<String, LlmError> {
+    let key = raw.trim();
+    if key.is_empty() {
+        return Err(LlmError::MissingApiKey);
+    }
+    if key.chars().any(char::is_control) {
+        return Err(LlmError::InvalidApiKey);
+    }
+    Ok(key.to_string())
+}
+
+/// Escape a value for a curl config-file quoted string (`header = "..."`). The key is already
+/// control-char-free (see `validate_api_key`); this handles the remaining `"` / `\` metacharacters.
+fn escape_curl_config(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 fn expect_keys(obj: &serde_json::Map<String, Value>, allowed: &[&str]) -> Result<(), LlmError> {
     for key in obj.keys() {
         if !allowed.contains(&key.as_str()) {
@@ -300,5 +347,26 @@ mod tests {
     #[test]
     fn reject_unexpected_fields() {
         assert!(parse_submit_action(r#"{"action":"noop","qty":1}"#).is_err());
+    }
+
+    #[test]
+    fn curl_config_escaping_is_safe() {
+        use super::escape_curl_config;
+        assert_eq!(escape_curl_config("sk-ant-abc123"), "sk-ant-abc123");
+        assert_eq!(escape_curl_config(r#"a"b\c"#), r#"a\"b\\c"#);
+    }
+
+    #[test]
+    fn validate_api_key_trims_and_rejects_control_chars() {
+        use super::{validate_api_key, LlmError};
+        // Trailing newline (the common env-var case) is trimmed.
+        assert_eq!(validate_api_key("sk-ant-abc123\n").unwrap(), "sk-ant-abc123");
+        assert_eq!(validate_api_key("  sk-ant-abc123  ").unwrap(), "sk-ant-abc123");
+        // Embedded control chars (newline / CR / tab) are rejected, not escaped.
+        assert!(matches!(validate_api_key("sk\nant"), Err(LlmError::InvalidApiKey)));
+        assert!(matches!(validate_api_key("sk\rant"), Err(LlmError::InvalidApiKey)));
+        assert!(matches!(validate_api_key("sk\tant"), Err(LlmError::InvalidApiKey)));
+        // Empty / whitespace-only → MissingApiKey.
+        assert!(matches!(validate_api_key("   "), Err(LlmError::MissingApiKey)));
     }
 }
