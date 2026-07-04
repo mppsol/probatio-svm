@@ -226,25 +226,35 @@ fn trade(pos: &mut Position, delta: i64, price: i64) {
 }
 
 fn apply(world: &mut RefWorld, action: Action) {
+    apply_with(world, action, 0);
+}
+
+/// Apply an action, filling at `mark + sign(delta)*slippage` — the fill adversarially crosses the spread
+/// (buys pay up, sells receive less). `slippage = 0` reproduces the clean fill exactly.
+fn apply_with(world: &mut RefWorld, action: Action, slippage: i64) {
     let mark = world.market.mark;
+    let fill = |delta: i64| mark + slippage * delta.signum();
     match action {
         Action::Noop => {}
         Action::Open { acct, side, qty } => {
             let delta = if side == Side::Long { qty as i64 } else { -(qty as i64) };
+            let price = fill(delta);
             if let Some(p) = world.resolve(acct) {
-                trade(p, delta, mark);
+                trade(p, delta, price);
             }
         }
         Action::Hedge { acct, target_delta } => {
             if let Some(p) = world.resolve(acct) {
                 let delta = target_delta - p.size;
-                trade(p, delta, mark);
+                let price = fill(delta);
+                trade(p, delta, price);
             }
         }
         Action::Close { acct } => {
             if let Some(p) = world.resolve(acct) {
                 let delta = -p.size;
-                trade(p, delta, mark);
+                let price = fill(delta);
+                trade(p, delta, price);
             }
         }
     }
@@ -294,6 +304,41 @@ fn run_episode_ref(policy: &mut dyn Policy) -> EpisodeResult {
         };
         for action in policy.act(&obs) {
             apply(&mut world, action);
+        }
+        let accounts: Vec<Position> = world.accounts().copied().collect();
+        trace.push(capture(slot, &world.market, &accounts));
+    }
+
+    EpisodeResult { policy: policy.name(), trace, claim: policy.claim() }
+}
+
+/// Play a deterministic episode under hostile conditions (slippage + a lagged multi-shock oracle path +
+/// noise) on the reference backend. `HostileParams::clean()` is byte-identical to `run_episode`.
+pub fn run_episode_ref_hostile(
+    policy: &mut dyn Policy,
+    params: &crate::hostile::HostileParams,
+) -> EpisodeResult {
+    let prov = policy.provisioning();
+    let owner = [0xA6u8; 32];
+    let mut world = RefWorld {
+        market: Market { mark: BASELINE_MARK, funding_index: 0, insurance: 0 },
+        measured: Position::flat(owner, prov.measured_collateral),
+        aux: prov.aux_collateral.iter().map(|&c| Position::flat(owner, c)).collect(),
+    };
+
+    let mut trace = Vec::with_capacity(N_SLOTS as usize);
+    for slot in 1..=N_SLOTS {
+        world.market.mark = params.mark_at(slot);
+        let obs = probatio_contract::Observation {
+            slot,
+            mark: world.market.mark,
+            my_size: world.measured.size,
+            my_collateral: world.measured.collateral,
+            funding_index: world.market.funding_index,
+            free_collateral: world.measured.free_collateral(world.market.mark),
+        };
+        for action in policy.act(&obs) {
+            apply_with(&mut world, action, params.slippage);
         }
         let accounts: Vec<Position> = world.accounts().copied().collect();
         trace.push(capture(slot, &world.market, &accounts));
