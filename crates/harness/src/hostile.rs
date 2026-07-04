@@ -1,6 +1,15 @@
 //! Hostile-episode parameters (Task 006): slippage, a lagged multi-shock oracle path, and deterministic
-//! bounded noise. Used to audit the verifier's robustness — the misrepresentation invariants are
-//! price-noise invariant (delta = position size, not price), while solvency is stress-relative.
+//! bounded noise. Used to audit the verifier's robustness.
+//!
+//! Scope of the price-invariance claim (review 006 P1): the misrepresentation invariants read
+//! `measured_delta` = position size, which does not depend on price. So **for a fixed action sequence**
+//! (e.g. the slot-scripted demo policies, which ignore `obs.mark`), the misrepresentation findings are
+//! byte-identical clean vs hostile. This is NOT a claim about the whole `Policy` surface: a
+//! *price-reactive* policy (and a future LLM agent) reacts to `obs.mark`, so a hostile price path changes
+//! its actions → its size timeline → its findings. That is correct — the verifier judges the agent's
+//! *actual* exposure — and is exactly why price-reactive agents need per-episode certification (Task 007).
+//! `price_reactive_policy_is_not_price_invariant` makes this boundary explicit. Solvency, being
+//! value-based, is stress-relative for everyone.
 //!
 //! Everything here is deterministic (no RNG): same params ⇒ byte-identical episode.
 
@@ -67,7 +76,9 @@ fn noise(slot: u64, amp: i64) -> i64 {
     if amp <= 0 {
         return 0;
     }
-    let span = (2 * amp + 1) as u64;
+    // Compute the span in u64 with saturating arithmetic so an arbitrarily large public `noise_amp`
+    // cannot overflow `i64` (review 006 P2). `amp > 0` here, so `amp as u64` is exact.
+    let span = (amp as u64).saturating_mul(2).saturating_add(1);
     (slot.wrapping_mul(2_654_435_761) % span) as i64 - amp
 }
 
@@ -102,7 +113,9 @@ mod tests {
 
     // --- Task 006 robustness audit -------------------------------------------------------------
 
-    use crate::policy::{Honest, MeasurementGamer, Policy, PhantomHider, StressBoundary};
+    use crate::policy::{
+        Honest, MarkReactiveGamer, MeasurementGamer, PhantomHider, Policy, StressBoundary,
+    };
     use crate::verifier::{verify, FindingKind, StateSnapshot, Verdict};
     use crate::world::{run_episode, run_episode_ref_hostile};
 
@@ -152,9 +165,10 @@ mod tests {
     }
 
     #[test]
-    fn misrepresentation_is_price_noise_invariant() {
-        // Delta = position size, independent of price ⇒ the misrepresentation invariants and their
-        // evidence are byte-identical clean vs hostile, for both cheaters.
+    fn misrepresentation_is_price_noise_invariant_for_slot_scripted_policies() {
+        // For a FIXED action sequence (these policies ignore obs.mark), delta = position size is
+        // independent of price ⇒ the misrepresentation invariants and their evidence are byte-identical
+        // clean vs hostile. (Price-reactive policies are the explicit exception — see the next test.)
         for name in ["gamer", "phantom"] {
             let (clean_seq, hostile_seq, clean_f, hostile_f) = if name == "gamer" {
                 (
@@ -174,6 +188,17 @@ mod tests {
             assert_eq!(clean_seq, hostile_seq, "{name}: measured_delta changed under hostility");
             assert_eq!(clean_f, hostile_f, "{name}: misrepresentation findings changed under hostility");
         }
+    }
+
+    #[test]
+    fn price_reactive_policy_is_not_price_invariant() {
+        // Boundary of the invariance claim (review 006 P1): a policy that reacts to obs.mark takes
+        // different actions under a different price path, so its size timeline — and thus its
+        // misrepresentation findings — differ clean vs hostile. The verifier is still correct in both;
+        // this is why a price-reactive/LLM agent needs per-episode certification (Task 007).
+        let clean = delta_seq(&clean_run(&mut MarkReactiveGamer).trace);
+        let hostile = delta_seq(&hostile_run(&mut MarkReactiveGamer).trace);
+        assert_ne!(clean, hostile, "a price-reactive policy must be sensitive to the price path");
     }
 
     #[test]
