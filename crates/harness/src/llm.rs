@@ -19,6 +19,7 @@ const DEFAULT_MODEL: &str = "claude-opus-4-8";
 #[derive(Debug)]
 pub enum LlmError {
     MissingApiKey,
+    InvalidApiKey,
     CurlFailed(String),
     InvalidJson(String),
     MissingToolUse,
@@ -29,6 +30,9 @@ impl fmt::Display for LlmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LlmError::MissingApiKey => f.write_str("ANTHROPIC_API_KEY is not set"),
+            LlmError::InvalidApiKey => {
+                f.write_str("ANTHROPIC_API_KEY contains control characters (newline/tab)")
+            }
             LlmError::CurlFailed(msg) => write!(f, "curl request failed: {msg}"),
             LlmError::InvalidJson(msg) => write!(f, "invalid json: {msg}"),
             LlmError::MissingToolUse => f.write_str("response did not include a tool_use block"),
@@ -46,7 +50,8 @@ pub struct CurlClaude {
 
 impl CurlClaude {
     pub fn from_env() -> Result<Self, LlmError> {
-        let api_key = env::var("ANTHROPIC_API_KEY").map_err(|_| LlmError::MissingApiKey)?;
+        let raw = env::var("ANTHROPIC_API_KEY").map_err(|_| LlmError::MissingApiKey)?;
+        let api_key = validate_api_key(&raw)?;
         let model = env::var("PROBATIO_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
         Ok(Self { api_key, model })
     }
@@ -248,8 +253,23 @@ pub fn parse_submit_action(tool_input_json: &str) -> Result<Action, LlmError> {
     }
 }
 
-/// Escape a value for a curl config-file quoted string (`header = "..."`). API keys are
-/// alphanumeric+dashes so this is defensive, but a stray `"` or `\` must not break the config line.
+/// Trim surrounding whitespace (env vars commonly carry a trailing newline) and reject a key that
+/// still contains any control character. A newline/CR would break the single-line curl config AND is
+/// invalid in an HTTP header value (header-injection guard); tabs/other control chars are likewise
+/// rejected rather than silently escaped (review 008).
+fn validate_api_key(raw: &str) -> Result<String, LlmError> {
+    let key = raw.trim();
+    if key.is_empty() {
+        return Err(LlmError::MissingApiKey);
+    }
+    if key.chars().any(char::is_control) {
+        return Err(LlmError::InvalidApiKey);
+    }
+    Ok(key.to_string())
+}
+
+/// Escape a value for a curl config-file quoted string (`header = "..."`). The key is already
+/// control-char-free (see `validate_api_key`); this handles the remaining `"` / `\` metacharacters.
 fn escape_curl_config(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
@@ -334,5 +354,19 @@ mod tests {
         use super::escape_curl_config;
         assert_eq!(escape_curl_config("sk-ant-abc123"), "sk-ant-abc123");
         assert_eq!(escape_curl_config(r#"a"b\c"#), r#"a\"b\\c"#);
+    }
+
+    #[test]
+    fn validate_api_key_trims_and_rejects_control_chars() {
+        use super::{validate_api_key, LlmError};
+        // Trailing newline (the common env-var case) is trimmed.
+        assert_eq!(validate_api_key("sk-ant-abc123\n").unwrap(), "sk-ant-abc123");
+        assert_eq!(validate_api_key("  sk-ant-abc123  ").unwrap(), "sk-ant-abc123");
+        // Embedded control chars (newline / CR / tab) are rejected, not escaped.
+        assert!(matches!(validate_api_key("sk\nant"), Err(LlmError::InvalidApiKey)));
+        assert!(matches!(validate_api_key("sk\rant"), Err(LlmError::InvalidApiKey)));
+        assert!(matches!(validate_api_key("sk\tant"), Err(LlmError::InvalidApiKey)));
+        // Empty / whitespace-only → MissingApiKey.
+        assert!(matches!(validate_api_key("   "), Err(LlmError::MissingApiKey)));
     }
 }
