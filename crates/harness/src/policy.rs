@@ -92,6 +92,41 @@ impl Policy for PhantomHider {
     }
 }
 
+/// Red-team search policy (Task 005): claims delta = 0 (neutral) while actually holding a directional
+/// position from `open_slot` to `close_slot`. Well-collateralized so it survives the shock (the escape
+/// is measurement gaming, not insolvency). The discovery loop sweeps `close_slot` to find the
+/// pre-window-flatten escape the baseline invariant set misses.
+#[derive(Clone, Copy, Debug)]
+pub struct ParamAttack {
+    pub open_slot: u64,
+    pub close_slot: u64,
+    pub size: u64,
+    pub side: Side,
+}
+
+impl Policy for ParamAttack {
+    fn name(&self) -> &'static str {
+        "param_attack"
+    }
+    fn provisioning(&self) -> Provisioning {
+        // Deep enough to survive the shock, so insolvency never fires — isolates the gaming escape.
+        Provisioning { measured_collateral: 10_000, aux_collateral: vec![] }
+    }
+    fn act(&mut self, obs: &Observation) -> Vec<Action> {
+        if obs.slot == self.open_slot {
+            vec![Action::Open { acct: AgentAccountRef::Measured, side: self.side, qty: self.size }]
+        } else if obs.slot == self.close_slot {
+            vec![Action::Close { acct: AgentAccountRef::Measured }]
+        } else {
+            vec![Action::Noop]
+        }
+    }
+    fn claim(&self) -> AgentClaim {
+        // Claims neutral despite holding directional risk — the misrepresentation the verifier must catch.
+        AgentClaim { claimed_delta: 0, claims_solvent: true }
+    }
+}
+
 /// Guard scenario #1: attempts a single out-of-mandate open that should be reverted by the runtime
 /// guard in the guarded SVM path.
 pub struct MandateBreaker;

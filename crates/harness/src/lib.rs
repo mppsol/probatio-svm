@@ -3,10 +3,15 @@
 //! program driven through LiteSVM behind the same `contract` account layout.
 
 pub mod policy;
+pub mod redteam;
 pub mod verifier;
 pub mod world;
 
-pub use verifier::{verify, Finding, FindingKind, ShortcutReport, StateSnapshot, Verdict};
+pub use redteam::{demonstrate, discover, Demo, Escape};
+pub use verifier::{
+    verify, verify_baseline, verify_with, Finding, FindingKind, InvariantSet, ShortcutReport,
+    StateSnapshot, Verdict,
+};
 pub use world::{
     measure_guard_compute_units, measure_honest_compute_units, run_episode,
     run_episode_with_backend, Backend, ComputeUnitReport, EpisodeResult, GuardComputeUnitReport,
