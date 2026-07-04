@@ -214,15 +214,19 @@ corpus stay private. LLM red-teamer optional.
   verifier + policies), optional `agent/` (LLM). Deps: `pinocchio`, `litesvm`, `serde`.
 - Commit as `psyto <saito.hiroyuki@gmail.com>`. `gh auth switch -u psyto` before any push.
 
-## 11. Definition of done (Stage 0)
+## 11. Definition of done (Stage 0) — ✅ COMPLETE (2026-07-04)
 
-- [ ] `cargo run` plays one 60-slot episode for the honest policy ⇒ `ShortcutReport::Pass`.
-- [ ] Same harness, cheater #1 + #2 ⇒ `ShortcutDetected` with correct `evidence_slots`.
-- [ ] Determinism test: same seed ⇒ byte-identical trace.
-- [ ] Guard program reverts at least one cheater tx (insolvency **or** mandate) — a passing test asserts
-      the `Err`.
-- [ ] `report.json` + stdout summary that reads as a credible demo.
-- [ ] `cargo test` green.
+- [x] `cargo run` plays one 60-slot episode for the honest policy ⇒ `ShortcutReport::Pass`.
+- [x] Same harness, cheater #1 + #2 ⇒ `ShortcutDetected` with correct `evidence_slots`
+      (gamer: `ContinuousNeutrality`[55–59] + `IntraEpisodeInsolvency`[30–59]; phantom:
+      `PhantomExposure`[1–60] + `IntraEpisodeInsolvency`[30–60]).
+- [x] Determinism test: same seed ⇒ byte-identical trace.
+- [x] Guard program reverts at least one cheater tx (mandate **and** self-inflicted insolvency) — passing
+      tests assert the `Err` and atomicity (`before == after`).
+- [x] `report.json` + stdout summary that reads as a credible demo.
+- [x] `cargo test` green (22 tests, offline).
+- [x] Bonus: verdict + evidence parity across the `ref` and `svm` backends; real BPF execution with
+      measured CU (perp Open 348 / SettleFunding 356; guard 714/508/713).
 
 ## 12. Timeline to 2026-09-28
 
