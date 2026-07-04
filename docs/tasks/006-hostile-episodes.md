@@ -10,13 +10,20 @@ deterministic noise) and turns "clean episode" from a limitation into a *tested*
 
 ## The key insight (drives the whole task)
 
-`measured_delta` is the position **size** — it does not depend on price. Policies act on slots, not on
-the mark, so the size timeline is identical no matter how hostile the price path is. Therefore the
-**misrepresentation invariants (delta-based: `ClaimTracksExposure`, `ContinuousNeutrality`,
-`PhantomExposure`) are price-noise invariant** — hostility cannot mask or fabricate them. The only
-value-based invariant, `IntraEpisodeInsolvency`, IS price-sensitive: it is **stress-relative**.
+`measured_delta` is the position **size** — it does not depend on price. **For a fixed action sequence**
+(the slot-scripted demo policies, which ignore `obs.mark`), the size timeline is identical no matter how
+hostile the price path is. So for those policies the **misrepresentation invariants (delta-based:
+`ClaimTracksExposure`, `ContinuousNeutrality`, `PhantomExposure`) are price-noise invariant** — hostility
+cannot mask or fabricate them.
 
-The task makes both facts explicit and tested.
+This is NOT a claim about the whole `Policy` surface: `act()` receives `obs.mark`, so a **price-reactive**
+policy (and a future LLM agent) can change its actions — and thus its findings — under a hostile path.
+That is correct (the verifier judges actual exposure) and is why price-reactive agents need per-episode
+certification (Task 007); the `MarkReactiveGamer` policy + `price_reactive_policy_is_not_price_invariant`
+test make the boundary explicit. The one value-based invariant, `IntraEpisodeInsolvency`, is
+price-sensitive for everyone: it is **stress-relative**.
+
+The task makes all of this explicit and tested.
 
 ## Scope (in)
 
@@ -55,6 +62,8 @@ The task makes both facts explicit and tested.
 
 ## Honest framing to record
 
-Hostile episodes HARDEN the claim rather than fix a bug: they prove the misrepresentation moat is
-price-noise invariant (a real strength, because it is position-based), and make solvency's
-stress-relativity explicit. If Codev finds a hostility-induced escape, that becomes the next promotion.
+Hostile episodes HARDEN the claim rather than fix a bug: for slot-scripted (fixed-action) policies they
+prove the misrepresentation moat is price-noise invariant (a real strength, because it is
+position-based), and they make solvency's stress-relativity explicit. The claim is explicitly scoped —
+price-reactive agents (Task 007) change actions with price and are the acknowledged boundary. If Codex
+finds a hostility-induced escape, that becomes the next promotion.

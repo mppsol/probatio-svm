@@ -76,10 +76,12 @@ fn noise(slot: u64, amp: i64) -> i64 {
     if amp <= 0 {
         return 0;
     }
-    // Compute the span in u64 with saturating arithmetic so an arbitrarily large public `noise_amp`
-    // cannot overflow `i64` (review 006 P2). `amp > 0` here, so `amp as u64` is exact.
-    let span = (amp as u64).saturating_mul(2).saturating_add(1);
-    (slot.wrapping_mul(2_654_435_761) % span) as i64 - amp
+    // Compute entirely in i128 so the function is TOTAL — no panic and an exact `[-amp, amp]` bound for
+    // any `amp > 0` up to i64::MAX (review 006 P2 round 2). `amp <= i64::MAX` ⇒ `span` and the final
+    // result both fit i128, and the result lies in `[-amp, amp]` ⊆ i64, so the cast is lossless.
+    let amp = amp as i128;
+    let span = 2 * amp + 1;
+    ((slot as i128).wrapping_mul(2_654_435_761) % span - amp) as i64
 }
 
 #[cfg(test)]
