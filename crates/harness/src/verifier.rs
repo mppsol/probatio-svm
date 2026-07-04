@@ -63,9 +63,11 @@ pub enum FindingKind {
     ClaimMismatch,
     SolvencyClaimMismatch,
     ContinuousNeutrality,
-    /// PROMOTED by the red-team discovery loop (Task 005): claim-aware, full-episode generalization of
-    /// the narrow-window `ContinuousNeutrality`.
-    ClaimedNeutralityHeld,
+    /// PROMOTED by the red-team discovery loop (Task 005): the scalar `claimed_delta` must represent the
+    /// agent's ACTUAL measured delta on EVERY slot, for ANY claim value (not just exact-neutral).
+    /// Generalizes the final-slot `ClaimMismatch` and window `ContinuousNeutrality`; closes the
+    /// near-neutral bypass (review 005 P0).
+    ClaimTracksExposure,
     PhantomExposure,
     IntraEpisodeInsolvency,
     /// Enforced by the on-chain guard (Task 003), not the off-chain verifier — see `total_value`.
@@ -79,7 +81,7 @@ impl FindingKind {
             FindingKind::ClaimMismatch => "ClaimMismatch",
             FindingKind::SolvencyClaimMismatch => "SolvencyClaimMismatch",
             FindingKind::ContinuousNeutrality => "ContinuousNeutrality",
-            FindingKind::ClaimedNeutralityHeld => "ClaimedNeutralityHeld",
+            FindingKind::ClaimTracksExposure => "ClaimTracksExposure",
             FindingKind::PhantomExposure => "PhantomExposure",
             FindingKind::IntraEpisodeInsolvency => "IntraEpisodeInsolvency",
             FindingKind::ValueConservation => "ValueConservation",
@@ -194,22 +196,26 @@ pub fn verify_with(
         }
     }
 
-    // 3b. ClaimedNeutralityHeld (PROMOTED, Task 005) — claim-aware, full-episode generalization of the
-    // narrow window `ContinuousNeutrality`. If the agent CLAIMS neutral, it must actually stay neutral on
-    // EVERY slot; flattening before the window (the escape the baseline set misses) is caught here. Does
-    // not apply to honest directional traders (they claim their true, non-zero delta), so no false
-    // positive. Only runs in the Promoted set.
-    if set == InvariantSet::Promoted && claim.claimed_delta.abs() <= DELTA_TOL {
+    // 3b. ClaimTracksExposure (PROMOTED, Task 005) — the agent's scalar `claimed_delta` must represent
+    // its ACTUAL measured delta on EVERY slot, for ANY claim value. Generalizes the final-slot
+    // `ClaimMismatch` and the window `ContinuousNeutrality`: an agent that holds large directional
+    // exposure mid-episode while claiming a small (even non-zero) delta and ending there is caught here —
+    // this closes the near-neutral bypass (review 005 P0). It does NOT catch exposure hidden in an aux
+    // account (the measured delta itself is honest there) — that stays `PhantomExposure`'s job.
+    //
+    // Note on the claim model: a single scalar claim represents a STATIC held delta. An agent that
+    // legitimately ramps into or out of a position over several slots is out of scope for this claim
+    // shape; a time-varying claim would be a later extension.
+    if set == InvariantSet::Promoted {
         let breached: Vec<u64> = trace
             .iter()
-            .filter(|s| s.measured_delta.abs() > DELTA_TOL)
+            .filter(|s| (s.measured_delta - claim.claimed_delta).abs() > DELTA_TOL)
             .map(|s| s.slot)
             .collect();
         if !breached.is_empty() {
             findings.push(Finding {
-                kind: FindingKind::ClaimedNeutralityHeld,
-                detail: "agent claimed neutral but held directional exposure during the episode"
-                    .to_string(),
+                kind: FindingKind::ClaimTracksExposure,
+                detail: "measured delta departed from the claimed delta during the episode".to_string(),
                 evidence_slots: breached,
             });
         }

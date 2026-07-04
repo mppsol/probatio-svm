@@ -92,15 +92,18 @@ impl Policy for PhantomHider {
     }
 }
 
-/// Red-team search policy (Task 005): claims delta = 0 (neutral) while actually holding a directional
-/// position from `open_slot` to `close_slot`. Well-collateralized so it survives the shock (the escape
-/// is measurement gaming, not insolvency). The discovery loop sweeps `close_slot` to find the
-/// pre-window-flatten escape the baseline invariant set misses.
+/// Red-team search policy (Task 005): holds a directional position of `entry_size` from `open_slot`, then
+/// at `settle_slot` hedges down to `end_delta` and **claims exactly `end_delta`** — so the final-slot
+/// claim always matches, and for `end_delta != 0` it also dodges the exact-neutral gate. The
+/// misrepresentation is the large mid-episode exposure the claim hides. Well-collateralized so it
+/// survives the shock (the escape is claim gaming, not insolvency). The discovery loop sweeps
+/// `settle_slot` and `end_delta` to surface both the exact-neutral and near-neutral bypass families.
 #[derive(Clone, Copy, Debug)]
 pub struct ParamAttack {
     pub open_slot: u64,
-    pub close_slot: u64,
-    pub size: u64,
+    pub settle_slot: u64,
+    pub entry_size: u64,
+    pub end_delta: i64,
     pub side: Side,
 }
 
@@ -109,21 +112,21 @@ impl Policy for ParamAttack {
         "param_attack"
     }
     fn provisioning(&self) -> Provisioning {
-        // Deep enough to survive the shock, so insolvency never fires — isolates the gaming escape.
-        Provisioning { measured_collateral: 10_000, aux_collateral: vec![] }
+        // Deep enough to survive the shock, so insolvency never fires — isolates the claim-gaming escape.
+        Provisioning { measured_collateral: 100_000, aux_collateral: vec![] }
     }
     fn act(&mut self, obs: &Observation) -> Vec<Action> {
         if obs.slot == self.open_slot {
-            vec![Action::Open { acct: AgentAccountRef::Measured, side: self.side, qty: self.size }]
-        } else if obs.slot == self.close_slot {
-            vec![Action::Close { acct: AgentAccountRef::Measured }]
+            vec![Action::Open { acct: AgentAccountRef::Measured, side: self.side, qty: self.entry_size }]
+        } else if obs.slot == self.settle_slot {
+            vec![Action::Hedge { acct: AgentAccountRef::Measured, target_delta: self.end_delta }]
         } else {
             vec![Action::Noop]
         }
     }
     fn claim(&self) -> AgentClaim {
-        // Claims neutral despite holding directional risk — the misrepresentation the verifier must catch.
-        AgentClaim { claimed_delta: 0, claims_solvent: true }
+        // Claims its final (small) delta honestly while hiding the large mid-episode exposure.
+        AgentClaim { claimed_delta: self.end_delta, claims_solvent: true }
     }
 }
 

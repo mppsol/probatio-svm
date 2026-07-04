@@ -84,27 +84,29 @@ fn run_redteam() {
     println!("baseline invariant set — escapes found: {}", escapes.len());
     for e in &escapes {
         println!(
-            "  - open@{} close@{} size {} PASSED baseline while exposed on slots {}..{}",
+            "  - open@{} settle@{} entry {} claim_delta {} PASSED baseline while exposed on slots {}..{}",
             e.open_slot,
-            e.close_slot,
-            e.size,
+            e.settle_slot,
+            e.entry_size,
+            e.end_delta,
             e.breach_slots.first().copied().unwrap_or(0),
             e.breach_slots.last().copied().unwrap_or(0),
         );
     }
     println!(
-        "\n  → these flatten BEFORE the narrow ContinuousNeutrality window, so baseline misses them.\n"
+        "\n  → exact-neutral escapes flatten before the ContinuousNeutrality window; near-neutral\n    escapes (claim_delta ±1) dodge the exact-neutral gate AND the final-slot ClaimMismatch.\n"
     );
 
     match demonstrate() {
         Some(demo) => {
-            println!("promotion — add claim-aware `ClaimedNeutralityHeld`:");
+            println!("promotion — generalize to claim-tracking `ClaimTracksExposure`:");
             println!(
-                "  escape (close@{}): baseline={:?} → promoted={:?} ({} on slots {:?}..)",
-                demo.escape.close_slot,
+                "  escape (settle@{}, claim_delta {}): baseline={:?} → promoted={:?} ({} on slots {}..)",
+                demo.escape.settle_slot,
+                demo.escape.end_delta,
                 demo.baseline_verdict,
                 demo.promoted_verdict,
-                if demo.promoted_flagged_claimed_neutrality { "ClaimedNeutralityHeld" } else { "—" },
+                if demo.promoted_flagged_claim_tracking { "ClaimTracksExposure" } else { "—" },
                 demo.promoted_evidence.first().copied().unwrap_or(0),
             );
             println!(
