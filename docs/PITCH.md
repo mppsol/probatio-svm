@@ -106,6 +106,12 @@ Terminal: large monospace font, ~100 cols, dark theme, clear scrollback before e
   the live agent.
 - Numbers to cite are real: 51 tests, real BPF via LiteSVM, Open ≈583 CU, guard ≈508–714 CU, 16
   discovered escapes. Keep them accurate.
+- Positioning (from the 2026-07 competitive scan): frame it as **"Patronus for on-chain Solana DeFi"** —
+  pre-deployment agent certification, a category that's empty on Solana. Defensibility = account state is
+  free ground truth (no website replicas) + on-chain enforcement + self-repairing invariants. Demand is
+  **anticipatory** (validated by analogy to regulated-enterprise AI assurance), not proven on-chain pain —
+  pitch the wedge, don't claim a bleeding market. **Do NOT cite specific crypto AI-agent exploit incidents
+  as precedent** — the ones surfaced (a ~$25M bot self-attack, a $1.78M Moonwell loss) failed verification.
 
 ## Shot list (commands, in order)
 

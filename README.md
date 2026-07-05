@@ -19,6 +19,27 @@ real Solana program and judges the agent's behavior. It is **not** a realtime ma
 verifier runs offline over a replay, like a fuzzer or CI, so it never has to "keep up" with block times
 or MEV. Certify first, deploy second.
 
+## Where it sits
+
+Pre-deployment **certification of autonomous agents** is a recognized, unsolved problem — but the work
+so far is either off-chain or adjacent:
+
+- **Off-chain agent-eval** (e.g. Patronus AI, ~$70M raised) builds replay "world models" that stress-test
+  agents and detect shortcuts — the same moat, but for enterprise SWE/finance, **not on-chain**. Probatio
+  is *"that, for Solana DeFi"* — and it's more defensible on-chain: Patronus must *replicate* websites to
+  build a world model; here **account state IS the world, so the ground truth is free**.
+- **Runtime guardrails** (Autonex, Blockaid) constrain or screen an agent's transactions *live*, against
+  hand-written policies. Probatio is **pre-capital**: it certifies whether an agent honored its *mandate*,
+  and its invariant set **self-repairs** via the red-team loop rather than being a fixed policy list.
+- **Solana's Agent Registry** is an identity/reputation trust layer, not a certifier — but its *Validation
+  Registry* is a hook for attestations, so Probatio can be **the certifier that feeds it**.
+- Among 2026 Colosseum agentic-finance projects, the verification/safety layer is essentially empty —
+  everyone is building agents; almost no one is building the thing that checks them.
+
+Honest framing: this is an **emerging, anticipatory** category — demand is validated by analogy (regulated
+enterprise AI needs pre-deployment assurance) more than by proven on-chain pain today. Probatio is a
+first-mover category bet, not a land-grab in a crowded market.
+
 ## The two layers
 
 ### 1. Verifier (off-chain) — the primary value
