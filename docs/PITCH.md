@@ -43,7 +43,7 @@ Terminal: large monospace font, ~100 cols, dark theme, clear scrollback before e
 - **Command:**
   ```bash
   cargo run -q -p probatio-svm-harness -- --backend svm       # same verdicts, real BPF program
-  cargo test -q --offline inline_enforcement_blocks           # the in-block revert, proven
+  cargo test -q --offline -p probatio-svm-harness --lib inline_enforcement_blocks           # the in-block revert, proven
   ```
 - **On screen:** `--backend svm` printing the *same* PASS/FLAG (caption: "real Pinocchio program,
   LiteSVM, ~583 CU/Open"); then the two `inline_enforcement_blocks_*` tests going green.
@@ -111,7 +111,7 @@ Terminal: large monospace font, ~100 cols, dark theme, clear scrollback before e
 
 1. `cargo run -q -p probatio-svm-harness -- --backend ref`
 2. `cargo run -q -p probatio-svm-harness -- --backend svm`
-3. `cargo test -q --offline inline_enforcement_blocks`
+3. `cargo test -q --offline -p probatio-svm-harness --lib inline_enforcement_blocks`
 4. `cargo run -q -p probatio-svm-harness -- redteam`
 5. `cargo run -q -p probatio-svm-harness -- gallery` (or `-- gallery --sample`)
 6. `head -20 gallery/neutral_mm-clean.json` (or `gallery/sample-scripted-drift.json`)
