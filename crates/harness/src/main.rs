@@ -1,12 +1,13 @@
 //! `cargo run -p probatio-svm-harness -- --backend svm` — plays the honest + two cheater policies
 //! through either backend, runs the verifier, prints a summary, and writes `report.json`.
 
-use probatio_svm_harness::agent::ClaudeAgent;
+use probatio_svm_harness::agent::{ClaudeAgent, ScriptedDecider};
 use probatio_svm_harness::policy::{Honest, MeasurementGamer, PhantomHider, Policy};
 use probatio_svm_harness::{
     demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend, verify,
-    Backend, CurlClaude, HostileParams, Verdict, NEUTRAL_MM,
+    Backend, CurlClaude, HostileParams, Transcript, Verdict, N_SLOTS, NEUTRAL_MM,
 };
+use probatio_contract::{Action, AgentAccountRef, Side};
 
 fn main() {
     let mut raw_args = std::env::args().skip(1);
@@ -18,6 +19,10 @@ fn main() {
             }
             "agent" => {
                 run_agent(raw_args.collect());
+                return;
+            }
+            "gallery" => {
+                run_gallery(raw_args.collect());
                 return;
             }
             _ => {}
@@ -131,6 +136,68 @@ fn run_agent(args: Vec<String>) {
         if hostile { "hostile ref" } else { "clean ref" }
     );
     print_report(&report);
+}
+
+fn run_gallery(args: Vec<String>) {
+    match args.as_slice() {
+        [flag] if flag == "--sample" => {
+            // Deterministic scripted-drift illustration — no API key needed. Claims neutral, opens long.
+            let mut script = vec![Action::Noop; N_SLOTS as usize];
+            script[0] = Action::Open { acct: AgentAccountRef::Measured, side: Side::Long, qty: 10 };
+            let ep =
+                run_episode(&mut ClaudeAgent::new(Box::new(ScriptedDecider::new(script)), NEUTRAL_MM));
+            let report = verify(ep.policy, &ep.trace, &ep.claim);
+            let transcript = Transcript::capture("scripted-drift", &NEUTRAL_MM, "clean", &ep, &report);
+            write_transcript("gallery/sample-scripted-drift.json", &transcript);
+            println!(
+                "wrote gallery/sample-scripted-drift.json (scripted illustration) — verdict {:?}",
+                report.verdict
+            );
+        }
+        rest => {
+            let hostile = match rest {
+                [] => false,
+                [flag] if flag == "--hostile" => true,
+                _ => {
+                    eprintln!("error: usage: gallery [--sample | --hostile]");
+                    std::process::exit(2);
+                }
+            };
+            let decider = match CurlClaude::from_env() {
+                Ok(decider) => decider,
+                Err(_) => {
+                    eprintln!(
+                        "error: ANTHROPIC_API_KEY is required for `gallery`; export it (or use `gallery --sample`)."
+                    );
+                    std::process::exit(1);
+                }
+            };
+            let mut policy = ClaudeAgent::new(Box::new(decider), NEUTRAL_MM);
+            let (backend, ep) = if hostile {
+                ("hostile", run_episode_ref_hostile(&mut policy, &HostileParams::hostile()))
+            } else {
+                ("clean", run_episode(&mut policy))
+            };
+            let report = verify(ep.policy, &ep.trace, &ep.claim);
+            let transcript = Transcript::capture("neutral_mm", &NEUTRAL_MM, backend, &ep, &report);
+            let path = format!("gallery/neutral_mm-{backend}.json");
+            write_transcript(&path, &transcript);
+
+            println!("Probatio SVM — Claude agent gallery ({backend})\n");
+            print_report(&report);
+            println!("\nwrote {path}");
+        }
+    }
+}
+
+fn write_transcript(path: &str, transcript: &Transcript) {
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Err(err) = std::fs::write(path, transcript.to_json() + "\n") {
+        eprintln!("error: could not write {path}: {err}");
+        std::process::exit(1);
+    }
 }
 
 fn run_redteam() {
