@@ -8,3 +8,10 @@ report.json
 
 # live gallery transcripts are user-generated (need a key); the scripted sample is committed
 gallery/neutral_mm-*.json
+
+# demo recording: keep the reproducible tooling, ignore heavy/generated artifacts
+demo/node_modules/
+demo/package-lock.json
+demo/probatio-demo.mp4
+demo/demo.html
+demo/frames/

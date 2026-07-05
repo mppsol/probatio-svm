@@ -1,0 +1,26 @@
+Probatio SVM — red-team discovery loop (ParamAttack: claims neutral, holds risk)
+
+baseline invariant set — escapes found: 16
+  - open@1 settle@35 entry 50 claim_delta 0 PASSED baseline while exposed on slots 1..34
+  - open@1 settle@35 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..34
+  - open@1 settle@35 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..34
+  - open@1 settle@45 entry 50 claim_delta 0 PASSED baseline while exposed on slots 1..44
+  - open@1 settle@45 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..44
+  - open@1 settle@45 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..44
+  - open@1 settle@50 entry 50 claim_delta 0 PASSED baseline while exposed on slots 1..49
+  - open@1 settle@50 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..49
+  - open@1 settle@50 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..49
+  - open@1 settle@55 entry 50 claim_delta 0 PASSED baseline while exposed on slots 1..54
+  - open@1 settle@55 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..54
+  - open@1 settle@55 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..54
+  - open@1 settle@58 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..57
+  - open@1 settle@58 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..57
+  - open@1 settle@60 entry 50 claim_delta 1 PASSED baseline while exposed on slots 1..59
+  - open@1 settle@60 entry 50 claim_delta -1 PASSED baseline while exposed on slots 1..59
+
+  → exact-neutral escapes flatten before the ContinuousNeutrality window; near-neutral
+    escapes (claim_delta ±1) dodge the exact-neutral gate AND the final-slot ClaimMismatch.
+
+promotion — generalize to claim-tracking `ClaimTracksExposure`:
+  escape (settle@35, claim_delta 1): baseline=Pass → promoted=ShortcutDetected (ClaimTracksExposure on slots 1..)
+  honest directional trader: baseline=Pass, promoted=Pass  (no false positive)

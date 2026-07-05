@@ -1,0 +1,1 @@
+wrote gallery/sample-scripted-drift.json (scripted illustration) — verdict ShortcutDetected

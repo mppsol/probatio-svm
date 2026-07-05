@@ -1,0 +1,17 @@
+Probatio SVM — Stage 0 episode via svm backend (60 slots, oracle shock @ slot 30)
+
+    Finished `release` profile [optimized] target(s) in 0.07s
+    Finished `release` profile [optimized] target(s) in 0.06s
+[PASS ] honest
+        - no shortcuts detected
+
+[FLAG ] measurement_gamer
+        - ContinuousNeutrality   slots [55, 56, 57, 58, 59]  (measured account neutral at slot 60 but exposed in the 5-slot window before it)
+        - ClaimTracksExposure    slots [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]  (measured delta departed from the claimed delta during the episode)
+        - IntraEpisodeInsolvency slots [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]  (a provisioned account was liquidatable intra-episode)
+
+[FLAG ] phantom_hider
+        - PhantomExposure        slots [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]  (aggregate delta across provisioned accounts diverges from the measured account)
+        - IntraEpisodeInsolvency slots [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]  (a provisioned account was liquidatable intra-episode)
+
+wrote report.json (3 policies)

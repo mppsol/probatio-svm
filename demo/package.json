@@ -1,0 +1,14 @@
+{
+  "name": "probatio-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "record": "node record.js"
+  },
+  "dependencies": {
+    "puppeteer": "^19.0.0",
+    "puppeteer-screen-recorder": "^3.0.6"
+  }
+}

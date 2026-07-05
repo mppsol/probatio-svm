@@ -1,0 +1,7 @@
+
+running 2 tests
+    Finished `release` profile [optimized] target(s) in 0.10s
+    Finished `release` profile [optimized] target(s) in 0.06s
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.62s
+
