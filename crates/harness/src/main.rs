@@ -3,6 +3,10 @@
 
 use probatio_svm_harness::agent::{ClaudeAgent, ScriptedDecider};
 use probatio_svm_harness::policy::{Honest, MeasurementGamer, PhantomHider, Policy};
+use probatio_svm_harness::jupiter::{
+    jupiter_to_snapshots, sample_drift, sample_neutral, JupPosition, JupSide, JupSlot,
+};
+use probatio_svm_harness::world::EpisodeResult;
 use probatio_svm_harness::{
     demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend, verify,
     Backend, CurlClaude, HostileParams, Transcript, Verdict, N_SLOTS, NEUTRAL_MM,
@@ -23,6 +27,10 @@ fn main() {
             }
             "gallery" => {
                 run_gallery(raw_args.collect());
+                return;
+            }
+            "certify-jupiter" => {
+                run_certify_jupiter(raw_args.collect());
                 return;
             }
             _ => {}
@@ -188,6 +196,82 @@ fn run_gallery(args: Vec<String>) {
             println!("\nwrote {path}");
         }
     }
+}
+
+fn run_certify_jupiter(args: Vec<String>) {
+    match args.as_slice() {
+        [flag] if flag == "--sample" => {
+            let (r1, t1) = certify_jupiter("jupiter-neutral", &sample_neutral(N_SLOTS));
+            write_transcript("gallery/jupiter-neutral.json", &t1);
+            println!("wrote gallery/jupiter-neutral.json — verdict {:?}", r1.verdict);
+            let (r2, t2) = certify_jupiter("jupiter-drift", &sample_drift(N_SLOTS));
+            write_transcript("gallery/jupiter-drift.json", &t2);
+            println!("wrote gallery/jupiter-drift.json — verdict {:?}", r2.verdict);
+        }
+        [path] if !path.starts_with('-') => {
+            let slots = match parse_jupiter_trace(path) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: could not parse Jupiter trace `{path}`: {e}");
+                    std::process::exit(1);
+                }
+            };
+            let (report, transcript) = certify_jupiter("jupiter-agent", &slots);
+            println!("Probatio SVM — Jupiter Perps certification ({} slots)\n", slots.len());
+            print_report(&report);
+            write_transcript("gallery/jupiter-certification.json", &transcript);
+            println!("\nwrote gallery/jupiter-certification.json");
+        }
+        _ => {
+            eprintln!("error: usage: certify-jupiter [--sample | <trace.json>]");
+            std::process::exit(2);
+        }
+    }
+}
+
+/// Map a Jupiter position trace → snapshots, certify against the delta-neutral mandate, build a transcript.
+fn certify_jupiter(
+    label: &'static str,
+    measured: &[JupSlot],
+) -> (probatio_svm_harness::ShortcutReport, Transcript) {
+    let snaps = jupiter_to_snapshots(measured, &[]);
+    let claim = NEUTRAL_MM.claim();
+    let report = verify(label, &snaps, &claim);
+    let ep = EpisodeResult { policy: label, trace: snaps, claim };
+    let transcript = Transcript::capture(label, &NEUTRAL_MM, "jupiter", &ep, &report);
+    (report, transcript)
+}
+
+/// Parse a Jupiter trace file: `[{ "slot": u, "mark_usd": i, "positions": [{ "side": "long"|"short",
+/// "size_usd": i, "collateral_usd": i, "entry_usd": i }] }]` — all values in WHOLE USD.
+fn parse_jupiter_trace(path: &str) -> Result<Vec<JupSlot>, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let root: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    let arr = root.as_array().ok_or("top level must be an array of slots")?;
+    let field_i = |v: &serde_json::Value, k: &str| -> Result<i64, String> {
+        v.get(k).and_then(serde_json::Value::as_i64).ok_or_else(|| format!("missing i64 field `{k}`"))
+    };
+    let mut slots = Vec::with_capacity(arr.len());
+    for s in arr {
+        let positions_json =
+            s.get("positions").and_then(serde_json::Value::as_array).ok_or("slot missing `positions`")?;
+        let mut positions = Vec::with_capacity(positions_json.len());
+        for p in positions_json {
+            let side = match p.get("side").and_then(serde_json::Value::as_str) {
+                Some("long") => JupSide::Long,
+                Some("short") => JupSide::Short,
+                _ => return Err("position `side` must be \"long\" or \"short\"".to_string()),
+            };
+            positions.push(JupPosition {
+                side,
+                size_usd: field_i(p, "size_usd")?,
+                collateral_usd: field_i(p, "collateral_usd")?,
+                entry_usd: field_i(p, "entry_usd")?,
+            });
+        }
+        slots.push(JupSlot { slot: field_i(s, "slot")? as u64, mark_usd: field_i(s, "mark_usd")?, positions });
+    }
+    Ok(slots)
 }
 
 fn write_transcript(path: &str, transcript: &Transcript) {
