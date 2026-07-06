@@ -246,11 +246,26 @@ fn certify_jupiter(
 /// "size_usd": i, "collateral_usd": i, "entry_usd": i }] }]` — all values in WHOLE USD.
 fn parse_jupiter_trace(path: &str) -> Result<Vec<JupSlot>, String> {
     let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let root: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    parse_jupiter_trace_str(&text)
+}
+
+/// Pure parse + validation (offline-testable). Rejects malformed values rather than casting through them
+/// (review 010: a negative `slot` was silently `as u64`-cast and certified as valid).
+fn parse_jupiter_trace_str(text: &str) -> Result<Vec<JupSlot>, String> {
+    let root: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let arr = root.as_array().ok_or("top level must be an array of slots")?;
-    let field_i = |v: &serde_json::Value, k: &str| -> Result<i64, String> {
-        v.get(k).and_then(serde_json::Value::as_i64).ok_or_else(|| format!("missing i64 field `{k}`"))
-    };
+
+    // Read a required i64 field, optionally enforcing a lower bound.
+    fn field_i(v: &serde_json::Value, k: &str, min: Option<i64>) -> Result<i64, String> {
+        let n = v.get(k).and_then(serde_json::Value::as_i64).ok_or_else(|| format!("missing i64 field `{k}`"))?;
+        if let Some(m) = min {
+            if n < m {
+                return Err(format!("field `{k}` = {n} is below minimum {m}"));
+            }
+        }
+        Ok(n)
+    }
+
     let mut slots = Vec::with_capacity(arr.len());
     for s in arr {
         let positions_json =
@@ -264,14 +279,55 @@ fn parse_jupiter_trace(path: &str) -> Result<Vec<JupSlot>, String> {
             };
             positions.push(JupPosition {
                 side,
-                size_usd: field_i(p, "size_usd")?,
-                collateral_usd: field_i(p, "collateral_usd")?,
-                entry_usd: field_i(p, "entry_usd")?,
+                size_usd: field_i(p, "size_usd", Some(0))?,       // notional must be non-negative
+                collateral_usd: field_i(p, "collateral_usd", Some(0))?,
+                entry_usd: field_i(p, "entry_usd", Some(1))?,     // entry > 0 (mapper divides by it)
             });
         }
-        slots.push(JupSlot { slot: field_i(s, "slot")? as u64, mark_usd: field_i(s, "mark_usd")?, positions });
+        slots.push(JupSlot {
+            slot: field_i(s, "slot", Some(0))? as u64,             // slot >= 0 (no negative → u64 wrap)
+            mark_usd: field_i(s, "mark_usd", Some(1))?,            // mark > 0
+            positions,
+        });
     }
     Ok(slots)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_jupiter_trace_str;
+
+    const GOOD: &str = r#"[{"slot":1,"mark_usd":100,"positions":[
+        {"side":"long","size_usd":10000,"collateral_usd":3000,"entry_usd":100}]}]"#;
+
+    #[test]
+    fn parses_a_valid_trace() {
+        let slots = parse_jupiter_trace_str(GOOD).unwrap();
+        assert_eq!(slots.len(), 1);
+        assert_eq!(slots[0].slot, 1);
+        assert_eq!(slots[0].positions.len(), 1);
+    }
+
+    #[test]
+    fn rejects_malformed_input() {
+        // negative slot (review 010), non-positive entry/mark, negative size, bad side, non-array, missing field
+        assert!(parse_jupiter_trace_str(r#"[{"slot":-1,"mark_usd":100,"positions":[]}]"#).is_err());
+        assert!(parse_jupiter_trace_str(r#"[{"slot":1,"mark_usd":0,"positions":[]}]"#).is_err());
+        assert!(parse_jupiter_trace_str(
+            r#"[{"slot":1,"mark_usd":100,"positions":[{"side":"long","size_usd":-1,"collateral_usd":0,"entry_usd":100}]}]"#
+        )
+        .is_err());
+        assert!(parse_jupiter_trace_str(
+            r#"[{"slot":1,"mark_usd":100,"positions":[{"side":"long","size_usd":1,"collateral_usd":0,"entry_usd":0}]}]"#
+        )
+        .is_err());
+        assert!(parse_jupiter_trace_str(
+            r#"[{"slot":1,"mark_usd":100,"positions":[{"side":"up","size_usd":1,"collateral_usd":0,"entry_usd":100}]}]"#
+        )
+        .is_err());
+        assert!(parse_jupiter_trace_str(r#"{"not":"an array"}"#).is_err());
+        assert!(parse_jupiter_trace_str(r#"[{"mark_usd":100,"positions":[]}]"#).is_err());
+    }
 }
 
 fn write_transcript(path: &str, transcript: &Transcript) {
