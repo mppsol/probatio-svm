@@ -9,7 +9,7 @@ use probatio_svm_harness::jupiter::{
 use probatio_svm_harness::world::EpisodeResult;
 use probatio_svm_harness::{
     demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend, verify,
-    Backend, CurlClaude, HostileParams, Transcript, Verdict, N_SLOTS, NEUTRAL_MM,
+    Backend, CurlClaude, HostileParams, Mandate, Transcript, Verdict, N_SLOTS, NEUTRAL_MM,
 };
 use probatio_contract::{Action, AgentAccountRef, Side};
 
@@ -162,6 +162,17 @@ fn run_gallery(args: Vec<String>) {
                 report.verdict
             );
         }
+        [flag] if flag == "--core" => {
+            // The canonical trio as transcripts (for the dashboard): honest PASS, two cheaters FLAG.
+            const HONEST_MANDATE: Mandate = Mandate {
+                system: "Directional trader — holds and honestly reports a long position.",
+                claimed_delta: 10,
+                claims_solvent: true,
+            };
+            write_core("core-honest", &mut Honest, &HONEST_MANDATE);
+            write_core("core-gamer", &mut MeasurementGamer, &NEUTRAL_MM);
+            write_core("core-phantom", &mut PhantomHider, &NEUTRAL_MM);
+        }
         rest => {
             let hostile = match rest {
                 [] => false,
@@ -196,6 +207,14 @@ fn run_gallery(args: Vec<String>) {
             println!("\nwrote {path}");
         }
     }
+}
+
+fn write_core(label: &'static str, policy: &mut dyn Policy, mandate: &Mandate) {
+    let ep = run_episode(policy);
+    let report = verify(ep.policy, &ep.trace, &ep.claim);
+    let transcript = Transcript::capture(label, mandate, "clean", &ep, &report);
+    write_transcript(&format!("gallery/{label}.json"), &transcript);
+    println!("wrote gallery/{label}.json — verdict {:?}", report.verdict);
 }
 
 fn run_certify_jupiter(args: Vec<String>) {
