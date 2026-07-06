@@ -65,8 +65,11 @@ const W = 300, H = 96, PAD = 10;
 function chart(t) {
   const slots = t.slots;
   const claim = t.claimed_delta;
-  const flagged = new Set();
-  for (const f of t.findings) for (const s of (f.evidence_slots || [])) flagged.add(s);
+  // Colour the line by what the line actually shows: slots where the MEASURED delta departs from the
+  // CLAIMED delta (matches the legend). NOT every finding's evidence — e.g. phantom exposure lives in a
+  // hidden account, so the measured line stays on-claim (green) while the FLAG badge + findings explain
+  // the catch. (review 011)
+  const isBad = s => s.measured_delta !== claim;
   const ys = slots.map(s => s.measured_delta).concat([claim, 0]);
   let lo = Math.min(...ys), hi = Math.max(...ys);
   if (lo === hi) { lo -= 1; hi += 1; }
@@ -76,7 +79,7 @@ function chart(t) {
   // split the delta line into ok/bad segments so the color reflects mandate adherence per slot
   const segs = []; let cur = null;
   slots.forEach((s, i) => {
-    const bad = flagged.has(s.slot);
+    const bad = isBad(s);
     if (!cur || cur.bad !== bad) { cur = { bad, pts: [] }; segs.push(cur);
       if (i > 0) cur.pts.push([x(i - 1), y(slots[i - 1].measured_delta)]); }
     cur.pts.push([x(i), y(s.measured_delta)]);
