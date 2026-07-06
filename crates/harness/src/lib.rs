@@ -4,6 +4,7 @@
 
 pub mod agent;
 pub mod hostile;
+pub mod jupiter;
 pub mod llm;
 pub mod policy;
 pub mod redteam;
@@ -14,6 +15,7 @@ pub mod world;
 pub use agent::{ClaudeAgent, Decider, Mandate, ScriptedDecider, NEUTRAL_MM};
 pub use transcript::Transcript;
 pub use hostile::{HostileParams, MarkScenario};
+pub use jupiter::{jupiter_to_snapshots, sample_drift, sample_neutral, JupPosition, JupSide, JupSlot};
 pub use llm::{parse_submit_action, CurlClaude, LlmError};
 pub use redteam::{demonstrate, discover, Demo, Escape};
 pub use verifier::{
