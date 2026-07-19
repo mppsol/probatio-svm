@@ -18,39 +18,79 @@ const CARDS = [
   { file: "sample-scripted-drift.json", title: "Scripted drift", sub: "claims neutral, opens a long and holds it", venue: "reference perp" },
 ].map((c) => ({ ...c, t: load(c.file) }));
 
+const HERO = load("sample-scripted-drift.json");
 const DATA = JSON.stringify(CARDS);
+const HERO_DATA = JSON.stringify(HERO);
 
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Probatio SVM — certification dashboard</title>
 <style>
-  :root { --bg:#05070d; --panel:#0a0e17; --line:#1c2740; --ink:#c7d2e6; --dim:#7f8db0;
-    --pass:#3ddc84; --flag:#ffb454; --accent:#5bc8ff; }
+  :root { --bg:#05070d; --panel:#0a0e17; --panel-hi:#0c1321; --line:#1c2740; --ink:#c7d2e6; --bright:#eef3fc; --dim:#7f8db0;
+    --pass:#3ddc84; --flag:#ffb454; --accent:#5bc8ff; --danger:#ff8d6b; }
   * { box-sizing:border-box; }
   body { margin:0; background:radial-gradient(1200px 700px at 50% -10%, #0d1524 0%, var(--bg) 55%);
     color:var(--ink); font-family:-apple-system,"Helvetica Neue",Arial,sans-serif; min-height:100vh; }
-  header { max-width:1100px; margin:0 auto; padding:44px 24px 8px; }
+  header { max-width:1160px; margin:0 auto; padding:44px 24px 8px; }
   .brand { color:var(--dim); font-size:13px; letter-spacing:.16em; }
-  h1 { margin:8px 0 6px; font-size:34px; color:#eef3fc; }
+  h1 { margin:8px 0 6px; font-size:clamp(30px, 5vw, 42px); color:var(--bright); }
   .tag { color:var(--dim); font-size:16px; max-width:760px; line-height:1.5; }
-  .legend { max-width:1100px; margin:14px auto 0; padding:0 24px; color:var(--dim); font-size:13px; }
+  .wrap { max-width:1160px; margin:0 auto; padding:0 24px; }
+  .hero { margin:28px 0 42px; overflow:hidden; background:linear-gradient(135deg, #0d1627 0%, var(--panel-hi) 55%, #11111b 100%);
+    border:1px solid #293a5b; border-radius:20px; box-shadow:0 22px 65px rgba(0,0,0,.28); }
+  .hero-top { display:flex; justify-content:space-between; gap:18px; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line); }
+  .eyebrow { color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+  .transcript { color:var(--dim); font-size:12px; }
+  .hero-body { display:grid; grid-template-columns:minmax(220px, .82fr) minmax(360px, 1.55fr); gap:0; }
+  .promise, .catch { padding:28px 28px 30px; }
+  .promise { border-right:1px solid var(--line); }
+  .step { color:var(--dim); font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+  .mandate { margin:12px 0 18px; color:var(--bright); font-size:20px; line-height:1.4; }
+  .claim-box { border-left:3px solid var(--accent); padding:8px 0 8px 12px; }
+  .claim-box span, .metric-label { display:block; color:var(--dim); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+  .claim-box strong { display:block; margin-top:3px; color:var(--bright); font-size:22px; }
+  .reveal { min-width:0; padding:28px 28px 24px; }
+  .reveal-head { display:flex; justify-content:space-between; gap:16px; align-items:baseline; }
+  .reveal h2 { margin:5px 0 0; color:var(--bright); font-size:clamp(22px, 3vw, 30px); }
+  .reveal-state { color:var(--flag); font-size:12px; font-weight:700; white-space:nowrap; }
+  .hero-chart { width:100%; height:240px; display:block; margin:22px 0 8px; }
+  .chart-grid { stroke:var(--line); stroke-width:1; }
+  .claim { stroke:var(--accent); stroke-width:1.5; stroke-dasharray:5 4; opacity:.92; }
+  .delta-ok { stroke:var(--pass); }
+  .delta-bad { stroke:var(--flag); }
+  .delta { fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+  .hero-dot { fill:var(--flag); stroke:#1b1420; stroke-width:2; }
+  .slot-ticks { color:var(--dim); font-size:11px; display:flex; justify-content:space-between; }
+  .chart-key { display:flex; flex-wrap:wrap; gap:12px 18px; margin-top:14px; color:var(--dim); font-size:12px; }
+  .key { display:flex; align-items:center; gap:7px; }
+  .swatch { width:22px; height:3px; border-radius:3px; background:var(--flag); }
+  .swatch.claim { background:repeating-linear-gradient(90deg, var(--accent) 0 5px, transparent 5px 9px); }
+  .reveal-copy { margin:15px 0 0; color:var(--ink); font-size:14px; line-height:1.55; }
+  .catch { grid-column:1 / -1; display:grid; grid-template-columns:minmax(190px, .55fr) 1.45fr; gap:28px; border-top:1px solid var(--line); background:rgba(4,7,13,.3); }
+  .verdict-word { color:var(--flag); font-size:clamp(38px, 6vw, 62px); font-weight:800; letter-spacing:.04em; line-height:1; }
+  .verdict-copy { margin:9px 0 0; color:var(--dim); font-size:13px; line-height:1.5; }
+  .evidence-title { margin:0 0 10px; color:var(--bright); font-size:16px; }
+  .evidence { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+  .evidence-item { padding:11px 12px; border:1px solid #38405a; border-radius:9px; background:#0a0e17; }
+  .evidence-item .kind { color:var(--flag); font-size:12px; font-weight:700; }
+  .evidence-item .slots { margin-top:3px; color:var(--bright); font-size:14px; }
+  .ground-truth { margin:14px 0 0; color:var(--dim); font-size:13px; line-height:1.55; }
+  .ground-truth strong { color:var(--ink); }
+  .gallery-title { margin:0 0 4px; color:var(--bright); font-size:23px; }
+  .legend { margin:0 0 18px; color:var(--dim); font-size:13px; line-height:1.5; }
   .legend b { color:var(--ink); }
-  main { max-width:1100px; margin:0 auto; padding:20px 24px 60px;
+  main { padding:0 0 60px;
     display:grid; grid-template-columns:repeat(auto-fill, minmax(330px, 1fr)); gap:18px; }
   .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
   .row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-  .title { font-size:18px; color:#eef3fc; }
+  .title { font-size:18px; color:var(--bright); }
   .venue { color:var(--dim); font-size:12px; letter-spacing:.02em; }
   .sub { color:var(--dim); font-size:13px; margin:4px 0 10px; line-height:1.4; }
   .badge { font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; letter-spacing:.04em; white-space:nowrap; }
   .badge.pass { color:#04210f; background:var(--pass); }
   .badge.flag { color:#2a1600; background:var(--flag); }
-  svg { width:100%; height:96px; display:block; margin:6px 0 2px; }
+  .card svg { width:100%; height:96px; display:block; margin:6px 0 2px; }
   .axis { stroke:var(--line); stroke-width:1; }
-  .claim { stroke:var(--accent); stroke-width:1.5; stroke-dasharray:4 3; opacity:.8; }
-  .delta-ok { stroke:var(--pass); }
-  .delta-bad { stroke:var(--flag); }
-  .delta { fill:none; stroke-width:2; }
   .chartcap { color:var(--dim); font-size:11px; display:flex; justify-content:space-between; }
   .meta { color:var(--dim); font-size:12px; margin:8px 0 6px; line-height:1.5; }
   .meta code { color:var(--ink); background:#0f1626; padding:1px 5px; border-radius:4px; }
@@ -58,9 +98,25 @@ const html = `<!doctype html>
   .findings li { font-size:12px; color:var(--ink); padding:5px 0; border-top:1px solid var(--line); }
   .findings .kind { color:var(--flag); font-weight:600; }
   .findings .slots { color:var(--dim); }
+  .finding-note { display:inline-block; margin-left:6px; color:var(--accent); font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
   .clean { color:var(--pass); font-size:12px; padding-top:6px; }
-  footer { max-width:1100px; margin:0 auto; padding:0 24px 50px; color:var(--dim); font-size:13px; line-height:1.6; }
+  footer { max-width:1160px; margin:0 auto; padding:0 24px 50px; color:var(--dim); font-size:13px; line-height:1.6; }
   footer a { color:var(--accent); text-decoration:none; }
+  @media (max-width:720px) {
+    header { padding-top:30px; }
+    .wrap { padding:0 16px; }
+    .hero { margin-top:22px; border-radius:15px; }
+    .hero-top, .promise, .reveal, .catch { padding-left:18px; padding-right:18px; }
+    .hero-top { align-items:flex-start; flex-direction:column; gap:5px; }
+    .hero-body, .catch { grid-template-columns:1fr; }
+    .promise { border-right:0; border-bottom:1px solid var(--line); }
+    .hero-chart { height:205px; }
+  }
+  @media (max-width:440px) {
+    .evidence { grid-template-columns:1fr; }
+    main { grid-template-columns:1fr; }
+    .mandate { font-size:18px; }
+  }
 </style></head>
 <body>
 <header>
@@ -70,10 +126,16 @@ const html = `<!doctype html>
     episode, and judged by reading account state as ground truth. Green = honored the mandate; amber =
     Probatio caught it drifting or cheating, with the exact slots.</div>
 </header>
-<div class="legend"><b>How to read a chart:</b> the solid line is the agent's actual net delta each slot;
-  the dashed line is what it <b>claimed</b>. When the solid line leaves the dashed one, the agent isn't
-  doing what it said — and the finding lists the slots.</div>
-<main id="grid"></main>
+<div class="wrap">
+  <section class="hero" id="hero" aria-label="Featured certification: scripted drift"></section>
+  <section aria-labelledby="gallery-title">
+    <h2 class="gallery-title" id="gallery-title">Certification gallery</h2>
+    <div class="legend"><b>How to read a chart:</b> the solid line is the agent's measured net delta each slot;
+      the dashed line is what it <b>claimed</b>. Amber means the measured delta differs from the claim in that
+      slot. Account-state findings are called out separately because they may not appear on the net-delta line.</div>
+    <main id="grid"></main>
+  </section>
+</div>
 <footer>
   Verdicts are produced offline by replaying each episode — nothing to bypass. The Jupiter cards certify a
   <b>market-neutral Jupiter Perps agent</b> from its position trace. Source &amp; live path:
@@ -82,7 +144,12 @@ const html = `<!doctype html>
 </footer>
 <script>
 const CARDS = ${DATA};
+const HERO = ${HERO_DATA};
 const W = 300, H = 96, PAD = 10;
+const nonDeltaKinds = {
+  PhantomExposure: 'account-state finding · hidden in another account',
+  IntraEpisodeInsolvency: 'account-state finding · went underwater after the price shock',
+};
 
 function chart(t) {
   const slots = t.slots;
@@ -116,13 +183,72 @@ function chart(t) {
     paths + '</svg>';
 }
 
+function heroChart(t) {
+  const slots = t.slots;
+  const claim = t.claimed_delta;
+  // The reveal is derived exclusively from measured_delta. A slot is amber only when its measured
+  // delta differs from the stated claim; findings do not influence this line's colour or geometry.
+  const isDiverged = s => s.measured_delta !== claim;
+  const ys = slots.map(s => s.measured_delta).concat([claim, 0]);
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  const span = Math.max(hi - lo, 1);
+  lo -= span * .22; hi += span * .22;
+  const width = 640, height = 240, padX = 24, padY = 20;
+  const x = i => padX + (i / (slots.length - 1)) * (width - 2 * padX);
+  const y = value => (height - padY) - ((value - lo) / (hi - lo)) * (height - 2 * padY);
+  const segments = []; let current = null;
+  slots.forEach((slot, i) => {
+    const diverged = isDiverged(slot);
+    if (!current || current.diverged !== diverged) {
+      current = { diverged, points: [] }; segments.push(current);
+      if (i > 0) current.points.push([x(i - 1), y(slots[i - 1].measured_delta)]);
+    }
+    current.points.push([x(i), y(slot.measured_delta)]);
+  });
+  const paths = segments.map(segment => '<polyline class="delta ' + (segment.diverged ? 'delta-bad' : 'delta-ok') +
+    '" points="' + segment.points.map(point => point[0].toFixed(1) + ',' + point[1].toFixed(1)).join(' ') + '"/>').join('');
+  const claimY = y(claim).toFixed(1);
+  const last = slots.length - 1;
+  return '<svg class="hero-chart" role="img" aria-label="Measured net delta is 10 from slots 1 through 60; claimed delta is 0." viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none">' +
+    '<line class="chart-grid" x1="' + padX + '" y1="' + y(lo + (hi - lo) * .25).toFixed(1) + '" x2="' + (width - padX) + '" y2="' + y(lo + (hi - lo) * .25).toFixed(1) + '"/>' +
+    '<line class="chart-grid" x1="' + padX + '" y1="' + y(lo + (hi - lo) * .75).toFixed(1) + '" x2="' + (width - padX) + '" y2="' + y(lo + (hi - lo) * .75).toFixed(1) + '"/>' +
+    '<line class="claim" x1="' + padX + '" y1="' + claimY + '" x2="' + (width - padX) + '" y2="' + claimY + '"/>' +
+    paths + '<circle class="hero-dot" cx="' + x(last).toFixed(1) + '" cy="' + y(slots[last].measured_delta).toFixed(1) + '" r="5"/></svg>';
+}
+
+function slotsLabel(slots) {
+  return slots.length === 1 ? 'slot ' + slots[0] : 'slots ' + slots[0] + '–' + slots[slots.length - 1];
+}
+
+function renderHero(t) {
+  const final = t.slots[t.slots.length - 1];
+  const evidence = t.findings.map(f => '<div class="evidence-item"><div class="kind">' + f.kind +
+    '</div><div class="slots">' + slotsLabel(f.evidence_slots) + '</div></div>').join('');
+  document.getElementById('hero').innerHTML =
+    '<div class="hero-top"><div class="eyebrow">Featured certification · a 60-slot replay</div><div class="transcript">transcript: ' + t.label + '</div></div>' +
+    '<div class="hero-body">' +
+      '<div class="promise"><div class="step">01 · The promise</div><p class="mandate">“' + t.system + '”</p>' +
+        '<div class="claim-box"><span>Agent-stated claim</span><strong>Claimed net delta ' + t.claimed_delta + '</strong></div></div>' +
+      '<div class="reveal"><div class="reveal-head"><div><div class="step">02 · The reveal</div><h2>Account state: net long ' + final.measured_delta + '</h2></div>' +
+        '<div class="reveal-state">measured ≠ claimed · slots 1–' + t.slots.length + '</div></div>' +
+        heroChart(t) + '<div class="slot-ticks"><span>slot 1</span><span>slot ' + t.slots.length + '</span></div>' +
+        '<div class="chart-key"><span class="key"><i class="swatch"></i>measured net delta</span><span class="key"><i class="swatch claim"></i>claimed delta ' + t.claimed_delta + '</span></div>' +
+        '<p class="reveal-copy">The measured account state is net long ' + final.measured_delta + ' across the replay while the stated claim stays at ' + t.claimed_delta + '.</p></div>' +
+      '<div class="catch"><div><div class="step">03 · The catch</div><div class="verdict-word">FLAG</div><p class="verdict-copy">Verdict: ' + t.verdict + '</p></div>' +
+        '<div><h3 class="evidence-title">Caught in the exact evidence slots</h3><div class="evidence">' + evidence + '</div>' +
+          '<p class="ground-truth"><strong>Why it cannot wriggle out:</strong> this verdict is computed offline by reading account state as ground truth — nothing to bypass.</p></div></div>' +
+    '</div>';
+}
+
+renderHero(HERO);
 const grid = document.getElementById('grid');
 for (const c of CARDS) {
   const t = c.t, pass = t.verdict === 'Pass';
   const findings = (t.findings || []).map(f => {
     const sl = f.evidence_slots || [];
     const range = sl.length ? ' <span class="slots">slots ' + sl[0] + '–' + sl[sl.length - 1] + '</span>' : '';
-    return '<li><span class="kind">' + f.kind + '</span>' + range + '</li>';
+    const note = nonDeltaKinds[f.kind] ? ' <span class="finding-note">' + nonDeltaKinds[f.kind] + '</span>' : '';
+    return '<li><span class="kind">' + f.kind + '</span>' + note + range + '</li>';
   }).join('');
   const el = document.createElement('div'); el.className = 'card';
   el.innerHTML =
