@@ -69,3 +69,18 @@ The generator was substantially rewritten (465 lines), so I re-audited rather th
 
 Re-request review after the P1+P2 fix (Round 2). This is close — one honest agent shouldn't be told it
 left a gap it never left.
+
+## Round 2 — APPROVE (`61fa8a1`)
+
+Both fixes verified by re-screenshotting and reading the computed style of `.reveal-act h3`:
+- **Steady holder** (Pass): headline now "The record matches the promise." in `rgb(86,216,140)` =
+  `var(--safe)` (green). Coheres with the green "Kept its word" verdict — the card now reads
+  trustworthy end-to-end.
+- **Balanced Jupiter trader** (Pass): same — "The record matches the promise." + green.
+- **Quiet long** (deception): unchanged — "The gap appears in slots 1–60." in `rgb(255,210,164)`
+  (amber). Deception path retained.
+- Fix scope minimal (11 lines `build.js`, 6 lines `index.html`); Node + inlined browser logic stay in
+  sync. `node web/build.js` deterministic (`5801ff70…eea534` on two runs); committed `index.html` ==
+  fresh build. `cargo test --offline` green (no Rust changed). Honesty audit from Round 1 unaffected.
+
+Merges to `master`.
