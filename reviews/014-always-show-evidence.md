@@ -42,3 +42,12 @@ change. Re-verify the Steady holder / Balanced Jupiter cards render the sentence
 - Progressive enhancement preserved (default card evidence in initial DOM); responsive.
 
 Re-request review after the one-line CSS fix (Round 2).
+
+## Round 2 — APPROVE (`7c35d23`)
+
+CSS-only fix verified: `.proof code` → `.proof li code`, so `display:block` applies only to finding-row
+kind subtitles. Screenshotted Steady holder — the Pass evidence now reads "…matched the claim of
+`position +10`." on one flowing line, period inline, no orphan. Finding-row codes still render as block
+subtitles (unchanged on deception cards). Fix is 2 lines; `node web/build.js` deterministic
+(`bbd9b773…d503a` twice); committed `index.html` == fresh build; `cargo test --offline` green. Honesty
+audit from Round 1 unaffected. Merges to `master`.
