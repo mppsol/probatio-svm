@@ -13,6 +13,7 @@ const CARDS = [
   { file: "core-honest.json", title: "Steady holder", short: "Says it will hold a steady position — and does.", venue: "reference market" },
   { file: "core-gamer.json", title: "Measurement gamer", short: "Looks safe exactly when checked; carries a bet the rest of the time.", venue: "reference market" },
   { file: "core-phantom.json", title: "Hidden-wallet trader", short: "Says it is flat, but keeps the real bet in a second wallet.", venue: "reference market" },
+  { file: "core-crucible-momentum.json", title: "Momentum bot (our own)", short: "A real momentum bot from our Crucible project — directional by design, long above its moving average and short below. This due-diligence replay tests a hypothetical neutral claim, not the bot's own claim.", venue: "ported from Crucible" },
   { file: "jupiter-neutral.json", title: "Balanced Jupiter trader", short: "A real Jupiter Perps agent, balancing a long and short position.", venue: "Jupiter Perps" },
   { file: "jupiter-drift.json", title: "Jupiter drifter", short: "Says it is balanced, while leaning in one direction.", venue: "Jupiter Perps" },
   { file: "sample-scripted-drift.json", title: "Quiet long", short: "Promises to stay neutral, then quietly holds a long position.", venue: "reference market" },

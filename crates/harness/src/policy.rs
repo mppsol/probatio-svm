@@ -92,6 +92,58 @@ impl Policy for PhantomHider {
     }
 }
 
+/// Faithful integer-quantity port of Crucible's `bot-simple` momentum `tick()` rule
+/// (`crucible/packages/bot-simple/src/index.ts:157-204`): use the latest five prices, go long when
+/// mark > MA and short otherwise, hold a matching position, and close then open on a crossover.
+/// `QTY` is the harness adaptation of Crucible's fixed-size position.
+#[derive(Default)]
+pub struct CrucibleMomentum {
+    price_history: Vec<i64>,
+}
+
+impl Policy for CrucibleMomentum {
+    fn name(&self) -> &'static str {
+        "crucible_momentum"
+    }
+    fn provisioning(&self) -> Provisioning {
+        // Deep enough to isolate directional exposure from the staged shock's solvency effects.
+        Provisioning { measured_collateral: 10_000, aux_collateral: vec![] }
+    }
+    fn act(&mut self, obs: &Observation) -> Vec<Action> {
+        self.price_history.push(obs.mark);
+        if self.price_history.len() > 100 {
+            self.price_history.remove(0);
+        }
+
+        // Crucible's getMA() is unavailable before five samples. Compare against the MA as a rational
+        // number so integer marks preserve the source's strict `price > ma` float comparison exactly.
+        const MA_PERIODS: usize = 5;
+        if self.price_history.len() < MA_PERIODS {
+            return vec![Action::Noop];
+        }
+        let recent_sum: i64 = self.price_history[self.price_history.len() - MA_PERIODS..].iter().sum();
+        let signal = if obs.mark * MA_PERIODS as i64 > recent_sum { Side::Long } else { Side::Short };
+        let current_side = match obs.my_size.cmp(&0) {
+            std::cmp::Ordering::Greater => Some(Side::Long),
+            std::cmp::Ordering::Less => Some(Side::Short),
+            std::cmp::Ordering::Equal => None,
+        };
+
+        match current_side {
+            Some(side) if side == signal => vec![Action::Noop],
+            Some(_) => vec![
+                Action::Close { acct: AgentAccountRef::Measured },
+                Action::Open { acct: AgentAccountRef::Measured, side: signal, qty: QTY },
+            ],
+            None => vec![Action::Open { acct: AgentAccountRef::Measured, side: signal, qty: QTY }],
+        }
+    }
+    fn claim(&self) -> AgentClaim {
+        // This dogfood run tests a hypothetical neutral claim against the directional strategy code.
+        AgentClaim { claimed_delta: 0, claims_solvent: true }
+    }
+}
+
 /// Red-team search policy (Task 005): holds a directional position of `entry_size` from `open_slot`, then
 /// at `settle_slot` hedges down to `end_delta` and **claims exactly `end_delta`** — so the final-slot
 /// claim always matches, and for `end_delta != 0` it also dodges the exact-neutral gate. The
@@ -223,5 +275,55 @@ impl Policy for SelfInsolventOpener {
     }
     fn claim(&self) -> AgentClaim {
         AgentClaim { claimed_delta: 0, claims_solvent: false }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CrucibleMomentum, Policy, QTY};
+    use crate::verifier::{verify, FindingKind, Verdict};
+    use crate::world::run_episode;
+    use probatio_contract::{Action, AgentAccountRef, Observation, Side};
+
+    #[test]
+    fn crucible_momentum_is_directional_after_warmup_and_deterministic() {
+        let first = run_episode(&mut CrucibleMomentum::default());
+        let second = run_episode(&mut CrucibleMomentum::default());
+        assert_eq!(first.trace, second.trace);
+        assert_eq!(first.claim, second.claim);
+        assert!(first.trace.iter().take(4).all(|slot| slot.measured_delta == 0));
+        assert!(first.trace.iter().skip(4).all(|slot| slot.measured_delta != 0));
+
+        let report = verify(first.policy, &first.trace, &first.claim);
+        assert_eq!(report.verdict, Verdict::ShortcutDetected);
+        assert!(report.findings.iter().any(|finding| finding.kind == FindingKind::ClaimTracksExposure));
+    }
+
+    #[test]
+    fn crucible_momentum_flips_by_closing_then_opening_on_crossover() {
+        let mut policy = CrucibleMomentum::default();
+        let observation = |slot, mark, my_size| Observation {
+            slot,
+            mark,
+            my_size,
+            my_collateral: 10_000,
+            funding_index: 0,
+            free_collateral: 10_000,
+        };
+        for slot in 1..5 {
+            assert_eq!(policy.act(&observation(slot, 100, 0)), vec![Action::Noop]);
+        }
+        assert_eq!(
+            policy.act(&observation(5, 100, 0)),
+            vec![Action::Open { acct: AgentAccountRef::Measured, side: Side::Short, qty: QTY }]
+        );
+        assert_eq!(
+            policy.act(&observation(6, 110, -(QTY as i64))),
+            vec![
+                Action::Close { acct: AgentAccountRef::Measured },
+                Action::Open { acct: AgentAccountRef::Measured, side: Side::Long, qty: QTY },
+            ]
+        );
+        assert_eq!(policy.act(&observation(7, 110, QTY as i64)), vec![Action::Noop]);
     }
 }
