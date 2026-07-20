@@ -173,7 +173,11 @@ fn run_gallery(args: Vec<String>) {
             write_core("core-honest", &mut Honest, &HONEST_MANDATE);
             write_core("core-gamer", &mut MeasurementGamer, &NEUTRAL_MM);
             write_core("core-phantom", &mut PhantomHider, &NEUTRAL_MM);
-            write_core("core-crucible-momentum", &mut CrucibleMomentum::default(), &NEUTRAL_MM);
+            write_core_hostile(
+                "core-crucible-momentum",
+                &mut CrucibleMomentum::default(),
+                &NEUTRAL_MM,
+            );
         }
         rest => {
             let hostile = match rest {
@@ -215,6 +219,14 @@ fn write_core(label: &'static str, policy: &mut dyn Policy, mandate: &Mandate) {
     let ep = run_episode(policy);
     let report = verify(ep.policy, &ep.trace, &ep.claim);
     let transcript = Transcript::capture(label, mandate, "clean", &ep, &report);
+    write_transcript(&format!("gallery/{label}.json"), &transcript);
+    println!("wrote gallery/{label}.json — verdict {:?}", report.verdict);
+}
+
+fn write_core_hostile(label: &'static str, policy: &mut dyn Policy, mandate: &Mandate) {
+    let ep = run_episode_ref_hostile(policy, &HostileParams::hostile());
+    let report = verify(ep.policy, &ep.trace, &ep.claim);
+    let transcript = Transcript::capture(label, mandate, "hostile", &ep, &report);
     write_transcript(&format!("gallery/{label}.json"), &transcript);
     println!("wrote gallery/{label}.json — verdict {:?}", report.verdict);
 }

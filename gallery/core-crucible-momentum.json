@@ -1,5 +1,5 @@
 {
-  "backend": "clean",
+  "backend": "hostile",
   "claimed_delta": 0,
   "claims_solvent": true,
   "findings": [
@@ -76,7 +76,7 @@
     {
       "aggregate_delta": 0,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 102,
       "measured_delta": 0,
       "slot": 1
     },
@@ -90,246 +90,246 @@
     {
       "aggregate_delta": 0,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 98,
       "measured_delta": 0,
       "slot": 3
     },
     {
       "aggregate_delta": 0,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 103,
       "measured_delta": 0,
       "slot": 4
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 101,
+      "measured_delta": 10,
       "slot": 5
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 99,
       "measured_delta": -10,
       "slot": 6
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 97,
       "measured_delta": -10,
       "slot": 7
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 102,
+      "measured_delta": 10,
       "slot": 8
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
       "mark": 100,
-      "measured_delta": -10,
+      "measured_delta": 10,
       "slot": 9
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 98,
       "measured_delta": -10,
       "slot": 10
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 103,
+      "measured_delta": 10,
       "slot": 11
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 101,
+      "measured_delta": 10,
       "slot": 12
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 99,
       "measured_delta": -10,
       "slot": 13
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 97,
       "measured_delta": -10,
       "slot": 14
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 102,
+      "measured_delta": 10,
       "slot": 15
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
       "mark": 100,
-      "measured_delta": -10,
+      "measured_delta": 10,
       "slot": 16
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 98,
       "measured_delta": -10,
       "slot": 17
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 103,
+      "measured_delta": 10,
       "slot": 18
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 101,
+      "measured_delta": 10,
       "slot": 19
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 99,
       "measured_delta": -10,
       "slot": 20
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 97,
       "measured_delta": -10,
       "slot": 21
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 102,
+      "measured_delta": 10,
       "slot": 22
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
       "mark": 100,
-      "measured_delta": -10,
+      "measured_delta": 10,
       "slot": 23
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 98,
       "measured_delta": -10,
       "slot": 24
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 103,
+      "measured_delta": 10,
       "slot": 25
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 101,
+      "measured_delta": 10,
       "slot": 26
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 99,
       "measured_delta": -10,
       "slot": 27
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 100,
+      "mark": 97,
       "measured_delta": -10,
       "slot": 28
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 100,
-      "measured_delta": -10,
+      "mark": 102,
+      "measured_delta": 10,
       "slot": 29
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 72,
       "measured_delta": -10,
       "slot": 30
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 56,
       "measured_delta": -10,
       "slot": 31
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 51,
       "measured_delta": -10,
       "slot": 32
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 43,
       "measured_delta": -10,
       "slot": 33
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 41,
       "measured_delta": -10,
       "slot": 34
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 39,
       "measured_delta": -10,
       "slot": 35
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 44,
+      "measured_delta": 10,
       "slot": 36
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 42,
+      "measured_delta": 10,
       "slot": 37
     },
     {
@@ -340,79 +340,79 @@
       "slot": 38
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 45,
+      "measured_delta": 10,
       "slot": 39
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 49,
+      "measured_delta": 10,
       "slot": 40
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 53,
+      "measured_delta": 10,
       "slot": 41
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 57,
+      "measured_delta": 10,
       "slot": 42
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 62,
+      "measured_delta": 10,
       "slot": 43
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 60,
+      "measured_delta": 10,
       "slot": 44
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 58,
       "measured_delta": -10,
       "slot": 45
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 63,
+      "measured_delta": 10,
       "slot": 46
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 61,
+      "measured_delta": 10,
       "slot": 47
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 59,
       "measured_delta": -10,
       "slot": 48
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 57,
       "measured_delta": -10,
       "slot": 49
     },
@@ -426,71 +426,71 @@
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 38,
       "measured_delta": -10,
       "slot": 51
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 36,
       "measured_delta": -10,
       "slot": 52
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 41,
       "measured_delta": -10,
       "slot": 53
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 39,
+      "measured_delta": 10,
       "slot": 54
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 37,
       "measured_delta": -10,
       "slot": 55
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 35,
       "measured_delta": -10,
       "slot": 56
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
       "mark": 40,
-      "measured_delta": -10,
+      "measured_delta": 10,
       "slot": 57
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 38,
+      "measured_delta": 10,
       "slot": 58
     },
     {
       "aggregate_delta": -10,
       "any_liquidatable": false,
-      "mark": 40,
+      "mark": 36,
       "measured_delta": -10,
       "slot": 59
     },
     {
-      "aggregate_delta": -10,
+      "aggregate_delta": 10,
       "any_liquidatable": false,
-      "mark": 40,
-      "measured_delta": -10,
+      "mark": 41,
+      "measured_delta": 10,
       "slot": 60
     }
   ],

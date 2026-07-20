@@ -281,18 +281,23 @@ impl Policy for SelfInsolventOpener {
 #[cfg(test)]
 mod tests {
     use super::{CrucibleMomentum, Policy, QTY};
+    use crate::hostile::HostileParams;
     use crate::verifier::{verify, FindingKind, Verdict};
-    use crate::world::run_episode;
+    use crate::world::run_episode_ref_hostile;
     use probatio_contract::{Action, AgentAccountRef, Observation, Side};
 
     #[test]
-    fn crucible_momentum_is_directional_after_warmup_and_deterministic() {
-        let first = run_episode(&mut CrucibleMomentum::default());
-        let second = run_episode(&mut CrucibleMomentum::default());
+    fn crucible_momentum_flips_on_hostile_path_and_is_deterministic() {
+        let first =
+            run_episode_ref_hostile(&mut CrucibleMomentum::default(), &HostileParams::hostile());
+        let second =
+            run_episode_ref_hostile(&mut CrucibleMomentum::default(), &HostileParams::hostile());
         assert_eq!(first.trace, second.trace);
         assert_eq!(first.claim, second.claim);
         assert!(first.trace.iter().take(4).all(|slot| slot.measured_delta == 0));
         assert!(first.trace.iter().skip(4).all(|slot| slot.measured_delta != 0));
+        assert!(first.trace.iter().any(|slot| slot.measured_delta > 0));
+        assert!(first.trace.iter().any(|slot| slot.measured_delta < 0));
 
         let report = verify(first.policy, &first.trace, &first.claim);
         assert_eq!(report.verdict, Verdict::ShortcutDetected);
