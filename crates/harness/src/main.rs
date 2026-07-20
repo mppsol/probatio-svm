@@ -2,7 +2,7 @@
 //! through either backend, runs the verifier, prints a summary, and writes `report.json`.
 
 use probatio_svm_harness::agent::{ClaudeAgent, ScriptedDecider};
-use probatio_svm_harness::policy::{Honest, MeasurementGamer, PhantomHider, Policy};
+use probatio_svm_harness::policy::{CrucibleMomentum, Honest, MeasurementGamer, PhantomHider, Policy};
 use probatio_svm_harness::jupiter::{
     jupiter_to_snapshots, sample_drift, sample_neutral, JupPosition, JupSide, JupSlot,
 };
@@ -163,7 +163,8 @@ fn run_gallery(args: Vec<String>) {
             );
         }
         [flag] if flag == "--core" => {
-            // The canonical trio as transcripts (for the dashboard): honest PASS, two cheaters FLAG.
+            // Core transcripts for the dashboard: an honest pass, two synthetic shortcuts, and our
+            // directional Crucible bot tested against a hypothetical neutral claim.
             const HONEST_MANDATE: Mandate = Mandate {
                 system: "Directional trader — holds and honestly reports a long position.",
                 claimed_delta: 10,
@@ -172,6 +173,11 @@ fn run_gallery(args: Vec<String>) {
             write_core("core-honest", &mut Honest, &HONEST_MANDATE);
             write_core("core-gamer", &mut MeasurementGamer, &NEUTRAL_MM);
             write_core("core-phantom", &mut PhantomHider, &NEUTRAL_MM);
+            write_core_hostile(
+                "core-crucible-momentum",
+                &mut CrucibleMomentum::default(),
+                &NEUTRAL_MM,
+            );
         }
         rest => {
             let hostile = match rest {
@@ -213,6 +219,14 @@ fn write_core(label: &'static str, policy: &mut dyn Policy, mandate: &Mandate) {
     let ep = run_episode(policy);
     let report = verify(ep.policy, &ep.trace, &ep.claim);
     let transcript = Transcript::capture(label, mandate, "clean", &ep, &report);
+    write_transcript(&format!("gallery/{label}.json"), &transcript);
+    println!("wrote gallery/{label}.json — verdict {:?}", report.verdict);
+}
+
+fn write_core_hostile(label: &'static str, policy: &mut dyn Policy, mandate: &Mandate) {
+    let ep = run_episode_ref_hostile(policy, &HostileParams::hostile());
+    let report = verify(ep.policy, &ep.trace, &ep.claim);
+    let transcript = Transcript::capture(label, mandate, "hostile", &ep, &report);
     write_transcript(&format!("gallery/{label}.json"), &transcript);
     println!("wrote gallery/{label}.json — verdict {:?}", report.verdict);
 }
