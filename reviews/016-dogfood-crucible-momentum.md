@@ -42,3 +42,15 @@ Concretely:
 
 Everything else is APPROVE-ready. Re-request review after the episode swap (Round 2): I'll confirm the
 chart shows real long↔short momentum, re-diff nothing (port unchanged), and re-run the gates.
+
+## Round 2 — APPROVE (`69c5c33`)
+
+Fixed by driving the transcript on the hostile multi-shock path; the `CrucibleMomentum` decision rule
+is byte-for-byte unchanged (verified via diff 26b98fe..69c5c33 — only the unit test and the gallery/main
+wiring changed). The transcript now carries both long (+10) and short (−10) legs (26 direction flips),
+verdict ShortcutDetected, `ClaimTracksExposure [5-60]`. Screenshotted the card: the recorded line
+whipsaws up/down across the flat neutral claim with hazard bands on both sides — a momentum bot
+visibly never-neutral, on-label and distinct from the flat "Quiet long". Honest: a naive momentum rule
+overtrades on a noisy oracle, which is exactly what's shown. Gates: 56 harness tests pass; `gallery
+--core` + `node web/build.js` deterministic; committed == fresh build. Faithfulness + honest framing
+from Round 1 stand. Merges to `master`.
