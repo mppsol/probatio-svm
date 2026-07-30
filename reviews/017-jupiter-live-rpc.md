@@ -126,3 +126,30 @@ in the live card.
   `mark_usd` affects equity/liquidation fields, not signed-notional-derived
   `measured_delta` or `aggregate_delta`.
 
+## Resolution (CC) — all three P1 fixed; P2-2 folded in; P2-1/P2-3 deferred
+
+Applied on `task/017-jupiter-live-rpc`; `cargo test -p probatio-svm-harness`
+now **64 lib + 2 bin** green, `Cargo.lock` still empty vs base.
+
+- **P1-1** — `decode_position` now returns `Result<Option<JupPosition>>`:
+  `Err` = untrusted/invalid account (wrong length/discriminator/side), `Ok(None)`
+  = structurally validated closed slot. `parse_gpa_response` propagates the `Err`
+  with `?` instead of dropping it. `base64_decode` is strict (positive
+  multiple-of-4 length, ≤2 trailing pads, zero padding bits). New tests:
+  strict-padding cases and a GPA array with a 213-byte account → `Err`.
+- **P1-2** — added `POSITION_DISCRIMINATOR` (`[170,188,143,228,122,64,247,208]`,
+  extracted from the committed fixture) as both a `memcmp` filter at offset 0 in
+  `fetch_owner_positions` and a decode-time check. New test mutates the
+  discriminator and asserts `Err`.
+- **P1-3** — `Transcript` now carries `assessment_kind` / `mandate_source` /
+  `provenance_note`, derived from the `"jupiter-live"` backend, and serializes
+  them. The live card states it is unsolicited DD, that the mandate was declared
+  by Probatio, and that a FLAG is not an assertion that the operator lied. New
+  offline test asserts the serialized live card contains this.
+- **P2-2** — `--mark` now rejects zero/negative (matches its error text); the
+  banner calls it a "user-supplied mark override", not an "on-chain override".
+- **Deferred** (as scoped): **P2-1** (a consented real *short* fixture needs a
+  fresh mainnet capture) and **P2-3** (`withContext` snapshot slot lives on the
+  untested network `fetch` path) — both belong to the pre-public-live-demo
+  follow-up, not this merge.
+

@@ -283,11 +283,13 @@ fn run_certify_jupiter_live(args: &[String]) {
         match a.as_str() {
             "--rpc" => rpc = it.next().cloned(),
             "--mark" => {
-                mark = it.next().and_then(|s| s.parse::<i64>().ok());
-                if mark.is_none() {
-                    eprintln!("error: --mark requires a positive integer USD price");
-                    std::process::exit(2);
-                }
+                mark = match it.next().and_then(|s| s.parse::<i64>().ok()) {
+                    Some(m) if m > 0 => Some(m),
+                    _ => {
+                        eprintln!("error: --mark requires a positive integer USD price");
+                        std::process::exit(2);
+                    }
+                };
             }
             other if !other.starts_with('-') && owner.is_none() => owner = Some(other.to_string()),
             other => {
@@ -325,7 +327,7 @@ fn run_certify_jupiter_live(args: &[String]) {
     println!("  owner       {owner}");
     println!("  positions   {} open, net signed notional ${net}", positions.len());
     println!("  mandate     delta-neutral (claimed_delta 0) — declared by us, not the operator");
-    println!("  mark        {}\n", if mark.is_some() { "on-chain override" } else { "size-weighted entry (advisory liquidation only)" });
+    println!("  mark        {}\n", if mark.is_some() { "user-supplied mark override (advisory liquidation only)" } else { "size-weighted entry (advisory liquidation only)" });
     print_report(&report);
 
     let path = format!("gallery/{label}.json");

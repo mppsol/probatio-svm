@@ -175,6 +175,12 @@ pub const JUP_PERPS_PROGRAM: &str = "PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu
 /// Serialized length of a `Position` account (8-byte Anchor discriminator + fields). Empirically
 /// confirmed against mainnet 2026-07-30 (`space == 216`).
 pub const POSITION_ACCOUNT_LEN: usize = 216;
+/// Anchor account discriminator for a Jupiter `Position` (`sha256("account:Position")[..8]`). Extracted
+/// from the committed mainnet fixture. Verified both as a `getProgramAccounts` `memcmp` filter and at
+/// decode time, so a same-sized *non-Position* account cannot be certified through the fixed offsets.
+pub const POSITION_DISCRIMINATOR: [u8; 8] = [170, 188, 143, 228, 122, 64, 247, 208];
+/// Base58 of `POSITION_DISCRIMINATOR` for the RPC `memcmp` filter (default `bytes` encoding is base58).
+const POSITION_DISCRIMINATOR_B58: &str = "VZMoMoKgZQb";
 
 // Byte offsets inside the account data, validated by decoding real open positions on 2026-07-30
 // (Borsh is fixed-order with no padding; `price@153` reproduced a live SOL entry of $153.22, and
@@ -213,30 +219,50 @@ fn read_u64_le(data: &[u8], off: usize) -> Option<u64> {
     data.get(off..off + 8)?.try_into().ok().map(u64::from_le_bytes)
 }
 
-/// Decode one `Position` account into a `JupPosition`, in WHOLE USD. Returns `None` for an unusable
-/// account: wrong length, a `side` that is not Long/Short, or a **closed slot** (`sizeUsd == 0` —
-/// Jupiter pre-allocates up to nine position slots per owner and leaves closed ones zero-sized).
-pub fn decode_position(data: &[u8]) -> Option<JupPosition> {
+/// Decode one `Position` account into a `JupPosition`, in WHOLE USD.
+///
+/// The two "no position" cases are kept distinct so the ingestion boundary never conflates *trusted
+/// absence* with *untrusted data*:
+/// - `Ok(None)` — a structurally valid but **closed slot** (correct discriminator, `sizeUsd == 0`;
+///   Jupiter pre-allocates up to nine position slots per owner and leaves closed ones zero-sized).
+/// - `Err(..)` — an **untrusted/invalid** account (wrong length, wrong discriminator, or an open slot
+///   with an impossible `side`). The caller must surface this, never silently drop it.
+pub fn decode_position(data: &[u8]) -> Result<Option<JupPosition>, JupFetchError> {
     if data.len() != POSITION_ACCOUNT_LEN {
-        return None;
+        return Err(JupFetchError::InvalidAccountData(format!(
+            "expected {POSITION_ACCOUNT_LEN}-byte Position account, got {}",
+            data.len()
+        )));
+    }
+    if data[0..8] != POSITION_DISCRIMINATOR {
+        return Err(JupFetchError::InvalidAccountData(
+            "account discriminator is not Jupiter Position".into(),
+        ));
+    }
+    let size_atomic = read_u64_le(data, OFF_SIZE_USD)
+        .ok_or_else(|| JupFetchError::InvalidAccountData("unreadable sizeUsd".into()))?;
+    if size_atomic == 0 {
+        return Ok(None); // structurally valid, pre-allocated closed slot
     }
     let side = match data[OFF_SIDE] {
         1 => JupSide::Long,
         2 => JupSide::Short,
-        _ => return None,
+        other => {
+            return Err(JupFetchError::InvalidAccountData(format!(
+                "open Position has invalid side byte {other}"
+            )))
+        }
     };
-    let size_atomic = read_u64_le(data, OFF_SIZE_USD)?;
-    if size_atomic == 0 {
-        return None; // closed / empty pre-allocated slot
-    }
-    let collateral_atomic = read_u64_le(data, OFF_COLLATERAL_USD)?;
-    let entry_atomic = read_u64_le(data, OFF_PRICE)?;
-    Some(JupPosition {
+    let collateral_atomic = read_u64_le(data, OFF_COLLATERAL_USD)
+        .ok_or_else(|| JupFetchError::InvalidAccountData("unreadable collateralUsd".into()))?;
+    let entry_atomic = read_u64_le(data, OFF_PRICE)
+        .ok_or_else(|| JupFetchError::InvalidAccountData("unreadable price".into()))?;
+    Ok(Some(JupPosition {
         side,
         size_usd: (size_atomic / USD_ATOMIC) as i64,
         collateral_usd: (collateral_atomic / USD_ATOMIC) as i64,
         entry_usd: (entry_atomic / USD_ATOMIC) as i64,
-    })
+    }))
 }
 
 /// Standard-alphabet Base64 decode (no whitespace; RPC `data[0]` is a single unbroken string). Kept
@@ -252,11 +278,25 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, JupFetchError> {
             _ => None,
         }
     }
-    let bytes: &[u8] = s.trim_end_matches('=').as_bytes();
-    let mut out = Vec::with_capacity(bytes.len() * 3 / 4);
+    let bytes = s.as_bytes();
+    // Canonical base64 is a positive multiple of four characters; a truncated account would otherwise
+    // decode "best effort" to a wrong length and then vanish as if it were a closed slot (see P1-1).
+    if bytes.is_empty() || bytes.len() % 4 != 0 {
+        return Err(JupFetchError::InvalidAccountData(format!(
+            "base64 length {} is not a positive multiple of 4",
+            bytes.len()
+        )));
+    }
+    // `=` padding may only be the final one or two characters.
+    let pad = bytes.iter().rev().take_while(|&&c| c == b'=').count();
+    if pad > 2 {
+        return Err(JupFetchError::InvalidAccountData("more than two base64 pad chars".into()));
+    }
+    let body = &bytes[..bytes.len() - pad];
+    let mut out = Vec::with_capacity(body.len() * 3 / 4);
     let mut acc: u32 = 0;
     let mut nbits = 0;
-    for &c in bytes {
+    for &c in body {
         let v = val(c).ok_or_else(|| JupFetchError::InvalidAccountData(format!("bad base64 char {c:#x}")))?;
         acc = (acc << 6) | v as u32;
         nbits += 6;
@@ -264,6 +304,10 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, JupFetchError> {
             nbits -= 8;
             out.push((acc >> nbits) as u8);
         }
+    }
+    // A canonical encoder zeroes the leftover padding bits; reject anything else as corrupt.
+    if nbits > 0 && (acc & ((1 << nbits) - 1)) != 0 {
+        return Err(JupFetchError::InvalidAccountData("non-zero base64 padding bits".into()));
     }
     Ok(out)
 }
@@ -290,7 +334,8 @@ pub fn parse_gpa_response(json_text: &str) -> Result<Vec<JupPosition>, JupFetchE
             .and_then(|s| s.as_str())
             .ok_or_else(|| JupFetchError::InvalidJson("account missing base64 data".into()))?;
         let bytes = base64_decode(b64)?;
-        if let Some(p) = decode_position(&bytes) {
+        // `?` surfaces an untrusted/invalid account; `None` is a validated closed slot we skip.
+        if let Some(p) = decode_position(&bytes)? {
             positions.push(p);
         }
     }
@@ -309,6 +354,7 @@ pub fn fetch_owner_positions(rpc_url: &str, owner: &str) -> Result<Vec<JupPositi
             "encoding": "base64",
             "filters": [
                 { "dataSize": POSITION_ACCOUNT_LEN },
+                { "memcmp": { "offset": 0, "bytes": POSITION_DISCRIMINATOR_B58 } },
                 { "memcmp": { "offset": OFF_OWNER, "bytes": owner } }
             ]
         }]
@@ -397,6 +443,12 @@ mod tests {
         assert_eq!(base64_decode("Zm8=").unwrap(), b"fo"); // 2-byte, single pad
         assert_eq!(base64_decode("Zm9v").unwrap(), b"foo");
         assert!(base64_decode("not base64!").is_err());
+        // Strictness (P1-1): a non-quartet length (dropped/missing padding) is rejected outright,
+        // never best-effort decoded to a wrong length that would then vanish as a "closed slot".
+        assert!(base64_decode("Zg").is_err()); // missing padding
+        assert!(base64_decode("Zm9").is_err()); // one char short of a quartet
+        assert!(base64_decode("Zg===").is_err()); // over-padded
+        assert!(base64_decode("Z=g=").is_err()); // misplaced padding
     }
 
     #[test]
@@ -410,24 +462,54 @@ mod tests {
         assert_eq!(p.collateral_usd, 15); // $15.22 collateral
     }
 
+    /// Build a structurally valid 216-byte open Position with the correct discriminator.
+    fn synth_open(side: u8, size: u64, collateral: u64, entry: u64) -> Vec<u8> {
+        let mut data = vec![0u8; POSITION_ACCOUNT_LEN];
+        data[0..8].copy_from_slice(&POSITION_DISCRIMINATOR);
+        data[OFF_SIDE] = side;
+        data[OFF_PRICE..OFF_PRICE + 8].copy_from_slice(&entry.to_le_bytes());
+        data[OFF_SIZE_USD..OFF_SIZE_USD + 8].copy_from_slice(&size.to_le_bytes());
+        data[OFF_COLLATERAL_USD..OFF_COLLATERAL_USD + 8].copy_from_slice(&collateral.to_le_bytes());
+        data
+    }
+
     #[test]
     fn closed_slot_and_short_side_decode() {
-        // Wrong length ⇒ None.
-        assert!(decode_position(&[0u8; 10]).is_none());
-        // A well-formed account with sizeUsd == 0 (closed slot) ⇒ filtered out.
-        let mut data = vec![0u8; POSITION_ACCOUNT_LEN];
-        data[OFF_SIDE] = 1; // Long
-        // size stays 0 ⇒ None
-        assert!(decode_position(&data).is_none());
-        // Give it a Short side and nonzero size/collateral/entry.
-        data[OFF_SIDE] = 2;
-        data[OFF_PRICE..OFF_PRICE + 8].copy_from_slice(&(100_000_000u64).to_le_bytes()); // $100
-        data[OFF_SIZE_USD..OFF_SIZE_USD + 8].copy_from_slice(&(5_000_000_000u64).to_le_bytes()); // $5000
-        data[OFF_COLLATERAL_USD..OFF_COLLATERAL_USD + 8].copy_from_slice(&(2_000_000_000u64).to_le_bytes()); // $2000
-        let p = decode_position(&data).expect("open short decodes");
+        // Wrong length ⇒ Err (untrusted), never silently dropped.
+        assert!(matches!(decode_position(&[0u8; 10]), Err(JupFetchError::InvalidAccountData(_))));
+        // Correct discriminator but sizeUsd == 0 ⇒ structurally valid closed slot ⇒ Ok(None).
+        let mut data = synth_open(1, 0, 0, 0);
+        assert!(decode_position(&data).unwrap().is_none());
+        // Give it a Short side and nonzero size/collateral/entry ⇒ Ok(Some).
+        data = synth_open(2, 5_000_000_000, 2_000_000_000, 100_000_000);
+        let p = decode_position(&data).unwrap().expect("open short decodes");
         assert_eq!(p.side, JupSide::Short);
         assert_eq!(p.signed_notional(), -5000);
         assert_eq!(p.collateral_usd, 2000);
+    }
+
+    #[test]
+    fn wrong_discriminator_is_rejected_not_dropped() {
+        // A same-sized account with the wrong discriminator must Err (type confusion, P1-2), not be
+        // skipped like a closed slot.
+        let mut data = synth_open(1, 5_000_000_000, 2_000_000_000, 100_000_000);
+        assert!(decode_position(&data).unwrap().is_some(), "sanity: valid Position decodes");
+        data[0] ^= 0xFF;
+        assert!(matches!(decode_position(&data), Err(JupFetchError::InvalidAccountData(_))));
+    }
+
+    #[test]
+    fn truncated_account_in_gpa_array_errs_not_partial() {
+        // A GPA array with one truncated account must return Err — never a partial vector that
+        // certifies a live verdict over an incomplete set (P1-1).
+        let short_b64 = "A".repeat(284); // 284 base64 chars ⇒ 213 bytes (one quartet short of 216)
+        let json = format!(
+            r#"{{"jsonrpc":"2.0","id":1,"result":[{{"account":{{"data":["{short_b64}","base64"]}}}}]}}"#
+        );
+        assert!(matches!(
+            parse_gpa_response(&json),
+            Err(JupFetchError::InvalidAccountData(_))
+        ));
     }
 
     #[test]

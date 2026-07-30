@@ -24,6 +24,14 @@ pub struct Transcript {
     pub claimed_delta: i64,
     pub claims_solvent: bool,
     pub backend: String,
+    /// How this assessment was initiated — e.g. `"unsolicited_due_diligence"` for a live on-chain card
+    /// (the operator made no claim to us) vs `"harness_episode"` for an agent run under our harness.
+    pub assessment_kind: String,
+    /// Who declared the mandate the positions are judged against — `"declared_by_probatio"` for the
+    /// live path, `"agent_under_test"` inside the harness.
+    pub mandate_source: String,
+    /// Plain-language honesty note carried WITH the persisted card, not only on the console.
+    pub provenance_note: String,
     pub verdict: String,
     pub findings: Vec<(String, Vec<u64>)>,
     pub slots: Vec<SlotRecord>,
@@ -53,6 +61,24 @@ impl Transcript {
             Verdict::ShortcutDetected => "ShortcutDetected",
         }
         .to_string();
+        // Provenance travels WITH the card. The live gallery card outlives the console banner, so the
+        // "unsolicited due-diligence / mandate declared by us" framing must be serialized — otherwise a
+        // reader sees only the generic market-maker system prompt and reads it as the operator's claim.
+        let (assessment_kind, mandate_source, provenance_note) = match backend {
+            "jupiter-live" => (
+                "unsolicited_due_diligence",
+                "declared_by_probatio",
+                "Probatio applied a delta-neutral mandate on its own initiative; the wallet operator made \
+                 no neutrality claim to us. A FLAG means the live on-chain positions do not satisfy that \
+                 mandate — it is NOT an assertion that the operator claimed neutrality or acted dishonestly.",
+            ),
+            _ => (
+                "harness_episode",
+                "agent_under_test",
+                "The agent ran inside Probatio's harness under the stated mandate; the claim is the \
+                 agent's own.",
+            ),
+        };
         let findings = report
             .findings
             .iter()
@@ -64,6 +90,9 @@ impl Transcript {
             claimed_delta: ep.claim.claimed_delta,
             claims_solvent: ep.claim.claims_solvent,
             backend: backend.to_string(),
+            assessment_kind: assessment_kind.to_string(),
+            mandate_source: mandate_source.to_string(),
+            provenance_note: provenance_note.to_string(),
             verdict,
             findings,
             slots,
@@ -96,6 +125,9 @@ impl Transcript {
             "claimed_delta": self.claimed_delta,
             "claims_solvent": self.claims_solvent,
             "backend": self.backend,
+            "assessment_kind": self.assessment_kind,
+            "mandate_source": self.mandate_source,
+            "provenance_note": self.provenance_note,
             "verdict": self.verdict,
             "findings": findings,
             "slots": slots,
@@ -131,6 +163,29 @@ mod tests {
         let kinds: Vec<&str> =
             value["findings"].as_array().unwrap().iter().map(|f| f["kind"].as_str().unwrap()).collect();
         assert!(kinds.contains(&"ClaimTracksExposure"));
+        // Harness episodes are the agent's own claim, not an unsolicited DD.
+        assert_eq!(value["assessment_kind"], "harness_episode");
+        assert_eq!(value["mandate_source"], "agent_under_test");
+    }
+
+    #[test]
+    fn live_card_persists_unsolicited_dd_provenance() {
+        // P1-3: the gallery card outlives the console banner, so the "unsolicited DD / mandate declared
+        // by us / a FLAG is not an accusation" framing must be IN the serialized card.
+        let mut script = vec![Action::Noop; N_SLOTS as usize];
+        script[0] = Action::Open { acct: AgentAccountRef::Measured, side: Side::Long, qty: 10 };
+        let ep = run_episode(&mut ClaudeAgent::new(Box::new(ScriptedDecider::new(script)), NEUTRAL_MM));
+        let report = verify(ep.policy, &ep.trace, &ep.claim);
+
+        // The live path captures with the "jupiter-live" backend.
+        let transcript = Transcript::capture("jupiter-live-Ah", &NEUTRAL_MM, "jupiter-live", &ep, &report);
+        let value: Value = serde_json::from_str(&transcript.to_json()).unwrap();
+
+        assert_eq!(value["assessment_kind"], "unsolicited_due_diligence");
+        assert_eq!(value["mandate_source"], "declared_by_probatio");
+        let note = value["provenance_note"].as_str().unwrap();
+        assert!(note.contains("unsolicited") || note.contains("on its own initiative"));
+        assert!(note.contains("NOT an assertion"), "must disclaim that a FLAG accuses the operator");
     }
 
     #[test]
