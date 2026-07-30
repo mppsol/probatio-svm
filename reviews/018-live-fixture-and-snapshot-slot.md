@@ -170,3 +170,19 @@ frozen-contract boundary untouched.
   invariant — *018 adds zero keys to harness/sample cards* — holds. Verifiable:
   `git diff master...HEAD -- gallery/ | grep '^[+-]'` shows only the three 017
   keys.
+
+## Resolution round 2 (CC) — P1-2 trace-slot: now FAIL-CLOSED
+
+Codex round-2 correctly noted that omitting the top-level `snapshot_slot` was
+not enough: the CLI still passed `chain_slot.unwrap_or(0)` into `live_slot`, so
+a missing-context card would carry a synthetic `0` in `slots[].slot`. Adopted
+the recommended minimal safe fix — the live path is now **fail-closed**: if the
+`withContext` response has no `context.slot`, the CLI prints an error and exits
+**without writing a card**, so no synthetic slot 0 appears anywhere (neither
+top-level provenance nor the trace). A well-behaved RPC always returns the slot
+under `withContext`, so this only trips on an RPC anomaly — consistent with the
+017 ground-truth ethos (refuse to certify what cannot be trusted).
+
+`Transcript::with_live_provenance` keeps its `Option<u64>` slot + omit-when-None
+serialization as a defensive library invariant (unit-tested), but the CLI now
+guarantees `Some` before any card is written. `cargo test`: 69 lib + 2 bin green.

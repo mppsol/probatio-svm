@@ -318,31 +318,37 @@ fn run_certify_jupiter_live(args: &[String]) {
         return;
     }
 
-    // The snapshot slot (from withContext) and capture time make the card identify WHICH chain state it
-    // judged; the RPC host is redacted of any API key before it is persisted. We do NOT fabricate a slot:
-    // if the RPC gave none, the card omits snapshot_slot rather than claiming a false slot 0.
-    let chain_slot = snapshot.slot;
-    if chain_slot.is_none() {
-        eprintln!("warning: RPC returned no context slot (withContext); card will omit snapshot_slot");
-    }
+    // A point-in-time DD card is only meaningful if it can name the chain snapshot it judged, so the
+    // live path is FAIL-CLOSED on a missing slot: we request `withContext`, and if the RPC returns no
+    // `context.slot` we refuse to write a card rather than stamp a synthetic slot 0 anywhere in it
+    // (top-level provenance OR the trace's `slots[].slot`). The RPC host is redacted of any API key.
+    let chain_slot = match snapshot.slot {
+        Some(s) => s,
+        None => {
+            eprintln!(
+                "error: RPC returned no context slot (withContext); refusing to write a point-in-time \
+                 due-diligence card without a verifiable on-chain snapshot"
+            );
+            std::process::exit(1);
+        }
+    };
     let captured_at = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
     let rpc_source = rpc_host_only(&rpc_url);
 
-    let slot = live_slot(snapshot.positions.clone(), mark, chain_slot.unwrap_or(0));
+    let slot = live_slot(snapshot.positions.clone(), mark, chain_slot);
     let net: i64 = snapshot.positions.iter().map(|p| p.signed_notional()).sum();
     let label = format!("jupiter-live-{}", &owner[..owner.len().min(8)]);
     let (report, transcript) = certify_jupiter_labeled(&label, &[slot]);
-    let transcript = transcript.with_live_provenance(chain_slot, captured_at, rpc_source.clone());
+    let transcript = transcript.with_live_provenance(Some(chain_slot), captured_at, rpc_source.clone());
 
-    let slot_display = chain_slot.map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string());
     println!("Probatio SVM — LIVE Jupiter Perps certification (unsolicited due-diligence)\n");
     println!("  owner       {owner}");
     println!("  positions   {} open, net signed notional ${net}", snapshot.positions.len());
     println!("  mandate     delta-neutral (claimed_delta 0) — declared by us, not the operator");
-    println!("  snapshot    slot {slot_display} via {rpc_source} (point-in-time, not a live monitor)");
+    println!("  snapshot    slot {chain_slot} via {rpc_source} (point-in-time, not a live monitor)");
     println!("  mark        {}\n", if mark.is_some() { "user-supplied mark override (advisory liquidation only)" } else { "size-weighted entry (advisory liquidation only)" });
     print_report(&report);
 
