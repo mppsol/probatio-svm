@@ -19,6 +19,11 @@ real Solana program and judges the agent's behavior. It is **not** a realtime ma
 verifier runs offline over a replay, like a fuzzer or CI, so it never has to "keep up" with block times
 or MEV. Certify first, deploy second.
 
+The same verifier can also read **live on-chain state** for a one-shot audit: `certify-jupiter --live`
+fetches a real wallet's current Jupiter Perps positions via `getProgramAccounts` and certifies that
+snapshot against a delta-neutral mandate as **unsolicited due-diligence**. This is a **point-in-time
+attestation**, still not a streaming monitor — it reads the chain once and judges what it finds.
+
 ## Where it sits
 
 Pre-deployment **certification of autonomous agents** is a recognized, unsolved problem — but the work
@@ -63,6 +68,30 @@ The two layers are complementary: **enforcement blocks bad *actions* in-block; t
 *states/behaviors*** over the episode (measurement gaming, phantom exposure, and passive oracle-driven
 insolvency that no single tx causes and no guard can revert).
 
+## Certifying real on-chain positions (live path)
+
+Because on Solana **account state IS the world**, the verifier needs no replay to judge a real position —
+it can read the chain directly. `certify-jupiter --live <owner>` fetches every open Jupiter Perps
+`Position` account owned by a wallet in one `getProgramAccounts` snapshot, decodes it against the
+committed account layout, and certifies net signed notional against a delta-neutral mandate. The delta
+verdict is **oracle-free** (signed notional is USD-denominated, so it is mark-independent; `--mark` only
+feeds the *advisory* liquidation model).
+
+The ingestion boundary is deliberately strict — this is a **ground-truth recovery** path, so it refuses
+to certify over anything it cannot fully trust:
+
+- Accounts are matched by the Jupiter program owner, a `dataSize` filter, **and the Anchor `Position`
+  discriminator** (a `memcmp` filter at offset 0, re-checked at decode) — a same-sized account of another
+  type is rejected, not certified through the fixed offsets.
+- A truncated / malformed account is an **error**, never a silently-dropped slot; the decoder separates
+  *untrusted* data (`Err`) from a *validated-closed* slot (`Ok(None)`), so a partial fetch can never look
+  like a complete, clean book.
+
+**Honesty:** this is **unsolicited due-diligence** — the wallet operator made no claim to us. A FLAG means
+"these live positions do not satisfy a delta-neutral mandate declared by Probatio", **never** "the operator
+lied". That provenance (`assessment_kind` / `mandate_source` / a plain-language note) is serialized *into*
+the gallery card, so it survives even when the console banner is gone.
+
 ## Status — Stage 0 complete + unbypassable enforcement ✅
 
 Built on a **real compiled BPF program**, not a mock: the harness runs `cargo build-sbf`, loads the
@@ -87,7 +116,8 @@ after`):
 | self-inflicted insolvency `Open` (collateral=10) | reverted `Custom(11)` SelfInflictedInsolvency |
 
 Perp instruction CU (with inline enforcement): `Open`=583, `Hedge`=758, `SettleFunding`=356 — far under
-the 200k/instruction budget. **25 tests green offline.**
+the 200k/instruction budget. **73 tests green offline** across the workspace (harness alone: 64 lib + 2
+binary, covering the live-ingestion decode/parse boundary against a real mainnet fixture).
 
 ## Quickstart
 
@@ -101,6 +131,13 @@ cargo run --offline -p probatio-svm-harness -- --backend svm
 
 # All tests (ref+svm parity, unbypassable-enforcement reverts, atomicity, CU):
 cargo test --offline
+
+# Certify a Jupiter Perps agent — deterministic sample cards (neutral vs drift), no key/RPC:
+cargo run --offline -p probatio-svm-harness -- certify-jupiter --sample
+
+# Unsolicited due-diligence on a REAL wallet's live positions (one on-chain snapshot).
+# --rpc defaults to mainnet-beta (or set PROBATIO_RPC_URL); --mark is an advisory liquidation input.
+cargo run -p probatio-svm-harness -- certify-jupiter --live <owner_pubkey> [--rpc <url>] [--mark <usd>]
 ```
 
 Requires the Rust toolchain (pinned in `rust-toolchain.toml`) and the Solana SBF toolchain
@@ -112,9 +149,11 @@ Requires the Rust toolchain (pinned in `rust-toolchain.toml`) and the Solana SBF
 crates/contract   shared account layout (Market, Position) + instruction codecs + check_position()
                   enforcement predicate — the load-bearing contract, read by the perp, the guard, AND
                   the verifier (#![no_std])
-crates/harness    episode driver (ref + LiteSVM backends), scripted policies, invariant-set verifier
+crates/harness    episode driver (ref + LiteSVM backends), scripted policies, invariant-set verifier,
+                  Jupiter live on-chain ingestion (getProgramAccounts → decode → certify)
 programs/perp     Pinocchio perp; inline-enforces check_position() on every mutating instruction
 programs/guard    Pinocchio composable guard for wrapping third-party-owned accounts
+gallery           serialized certification cards (sample cards tracked; jupiter-live-*.json gitignored)
 docs/tasks        task briefs (the CC↔Codex handoff surface)
 reviews           cross-review verdicts
 STAGE0_DESIGN.md  the design + honest scope notes + roadmap
@@ -146,8 +185,13 @@ STAGE0_DESIGN.md  the design + honest scope notes + roadmap
   invariants (the coverage moat; [[solinv]] DNA).
 - ✅ **Hostile episodes** — slippage, lagged multi-shock oracle, deterministic noise; verifier robustness
   audit.
-- **LLM agent** behind the `Policy` trait — a real (price-reactive) agent to certify per-episode; the
+- ✅ **LLM agent** behind the `Policy` trait — a real (price-reactive) agent certified per-episode; the
   natural next step from the hostile-episode boundary.
+- ✅ **Jupiter Perps adapter + live on-chain ingestion** — map a real venue's positions into the verifier,
+  and certify a real wallet's live positions as unsolicited due-diligence (`certify-jupiter --live`).
+- **Real short/multi-custody fixture + snapshot slot** — a consented real *short* Position fixture and a
+  `withContext` slot stamped into the live card (so a point-in-time DD identifies which chain snapshot it
+  assessed).
 - **CPI guard promotion** — unbypassable enforcement for third-party-owned accounts.
 - Pitch video (certify PASS / catch FLAG / enforce revert).
 
