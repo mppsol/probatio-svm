@@ -473,6 +473,14 @@ mod tests {
     /// account layout shifted and every live certification would be silently wrong.
     const GPA_FIXTURE: &str = include_str!("testdata/jupiter_gpa_owner.json");
 
+    /// A real `getProgramAccounts` **withContext** response, one open **SHORT** on a **different custody**
+    /// than the SOL long fixture (custody `5Pv3gM9…` vs `7xS2gz2…`; entry ≈ $63k ⇒ a BTC-class market),
+    /// captured from mainnet at slot 436117349 on 2026-07-30 (trimmed to the single account of interest;
+    /// bytes verbatim). Proves the fixed offsets recover a real short + a second custody from live bytes —
+    /// not just synthetic bytes written at the same offsets (task 018 P2-1). Being a withContext response,
+    /// it also exercises the context-shape parse against real bytes.
+    const GPA_FIXTURE_SHORT: &str = include_str!("testdata/jupiter_gpa_short.json");
+
     #[test]
     fn base64_roundtrip_and_padding() {
         assert_eq!(base64_decode("AAAA").unwrap(), vec![0, 0, 0]);
@@ -497,6 +505,22 @@ mod tests {
         assert_eq!(p.entry_usd, 143); // $143.49 → whole USD
         assert_eq!(p.size_usd, 16); // $16.75 leveraged notional
         assert_eq!(p.collateral_usd, 15); // $15.22 collateral
+    }
+
+    #[test]
+    fn decode_real_mainnet_short_distinct_custody() {
+        // A REAL short on a different custody (P2-1): the fixed offsets must recover a short + a second
+        // market from live bytes, not just round-trip synthetic bytes at the same offsets.
+        let snap = parse_gpa_response(GPA_FIXTURE_SHORT).expect("parse real short gPA response");
+        assert_eq!(snap.positions.len(), 1);
+        let p = snap.positions[0];
+        assert_eq!(p.side, JupSide::Short);
+        assert_eq!(p.size_usd, 26_499); // leveraged notional (whole USD)
+        assert_eq!(p.collateral_usd, 2_632);
+        assert_eq!(p.entry_usd, 63_263); // ≈ BTC-class entry ⇒ clearly a different market than the SOL long
+        assert_eq!(p.signed_notional(), -26_499, "short ⇒ negative signed notional");
+        // Being a withContext response, the real slot is recovered too.
+        assert_eq!(snap.slot, Some(436_117_349));
     }
 
     /// Build a structurally valid 216-byte open Position with the correct discriminator.

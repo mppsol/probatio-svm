@@ -36,8 +36,16 @@ real wallet in public:
 `getProgramAccounts` with the `dataSize` + `POSITION_DISCRIMINATOR` memcmp filter, then find an account
 whose `side@152 == 2`). Neither agent's **test** path may hit the network (AGENTS.md gate), so the capture
 is a **one-time data step** done by Hiro or an agent with network access; the committed result is a static
-blob. Record the capture date + the explorer-confirmed figures in a comment/const beside the test, exactly
-as 017 did for the long fixture.
+blob. Record the capture date + the figures in a comment/const beside the test, exactly as 017 did for
+the long fixture.
+
+**Acquisition outcome (2026-07-30):** the free Alchemy endpoint rejected `getProgramAccounts` (HTTP 429,
+per-second compute cap — even a single owner-scoped scan); `getAccountInfo` worked. The public
+`api.mainnet-beta.solana.com` served the full side-filtered `getProgramAccounts` (withContext) — 351,855
+short accounts at slot 436117349 — from which one open short on a **different custody** than the SOL long
+(`5Pv3gM9…` vs `7xS2gz2…`, entry ≈ $63k ⇒ BTC-class) was trimmed to a single-account withContext blob
+(`testdata/jupiter_gpa_short.json`, 816 bytes, bytes verbatim). It doubles as a real-bytes exercise of the
+context-shape parse. No RPC key touches the repo.
 
 ### Part B — snapshot slot + source provenance (P2-3)
 
