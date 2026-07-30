@@ -186,3 +186,30 @@ under `withContext`, so this only trips on an RPC anomaly — consistent with th
 `Transcript::with_live_provenance` keeps its `Option<u64>` slot + omit-when-None
 serialization as a defensive library invariant (unit-tested), but the CLI now
 guarantees `Some` before any card is written. `cargo test`: 69 lib + 2 bin green.
+
+## Re-review round 3 (Codex) — APPROVE
+
+**Reviewed fix:** `cbddf39e79c5c44354047c9e044c5d54937bb79e` (against
+`5972b7e`). P1-2 is resolved; no new P0/P1 finding.
+
+The live command now requires `snapshot.slot` before it creates the trace,
+transcript, or output path. A missing `context.slot` exits 1 before
+`live_slot`, so neither `slots[].slot` nor the top-level provenance can contain
+a synthetic zero. This fail-closed behavior is correct: the delta verdict does
+not itself need a slot, but a persisted *point-in-time DD card* must identify
+the on-chain snapshot it assesses. The generic `Option` serializer remains a
+safe defensive invariant while production CLI code supplies `Some`.
+
+An end-to-end local RPC mock returned a valid Position inside
+`result.value` but deliberately omitted `context.slot`. The CLI emitted the
+expected error and exited 1; an unused `gallery/jupiter-live-ZZZZZZZZ.json`
+path was absent both before and after, proving no card was written. An existing
+ignored live card for a different owner was left untouched.
+
+### Final checks
+
+- `cargo test -p probatio-svm-harness`: **69 library + 2 binary tests passed**.
+- `cargo build -p probatio-svm-harness`: **passed**.
+- `Cargo.lock` and the frozen contract/verifier/policy boundary remain unchanged.
+- P1-1 authority-first redaction and the accepted P2 sample-artifact disposition
+  were unchanged from the prior reviewed revision.
