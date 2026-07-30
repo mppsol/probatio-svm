@@ -16,6 +16,8 @@ demo/probatio-demo.mp4
 demo/demo.html
 demo/frames/
 gallery/jupiter-certification.json
+# live due-diligence cards name a real wallet + capture point-in-time on-chain state → never committed
+gallery/jupiter-live-*.json
 
 web/preview.png
 web/node_modules/
