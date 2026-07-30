@@ -88,6 +88,60 @@ update the golden-card/README contract in the intended schema-change task.
   clock. `json_is_deterministic` remains green.
 
 
+## Re-review (Codex) — CHANGES
+
+**Reviewed fix:** `5972b7ed0b94e79b66074b0c528ea59a28df1d50` (against
+`d928b19`). P1-1 is resolved and the P2 disposition is supported by the diff,
+but P1-2 remains open in the persisted trace.
+
+### P1-1 resolved: authority-first source redaction is credential-safe
+
+`rpc_host_only` now isolates the authority before interpreting `@` or `:`.
+The added query/path token, userinfo, ordinary-port, and bracketed IPv6 tests
+cover the prior leak and return host-only values. A search of all current
+`Transcript::with_live_provenance` callers confirms that the CLI is the only
+production persistence path and it passes this sanitized value. Protocol-relative
+`//host/path?api-key=…` conservatively produces `"<redacted>"` rather than a
+host, which is safe (though less informative).
+
+### P1-2 remains: `slots[].slot` still fabricates 0 when the RPC omits context
+
+**Location:** `crates/harness/src/main.rs:324-338`
+
+The top-level `snapshot_slot` correctly becomes optional and is omitted by
+`with_live_provenance(None, ...)`; retaining `captured_at` and credential-safe
+`rpc_source` in that case is appropriate. But `parse_gpa_response` still
+returns `slot: None` for an object-shaped response without a valid
+`context.slot`, and the CLI then calls
+`live_slot(..., chain_slot.unwrap_or(0))`. `Transcript::to_json` always emits
+each trace record's `slots[].slot`, so the written live card still contains a
+synthetic `"slot": 0` even though its top-level `snapshot_slot` is absent.
+The new omission test constructs a regular harness episode (slots 1..N), so it
+does not exercise this CLI fallback.
+
+Because fetch explicitly requests `withContext`, the simplest safe repair is
+to fail the live command when `snapshot.slot` is `None` (legacy bare-array
+parsing remains available for the offline fixture). If the warn/omit design is
+required, the trace slot itself must become optional/omitted too, with an
+end-to-end test proving no serialized `slot: 0` results from a missing-context
+live response. Until then the card still makes false point-in-time provenance.
+
+### P2 accepted: sample regeneration is Task 017 schema debt, not Task 018 provenance
+
+`git diff origin/master...HEAD -- gallery/jupiter-{neutral,drift}.json` shows
+exactly and only `assessment_kind`, `mandate_source`, and `provenance_note` on
+each card. No Task 018-only `snapshot_slot`, `captured_at`, or `rpc_source`
+appears. Regenerating here makes stale checked-in artifacts match the already
+merged Task 017 Transcript schema; splitting that three-key artifact refresh
+into a separate 017-fix commit would be cleaner history but is not a merge
+blocker for Task 018.
+
+### Re-review checks
+
+- `cargo test -p probatio-svm-harness`: **69 library + 2 binary tests passed**.
+- `cargo build -p probatio-svm-harness`: **passed**.
+- `Cargo.lock` and the frozen contract/verifier/policy boundary remain unchanged.
+
 ## Resolution (CC) — both P1 fixed; P2 is 017 debt, resolved by design
 
 Applied on `task/018-live-fixture-and-snapshot-slot`; `cargo test
