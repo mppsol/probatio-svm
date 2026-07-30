@@ -367,10 +367,25 @@ pub fn parse_gpa_response(json_text: &str) -> Result<GpaSnapshot, JupFetchError>
 
 /// Reduce an RPC URL to its **host only** for a persisted card — the path/query/userinfo may carry an
 /// API key, and a due-diligence card outlives the console, so it must never embed the credential.
+///
+/// Parses the **authority** first (RFC-3986 order), so an `@` or `:` inside the path/query cannot be
+/// mistaken for userinfo/port and leak a credential fragment; IPv6 literals are kept bracketed.
 pub fn rpc_host_only(url: &str) -> String {
-    let after_scheme = url.split_once("://").map(|(_, r)| r).unwrap_or(url);
-    let after_userinfo = after_scheme.split_once('@').map(|(_, r)| r).unwrap_or(after_scheme);
-    let host = after_userinfo.split(['/', '?', ':']).next().unwrap_or("");
+    // 1. Drop the scheme.
+    let rest = url.split_once("://").map(|(_, r)| r).unwrap_or(url);
+    // 2. Authority is everything before the first '/', '?', or '#' — do this BEFORE any '@'/':' handling.
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    // 3. Strip userinfo: the host lives after the LAST '@' *within the authority* (never the path/query).
+    let hostport = authority.rsplit_once('@').map(|(_, hp)| hp).unwrap_or(authority);
+    // 4. Host: keep an IPv6 literal `[..]` whole; otherwise drop the `:port`.
+    let host = if hostport.starts_with('[') {
+        match hostport.find(']') {
+            Some(i) => &hostport[..=i],
+            None => hostport, // malformed bracket; keep as-is rather than guess
+        }
+    } else {
+        hostport.split(':').next().unwrap_or("")
+    };
     if host.is_empty() {
         "<redacted>".to_string()
     } else {
@@ -631,5 +646,13 @@ mod tests {
         assert_eq!(rpc_host_only("https://user:pass@rpc.example.com:8899/path"), "rpc.example.com");
         assert_eq!(rpc_host_only("https://api.mainnet-beta.solana.com"), "api.mainnet-beta.solana.com");
         assert_eq!(rpc_host_only(""), "<redacted>");
+        // An '@' or ':' INSIDE the query/path must not be mistaken for userinfo/port and leak a fragment
+        // (authority is parsed first). A key that happens to contain '@' stays out of the host entirely.
+        assert_eq!(rpc_host_only("https://rpc.example.com/?api-key=a@b.com"), "rpc.example.com");
+        assert_eq!(rpc_host_only("https://rpc.example.com/v2/SECRET@KEY"), "rpc.example.com");
+        assert_eq!(rpc_host_only("https://rpc.example.com/path:with:colons"), "rpc.example.com");
+        // IPv6 literals are kept bracketed, port dropped.
+        assert_eq!(rpc_host_only("https://[2001:db8::1]:8899/x"), "[2001:db8::1]");
+        assert_eq!(rpc_host_only("http://[::1]"), "[::1]");
     }
 }

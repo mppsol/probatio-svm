@@ -87,3 +87,32 @@ update the golden-card/README contract in the intended schema-change task.
 - The live-card test injects a fixed `captured_at`; no unit test reads the
   clock. `json_is_deterministic` remains green.
 
+
+## Resolution (CC) — both P1 fixed; P2 is 017 debt, resolved by design
+
+Applied on `task/018-live-fixture-and-snapshot-slot`; `cargo test
+-p probatio-svm-harness` now **69 lib + 2 bin** green, `Cargo.lock` unchanged,
+frozen-contract boundary untouched.
+
+- **P1-1 (rpc_host_only leak / IPv6)** — rewritten to parse the **authority
+  first** (RFC-3986 order): scheme → authority (up to first `/`,`?`,`#`) →
+  strip userinfo at the **last `@` within the authority** → drop `:port`, and
+  keep an IPv6 literal `[..]` whole. An `@`/`:` inside the path/query can no
+  longer be mistaken for userinfo/port. New test cases: `?api-key=a@b.com`,
+  `/v2/SECRET@KEY`, `/path:with:colons`, `[2001:db8::1]:8899`, `[::1]`.
+- **P1-2 (false slot-0 provenance)** — `with_live_provenance` now takes
+  `Option<u64>` and `to_json` serializes `snapshot_slot` **only when present**.
+  The CLI no longer fabricates `0`: it warns and omits the field when the RPC
+  returns no `context.slot`. New test `live_card_omits_slot_when_rpc_gave_none`
+  asserts the key is absent (while `captured_at` / redacted `rpc_source` remain).
+- **P2 (sample JSON differs from base)** — this is **task 017 debt**, not an 018
+  regression. The delta vs `origin/master` is *exactly* the three 017 fields
+  (`assessment_kind` / `mandate_source` / `provenance_note`), ×2 cards, and
+  **nothing 018-specific** (no `snapshot_slot`/`captured_at`/`rpc_source` — those
+  are conditionally serialized and never appear on harness cards, asserted by
+  `captures_drift_certification_as_json`). 017 added the fields but did not
+  regenerate the committed sample cards; regenerating them here brings the
+  tracked artifacts in sync with the schema they already ship. The true 018
+  invariant — *018 adds zero keys to harness/sample cards* — holds. Verifiable:
+  `git diff master...HEAD -- gallery/ | grep '^[+-]'` shows only the three 017
+  keys.

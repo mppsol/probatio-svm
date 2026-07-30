@@ -113,8 +113,11 @@ impl Transcript {
     /// (Unix epoch seconds — the caller reads the clock, so tests inject a fixed value), and the RPC
     /// **host** (already credential-redacted via `jupiter::rpc_host_only`). Makes a point-in-time
     /// due-diligence card self-describing about *which* snapshot and *when*.
-    pub fn with_live_provenance(mut self, snapshot_slot: u64, captured_at: u64, rpc_source: String) -> Self {
-        self.snapshot_slot = Some(snapshot_slot);
+    ///
+    /// `snapshot_slot` is an `Option`: if the RPC returned no `context.slot`, the card **omits** it
+    /// rather than fabricating slot 0 — false provenance is worse than absent provenance.
+    pub fn with_live_provenance(mut self, snapshot_slot: Option<u64>, captured_at: u64, rpc_source: String) -> Self {
+        self.snapshot_slot = snapshot_slot;
         self.captured_at = Some(captured_at);
         self.rpc_source = Some(rpc_source);
         self
@@ -219,7 +222,7 @@ mod tests {
         // The live path captures with the "jupiter-live" backend, then stamps the snapshot provenance.
         // captured_at is INJECTED here (fixed), never read from the clock, so the test stays deterministic.
         let transcript = Transcript::capture("jupiter-live-Ah", &NEUTRAL_MM, "jupiter-live", &ep, &report)
-            .with_live_provenance(305_123_456, 1_753_800_000, "mainnet.helius-rpc.com".to_string());
+            .with_live_provenance(Some(305_123_456), 1_753_800_000, "mainnet.helius-rpc.com".to_string());
         let value: Value = serde_json::from_str(&transcript.to_json()).unwrap();
 
         assert_eq!(value["assessment_kind"], "unsolicited_due_diligence");
@@ -234,6 +237,23 @@ mod tests {
         // The persisted source must be host-only — never a key-bearing URL.
         let src = value["rpc_source"].as_str().unwrap();
         assert!(!src.contains("api-key") && !src.contains("://") && !src.contains('?'));
+    }
+
+    #[test]
+    fn live_card_omits_slot_when_rpc_gave_none() {
+        // P1-2: a withContext response with no context.slot must NOT fabricate slot 0 — the card omits
+        // snapshot_slot entirely (false provenance is worse than absent provenance).
+        let mut a = ClaudeAgent::new(Box::new(ScriptedDecider::new(vec![])), NEUTRAL_MM);
+        let ep = run_episode(&mut a);
+        let report = verify(ep.policy, &ep.trace, &ep.claim);
+        let transcript = Transcript::capture("jupiter-live-Ah", &NEUTRAL_MM, "jupiter-live", &ep, &report)
+            .with_live_provenance(None, 1_753_800_000, "mainnet.helius-rpc.com".to_string());
+        let value: Value = serde_json::from_str(&transcript.to_json()).unwrap();
+        let obj = value.as_object().unwrap();
+        assert!(!obj.contains_key("snapshot_slot"), "must omit, not fabricate slot 0");
+        // …but capture time and (redacted) source are still recorded.
+        assert_eq!(value["captured_at"], 1_753_800_000u64);
+        assert_eq!(value["rpc_source"], "mainnet.helius-rpc.com");
     }
 
     #[test]
