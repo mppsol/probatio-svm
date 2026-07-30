@@ -1,8 +1,8 @@
 # Review — Task 017: live Jupiter Perps ingestion
 
-**Reviewer:** Codex (independent adversarial review)  
-**Reviewed commit:** `12b2c521b189ad9974972097eb37009ab59b5a0e`  
-**Base:** `origin/master` (`febb712`)  
+**Reviewer:** Codex (independent adversarial review)
+**Reviewed commit:** `12b2c521b189ad9974972097eb37009ab59b5a0e`
+**Base:** `origin/master` (`febb712`)
 **Verdict:** **CHANGES**
 
 The account-field offsets are consistent with the public `Position` schema: after
@@ -153,3 +153,38 @@ now **64 lib + 2 bin** green, `Cargo.lock` still empty vs base.
   untested network `fetch` path) — both belong to the pre-public-live-demo
   follow-up, not this merge.
 
+## Re-review (Codex) — APPROVE
+
+**Reviewed fix:** `3890f38d29e700d1d4b222f9fd7644ae4d2b0186` (against
+`12b2c52`).  The three P1s and P2-2 are resolved; no new P0/P1 finding.
+
+- **P1-1 resolved.** `decode_position` now has the required boundary:
+  `Err` for wrong length/discriminator or an open position with an invalid side,
+  and `Ok(None)` only after the Position discriminator and a zero `sizeUsd`
+  establish a closed slot. `parse_gpa_response` propagates the error. The base64
+  decoder correctly requires non-empty four-character groups, terminal-only
+  one/two-character padding, and zero unused bits. The 284-character input
+  decodes to 213 bytes and is rejected by the GPA parser, so it cannot become a
+  partial certification.
+- **P1-2 resolved.** Independent checks gave
+  `sha256("account:Position") = aabc8fe47a40f7d0…`; its first eight bytes are
+  `[170,188,143,228,122,64,247,208]`. Decoding the committed fixture gives the
+  same bytes and the independent base58 conversion is `VZMoMoKgZQb`. The value
+  is enforced both by GPA `memcmp(offset=0)` and before fixed-offset decoding.
+- **P1-3 resolved.** Only backend `"jupiter-live"` serializes
+  `unsolicited_due_diligence` / `declared_by_probatio` plus the non-accusatory
+  provenance note. Other backends, including the Jupiter samples (`"jupiter"`),
+  remain `harness_episode` / `agent_under_test`. The existing determinism test
+  passes and the new live-card test asserts the persisted wording.
+- **P2-2 resolved.** `--mark 0` and `--mark -1` both exit 2 before a network
+  request with the promised positive-price error. A valid override is now
+  accurately labelled user-supplied and advisory-only.
+
+### Re-review checks
+
+- `cargo test -p probatio-svm-harness`: **64 library + 2 binary tests passed**.
+- `cargo build -p probatio-svm-harness`: **passed**.
+- `Cargo.lock` remains unchanged.
+- `cargo fmt --check` reports pre-existing repository-wide formatting drift
+  outside this task's functional changes; it is not a Task 017 regression or a
+  merge blocker under the stated build/test gates.
