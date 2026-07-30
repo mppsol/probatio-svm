@@ -86,11 +86,23 @@ to certify over anything it cannot fully trust:
 - A truncated / malformed account is an **error**, never a silently-dropped slot; the decoder separates
   *untrusted* data (`Err`) from a *validated-closed* slot (`Ok(None)`), so a partial fetch can never look
   like a complete, clean book.
+- The fetch uses `withContext`, and the path is **fail-closed on a missing snapshot slot**: a
+  point-in-time card is only meaningful if it can name the chain snapshot it judged, so if the RPC returns
+  no `context.slot` the CLI exits without writing a card rather than stamp a synthetic slot `0`.
 
 **Honesty:** this is **unsolicited due-diligence** — the wallet operator made no claim to us. A FLAG means
 "these live positions do not satisfy a delta-neutral mandate declared by Probatio", **never** "the operator
-lied". That provenance (`assessment_kind` / `mandate_source` / a plain-language note) is serialized *into*
-the gallery card, so it survives even when the console banner is gone.
+lied". The card is self-describing about *what*, *which snapshot*, and *when*, all serialized *into* the
+gallery card so they survive the console banner:
+
+- `assessment_kind` / `mandate_source` / a plain-language note — the unsolicited-DD framing.
+- `snapshot_slot` + `captured_at` — the exact Solana slot and capture time the positions were read at.
+- `rpc_source` — the endpoint **host only**, credential-redacted (a DD card that outlives the console must
+  never embed an API key in the URL).
+
+The decode/parse boundary is proven against **real committed mainnet fixtures** — an open SOL long and an
+open short on a *different custody* (a BTC-class market) — so the fixed offsets are shown to recover a real
+short and a second market from live bytes, not just round-trip synthetic bytes.
 
 ## Status — Stage 0 complete + unbypassable enforcement ✅
 
@@ -116,8 +128,9 @@ after`):
 | self-inflicted insolvency `Open` (collateral=10) | reverted `Custom(11)` SelfInflictedInsolvency |
 
 Perp instruction CU (with inline enforcement): `Open`=583, `Hedge`=758, `SettleFunding`=356 — far under
-the 200k/instruction budget. **73 tests green offline** across the workspace (harness alone: 64 lib + 2
-binary, covering the live-ingestion decode/parse boundary against a real mainnet fixture).
+the 200k/instruction budget. **78 tests green offline** across the workspace (harness alone: 69 lib + 2
+binary, covering the live-ingestion decode/parse boundary against real mainnet long *and* short fixtures,
+withContext slot recovery, and credential redaction).
 
 ## Quickstart
 
@@ -189,10 +202,12 @@ STAGE0_DESIGN.md  the design + honest scope notes + roadmap
   natural next step from the hostile-episode boundary.
 - ✅ **Jupiter Perps adapter + live on-chain ingestion** — map a real venue's positions into the verifier,
   and certify a real wallet's live positions as unsolicited due-diligence (`certify-jupiter --live`).
-- **Real short/multi-custody fixture + snapshot slot** — a consented real *short* Position fixture and a
-  `withContext` slot stamped into the live card (so a point-in-time DD identifies which chain snapshot it
-  assessed).
+- ✅ **Real short/multi-custody fixture + snapshot-slot provenance** — a real *short* Position fixture on a
+  different custody, plus `withContext` slot / capture time / credential-redacted host stamped into the
+  card, fail-closed when the snapshot slot is missing.
 - **CPI guard promotion** — unbypassable enforcement for third-party-owned accounts.
+- **Live cert web card + multi-slot polling + on-chain Custody mark** — dashboard surface for a live cert,
+  a time-series live trace, and an oracle mark read from the Custody account (today `--mark`).
 - Pitch video (certify PASS / catch FLAG / enforce revert).
 
 ## Built with cross-review

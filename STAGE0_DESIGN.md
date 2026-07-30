@@ -241,9 +241,10 @@ corpus stay private. LLM red-teamer optional.
 - Gymnasium-style wrapper + 2–3 tasks (perp risk mgmt, treasury rebalance, liquidation defense) ⇒ an
   eval suite, not a one-off.
 - Certify a *real* third-party agent (a Drift/Kamino-vault strategy) against the public invariant set.
-  **First step shipped (task 017):** `certify-jupiter --live` reads a real wallet's Jupiter Perps
-  positions on-chain (getProgramAccounts → strict decode against the committed layout) and certifies the
-  snapshot as unsolicited due-diligence. Next: a consented real *short* fixture + `withContext` snapshot
-  slot before a public live demo.
+  **Shipped (tasks 017–018):** `certify-jupiter --live` reads a real wallet's Jupiter Perps positions
+  on-chain (getProgramAccounts → strict decode against the committed layout) and certifies the snapshot as
+  unsolicited due-diligence. Task 018 added a real *short* fixture on a different custody, `withContext`
+  snapshot-slot / capture-time / credential-redacted-host provenance in the card, and fail-closed
+  behaviour when the snapshot slot is missing — the live path is now honest enough for a public demo.
 - OSS guard ↔ private-verifier split packaging; decide what (if anything) feeds back into the solinv
   2027春 plan.
