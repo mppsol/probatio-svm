@@ -312,18 +312,41 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, JupFetchError> {
     Ok(out)
 }
 
-/// Parse a `getProgramAccounts` JSON-RPC response into open positions (the pure, offline-testable half
-/// of the live path). Surfaces an RPC `error` object rather than silently returning an empty set.
-pub fn parse_gpa_response(json_text: &str) -> Result<Vec<JupPosition>, JupFetchError> {
+/// One live on-chain snapshot: the open positions recovered plus the Solana slot the RPC observed them
+/// at (present only when the response carries context — see `withContext`). The slot lets a point-in-time
+/// due-diligence card identify exactly which chain snapshot it certified.
+#[derive(Clone, Debug)]
+pub struct GpaSnapshot {
+    pub positions: Vec<JupPosition>,
+    pub slot: Option<u64>,
+}
+
+/// Parse a `getProgramAccounts` JSON-RPC response into open positions + snapshot slot (the pure,
+/// offline-testable half of the live path). Surfaces an RPC `error` object rather than silently
+/// returning an empty set. Accepts **both** response shapes so an old bare-array fixture still parses:
+/// - bare:        `result: [ …accounts… ]`                       (no context ⇒ `slot: None`)
+/// - withContext: `result: { context: { slot }, value: [ … ] }`  (⇒ `slot: Some(..)`)
+pub fn parse_gpa_response(json_text: &str) -> Result<GpaSnapshot, JupFetchError> {
     let root: serde_json::Value =
         serde_json::from_str(json_text).map_err(|e| JupFetchError::InvalidJson(e.to_string()))?;
     if let Some(err) = root.get("error") {
         return Err(JupFetchError::RpcError(err.to_string()));
     }
-    let accounts = root
+    let result = root
         .get("result")
-        .and_then(|r| r.as_array())
-        .ok_or_else(|| JupFetchError::InvalidJson("missing `result` array".into()))?;
+        .ok_or_else(|| JupFetchError::InvalidJson("missing `result`".into()))?;
+    let (accounts, slot) = if let Some(arr) = result.as_array() {
+        (arr, None)
+    } else {
+        let value = result
+            .get("value")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| {
+                JupFetchError::InvalidJson("`result` is neither an array nor a withContext object".into())
+            })?;
+        let slot = result.get("context").and_then(|c| c.get("slot")).and_then(|s| s.as_u64());
+        (value, slot)
+    };
     let mut positions = Vec::new();
     for acc in accounts {
         // account.data is `[base64_string, "base64"]`.
@@ -339,19 +362,48 @@ pub fn parse_gpa_response(json_text: &str) -> Result<Vec<JupPosition>, JupFetchE
             positions.push(p);
         }
     }
-    Ok(positions)
+    Ok(GpaSnapshot { positions, slot })
+}
+
+/// Reduce an RPC URL to its **host only** for a persisted card — the path/query/userinfo may carry an
+/// API key, and a due-diligence card outlives the console, so it must never embed the credential.
+///
+/// Parses the **authority** first (RFC-3986 order), so an `@` or `:` inside the path/query cannot be
+/// mistaken for userinfo/port and leak a credential fragment; IPv6 literals are kept bracketed.
+pub fn rpc_host_only(url: &str) -> String {
+    // 1. Drop the scheme.
+    let rest = url.split_once("://").map(|(_, r)| r).unwrap_or(url);
+    // 2. Authority is everything before the first '/', '?', or '#' — do this BEFORE any '@'/':' handling.
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    // 3. Strip userinfo: the host lives after the LAST '@' *within the authority* (never the path/query).
+    let hostport = authority.rsplit_once('@').map(|(_, hp)| hp).unwrap_or(authority);
+    // 4. Host: keep an IPv6 literal `[..]` whole; otherwise drop the `:port`.
+    let host = if hostport.starts_with('[') {
+        match hostport.find(']') {
+            Some(i) => &hostport[..=i],
+            None => hostport, // malformed bracket; keep as-is rather than guess
+        }
+    } else {
+        hostport.split(':').next().unwrap_or("")
+    };
+    if host.is_empty() {
+        "<redacted>".to_string()
+    } else {
+        host.to_string()
+    }
 }
 
 /// Fetch every OPEN Jupiter position owned by `owner` from `rpc_url` via `curl`, in one snapshot.
 /// Uses a `dataSize` + owner `memcmp` filter so the scan returns only that owner's ≤9 position
 /// accounts. Not unit-tested (network); the decode/parse it delegates to IS tested offline.
-pub fn fetch_owner_positions(rpc_url: &str, owner: &str) -> Result<Vec<JupPosition>, JupFetchError> {
+pub fn fetch_owner_positions(rpc_url: &str, owner: &str) -> Result<GpaSnapshot, JupFetchError> {
     let body = serde_json::json!({
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getProgramAccounts",
         "params": [JUP_PERPS_PROGRAM, {
             "encoding": "base64",
+            "withContext": true,
             "filters": [
                 { "dataSize": POSITION_ACCOUNT_LEN },
                 { "memcmp": { "offset": 0, "bytes": POSITION_DISCRIMINATOR_B58 } },
@@ -376,9 +428,9 @@ pub fn fetch_owner_positions(rpc_url: &str, owner: &str) -> Result<Vec<JupPositi
 /// `mark_usd` is used only for the secondary liquidation/equity modeling. When the caller has no live
 /// oracle we default `mark` to the size-weighted average entry (documented approximation — the
 /// liquidation flag is then advisory; the delta verdict is unaffected).
-pub fn live_slot(positions: Vec<JupPosition>, mark_override: Option<i64>) -> JupSlot {
+pub fn live_slot(positions: Vec<JupPosition>, mark_override: Option<i64>, chain_slot: u64) -> JupSlot {
     let mark = mark_override.unwrap_or_else(|| size_weighted_entry(&positions));
-    JupSlot { slot: 0, mark_usd: mark, positions }
+    JupSlot { slot: chain_slot, mark_usd: mark, positions }
 }
 
 fn size_weighted_entry(positions: &[JupPosition]) -> i64 {
@@ -436,6 +488,14 @@ mod tests {
     /// account layout shifted and every live certification would be silently wrong.
     const GPA_FIXTURE: &str = include_str!("testdata/jupiter_gpa_owner.json");
 
+    /// A real `getProgramAccounts` **withContext** response, one open **SHORT** on a **different custody**
+    /// than the SOL long fixture (custody `5Pv3gM9…` vs `7xS2gz2…`; entry ≈ $63k ⇒ a BTC-class market),
+    /// captured from mainnet at slot 436117349 on 2026-07-30 (trimmed to the single account of interest;
+    /// bytes verbatim). Proves the fixed offsets recover a real short + a second custody from live bytes —
+    /// not just synthetic bytes written at the same offsets (task 018 P2-1). Being a withContext response,
+    /// it also exercises the context-shape parse against real bytes.
+    const GPA_FIXTURE_SHORT: &str = include_str!("testdata/jupiter_gpa_short.json");
+
     #[test]
     fn base64_roundtrip_and_padding() {
         assert_eq!(base64_decode("AAAA").unwrap(), vec![0, 0, 0]);
@@ -453,13 +513,29 @@ mod tests {
 
     #[test]
     fn decode_real_mainnet_position() {
-        let positions = parse_gpa_response(GPA_FIXTURE).expect("parse real gPA response");
-        assert_eq!(positions.len(), 1, "fixture owner had exactly one open position");
-        let p = positions[0];
+        let snap = parse_gpa_response(GPA_FIXTURE).expect("parse real gPA response");
+        assert_eq!(snap.positions.len(), 1, "fixture owner had exactly one open position");
+        let p = snap.positions[0];
         assert_eq!(p.side, JupSide::Long);
         assert_eq!(p.entry_usd, 143); // $143.49 → whole USD
         assert_eq!(p.size_usd, 16); // $16.75 leveraged notional
         assert_eq!(p.collateral_usd, 15); // $15.22 collateral
+    }
+
+    #[test]
+    fn decode_real_mainnet_short_distinct_custody() {
+        // A REAL short on a different custody (P2-1): the fixed offsets must recover a short + a second
+        // market from live bytes, not just round-trip synthetic bytes at the same offsets.
+        let snap = parse_gpa_response(GPA_FIXTURE_SHORT).expect("parse real short gPA response");
+        assert_eq!(snap.positions.len(), 1);
+        let p = snap.positions[0];
+        assert_eq!(p.side, JupSide::Short);
+        assert_eq!(p.size_usd, 26_499); // leveraged notional (whole USD)
+        assert_eq!(p.collateral_usd, 2_632);
+        assert_eq!(p.entry_usd, 63_263); // ≈ BTC-class entry ⇒ clearly a different market than the SOL long
+        assert_eq!(p.signed_notional(), -26_499, "short ⇒ negative signed notional");
+        // Being a withContext response, the real slot is recovered too.
+        assert_eq!(snap.slot, Some(436_117_349));
     }
 
     /// Build a structurally valid 216-byte open Position with the correct discriminator.
@@ -523,9 +599,60 @@ mod tests {
         // Same positions, two different marks ⇒ identical measured_delta (the moat certifies without an oracle).
         let positions =
             vec![JupPosition { side: JupSide::Long, size_usd: 10_000, collateral_usd: 4_000, entry_usd: 100 }];
-        let a = jupiter_to_snapshots(&[live_slot(positions.clone(), Some(100))], &[]);
-        let b = jupiter_to_snapshots(&[live_slot(positions, Some(50))], &[]);
+        let a = jupiter_to_snapshots(&[live_slot(positions.clone(), Some(100), 42)], &[]);
+        let b = jupiter_to_snapshots(&[live_slot(positions, Some(50), 42)], &[]);
         assert_eq!(a[0].measured_delta, b[0].measured_delta);
         assert_eq!(a[0].measured_delta, 100); // net long $10k ⇒ 100 units
+    }
+
+    #[test]
+    fn live_slot_carries_chain_slot() {
+        let positions =
+            vec![JupPosition { side: JupSide::Long, size_usd: 10_000, collateral_usd: 4_000, entry_usd: 100 }];
+        assert_eq!(live_slot(positions, Some(100), 305_123_456).slot, 305_123_456);
+    }
+
+    #[test]
+    fn parse_accepts_both_shapes_and_extracts_slot() {
+        // A single open Long account, wrapped once as a bare array and once as a withContext object.
+        let acc = format!(
+            r#"{{"account":{{"data":["{}","base64"]}}}}"#,
+            {
+                // reuse the real fixture's account so the bytes are a valid Position
+                let v: serde_json::Value = serde_json::from_str(GPA_FIXTURE).unwrap();
+                v["result"][0]["account"]["data"][0].as_str().unwrap().to_string()
+            }
+        );
+        let bare = format!(r#"{{"jsonrpc":"2.0","id":1,"result":[{acc}]}}"#);
+        let ctx = format!(
+            r#"{{"jsonrpc":"2.0","id":1,"result":{{"context":{{"slot":305123456}},"value":[{acc}]}}}}"#
+        );
+
+        let sb = parse_gpa_response(&bare).expect("bare array parses");
+        let sc = parse_gpa_response(&ctx).expect("withContext parses");
+        // Identical positions from both shapes…
+        assert_eq!(sb.positions.len(), 1);
+        assert_eq!(sc.positions.len(), 1);
+        assert_eq!(sb.positions[0].signed_notional(), sc.positions[0].signed_notional());
+        // …but only the withContext shape yields the snapshot slot.
+        assert_eq!(sb.slot, None);
+        assert_eq!(sc.slot, Some(305_123_456));
+    }
+
+    #[test]
+    fn rpc_host_only_redacts_credentials() {
+        // The path/query/userinfo may carry an API key — a persisted card must keep only the host.
+        assert_eq!(rpc_host_only("https://mainnet.helius-rpc.com/?api-key=SECRET"), "mainnet.helius-rpc.com");
+        assert_eq!(rpc_host_only("https://user:pass@rpc.example.com:8899/path"), "rpc.example.com");
+        assert_eq!(rpc_host_only("https://api.mainnet-beta.solana.com"), "api.mainnet-beta.solana.com");
+        assert_eq!(rpc_host_only(""), "<redacted>");
+        // An '@' or ':' INSIDE the query/path must not be mistaken for userinfo/port and leak a fragment
+        // (authority is parsed first). A key that happens to contain '@' stays out of the host entirely.
+        assert_eq!(rpc_host_only("https://rpc.example.com/?api-key=a@b.com"), "rpc.example.com");
+        assert_eq!(rpc_host_only("https://rpc.example.com/v2/SECRET@KEY"), "rpc.example.com");
+        assert_eq!(rpc_host_only("https://rpc.example.com/path:with:colons"), "rpc.example.com");
+        // IPv6 literals are kept bracketed, port dropped.
+        assert_eq!(rpc_host_only("https://[2001:db8::1]:8899/x"), "[2001:db8::1]");
+        assert_eq!(rpc_host_only("http://[::1]"), "[::1]");
     }
 }
