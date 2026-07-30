@@ -1,9 +1,12 @@
 {
+  "assessment_kind": "harness_episode",
   "backend": "jupiter",
   "claimed_delta": 0,
   "claims_solvent": true,
   "findings": [],
   "label": "jupiter-neutral",
+  "mandate_source": "agent_under_test",
+  "provenance_note": "The agent ran inside Probatio's harness under the stated mandate; the claim is the agent's own.",
   "slots": [
     {
       "aggregate_delta": 0,

@@ -32,6 +32,13 @@ pub struct Transcript {
     pub mandate_source: String,
     /// Plain-language honesty note carried WITH the persisted card, not only on the console.
     pub provenance_note: String,
+    /// Live-path only: the Solana slot the RPC observed the positions at (`withContext`), so the card
+    /// says *which* on-chain snapshot it certified. `None` for harness/sample cards.
+    pub snapshot_slot: Option<u64>,
+    /// Live-path only: capture time as Unix epoch seconds. `None` for harness/sample cards.
+    pub captured_at: Option<u64>,
+    /// Live-path only: the RPC endpoint **host** (credential-redacted). `None` for harness/sample cards.
+    pub rpc_source: Option<String>,
     pub verdict: String,
     pub findings: Vec<(String, Vec<u64>)>,
     pub slots: Vec<SlotRecord>,
@@ -93,10 +100,24 @@ impl Transcript {
             assessment_kind: assessment_kind.to_string(),
             mandate_source: mandate_source.to_string(),
             provenance_note: provenance_note.to_string(),
+            snapshot_slot: None,
+            captured_at: None,
+            rpc_source: None,
             verdict,
             findings,
             slots,
         }
+    }
+
+    /// Stamp a live on-chain card with the snapshot it assessed: the Solana slot, the capture time
+    /// (Unix epoch seconds — the caller reads the clock, so tests inject a fixed value), and the RPC
+    /// **host** (already credential-redacted via `jupiter::rpc_host_only`). Makes a point-in-time
+    /// due-diligence card self-describing about *which* snapshot and *when*.
+    pub fn with_live_provenance(mut self, snapshot_slot: u64, captured_at: u64, rpc_source: String) -> Self {
+        self.snapshot_slot = Some(snapshot_slot);
+        self.captured_at = Some(captured_at);
+        self.rpc_source = Some(rpc_source);
+        self
     }
 
     /// Deterministic pretty JSON (serde_json Map orders keys, so `--sample` produces stable bytes).
@@ -119,7 +140,7 @@ impl Transcript {
                 })
             })
             .collect();
-        serde_json::to_string_pretty(&json!({
+        let mut obj = json!({
             "label": self.label,
             "system": self.system,
             "claimed_delta": self.claimed_delta,
@@ -131,8 +152,21 @@ impl Transcript {
             "verdict": self.verdict,
             "findings": findings,
             "slots": slots,
-        }))
-        .unwrap_or_default()
+        });
+        // Live-only provenance is inserted ONLY when present, so harness/sample cards stay byte-identical
+        // (serde_json orders keys, so insertion order does not matter). The map is always an object here.
+        if let Some(map) = obj.as_object_mut() {
+            if let Some(slot) = self.snapshot_slot {
+                map.insert("snapshot_slot".into(), json!(slot));
+            }
+            if let Some(ts) = self.captured_at {
+                map.insert("captured_at".into(), json!(ts));
+            }
+            if let Some(ref src) = self.rpc_source {
+                map.insert("rpc_source".into(), json!(src));
+            }
+        }
+        serde_json::to_string_pretty(&obj).unwrap_or_default()
     }
 }
 
@@ -166,6 +200,11 @@ mod tests {
         // Harness episodes are the agent's own claim, not an unsolicited DD.
         assert_eq!(value["assessment_kind"], "harness_episode");
         assert_eq!(value["mandate_source"], "agent_under_test");
+        // No live provenance keys on a harness card ⇒ sample cards stay byte-identical.
+        let obj = value.as_object().unwrap();
+        assert!(!obj.contains_key("snapshot_slot"));
+        assert!(!obj.contains_key("captured_at"));
+        assert!(!obj.contains_key("rpc_source"));
     }
 
     #[test]
@@ -177,8 +216,10 @@ mod tests {
         let ep = run_episode(&mut ClaudeAgent::new(Box::new(ScriptedDecider::new(script)), NEUTRAL_MM));
         let report = verify(ep.policy, &ep.trace, &ep.claim);
 
-        // The live path captures with the "jupiter-live" backend.
-        let transcript = Transcript::capture("jupiter-live-Ah", &NEUTRAL_MM, "jupiter-live", &ep, &report);
+        // The live path captures with the "jupiter-live" backend, then stamps the snapshot provenance.
+        // captured_at is INJECTED here (fixed), never read from the clock, so the test stays deterministic.
+        let transcript = Transcript::capture("jupiter-live-Ah", &NEUTRAL_MM, "jupiter-live", &ep, &report)
+            .with_live_provenance(305_123_456, 1_753_800_000, "mainnet.helius-rpc.com".to_string());
         let value: Value = serde_json::from_str(&transcript.to_json()).unwrap();
 
         assert_eq!(value["assessment_kind"], "unsolicited_due_diligence");
@@ -186,6 +227,13 @@ mod tests {
         let note = value["provenance_note"].as_str().unwrap();
         assert!(note.contains("unsolicited") || note.contains("on its own initiative"));
         assert!(note.contains("NOT an assertion"), "must disclaim that a FLAG accuses the operator");
+        // P2-3: the card is self-describing about WHICH snapshot and WHEN, with a credential-safe source.
+        assert_eq!(value["snapshot_slot"], 305_123_456u64);
+        assert_eq!(value["captured_at"], 1_753_800_000u64);
+        assert_eq!(value["rpc_source"], "mainnet.helius-rpc.com");
+        // The persisted source must be host-only — never a key-bearing URL.
+        let src = value["rpc_source"].as_str().unwrap();
+        assert!(!src.contains("api-key") && !src.contains("://") && !src.contains('?'));
     }
 
     #[test]

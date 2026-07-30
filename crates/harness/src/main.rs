@@ -4,8 +4,8 @@
 use probatio_svm_harness::agent::{ClaudeAgent, ScriptedDecider};
 use probatio_svm_harness::policy::{CrucibleMomentum, Honest, MeasurementGamer, PhantomHider, Policy};
 use probatio_svm_harness::jupiter::{
-    fetch_owner_positions, jupiter_to_snapshots, live_slot, sample_drift, sample_neutral, JupPosition,
-    JupSide, JupSlot,
+    fetch_owner_positions, jupiter_to_snapshots, live_slot, rpc_host_only, sample_drift, sample_neutral,
+    JupPosition, JupSide, JupSlot,
 };
 use probatio_svm_harness::world::EpisodeResult;
 use probatio_svm_harness::{
@@ -306,27 +306,38 @@ fn run_certify_jupiter_live(args: &[String]) {
         .or_else(|| std::env::var("PROBATIO_RPC_URL").ok())
         .unwrap_or_else(|| "https://api.mainnet-beta.solana.com".to_string());
 
-    let positions = match fetch_owner_positions(&rpc_url, &owner) {
-        Ok(p) => p,
+    let snapshot = match fetch_owner_positions(&rpc_url, &owner) {
+        Ok(s) => s,
         Err(e) => {
             eprintln!("error: could not fetch Jupiter positions for {owner}: {e}");
             std::process::exit(1);
         }
     };
-    if positions.is_empty() {
+    if snapshot.positions.is_empty() {
         println!("{owner} has no open Jupiter positions — nothing to certify.");
         return;
     }
 
-    let slot = live_slot(positions.clone(), mark);
-    let net: i64 = positions.iter().map(|p| p.signed_notional()).sum();
+    // The snapshot slot (from withContext) and capture time make the card identify WHICH chain state it
+    // judged; the RPC host is redacted of any API key before it is persisted.
+    let chain_slot = snapshot.slot.unwrap_or(0);
+    let captured_at = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let rpc_source = rpc_host_only(&rpc_url);
+
+    let slot = live_slot(snapshot.positions.clone(), mark, chain_slot);
+    let net: i64 = snapshot.positions.iter().map(|p| p.signed_notional()).sum();
     let label = format!("jupiter-live-{}", &owner[..owner.len().min(8)]);
     let (report, transcript) = certify_jupiter_labeled(&label, &[slot]);
+    let transcript = transcript.with_live_provenance(chain_slot, captured_at, rpc_source.clone());
 
     println!("Probatio SVM — LIVE Jupiter Perps certification (unsolicited due-diligence)\n");
     println!("  owner       {owner}");
-    println!("  positions   {} open, net signed notional ${net}", positions.len());
+    println!("  positions   {} open, net signed notional ${net}", snapshot.positions.len());
     println!("  mandate     delta-neutral (claimed_delta 0) — declared by us, not the operator");
+    println!("  snapshot    slot {chain_slot} via {rpc_source} (point-in-time, not a live monitor)");
     println!("  mark        {}\n", if mark.is_some() { "user-supplied mark override (advisory liquidation only)" } else { "size-weighted entry (advisory liquidation only)" });
     print_report(&report);
 
