@@ -4,7 +4,8 @@
 use probatio_svm_harness::agent::{ClaudeAgent, ScriptedDecider};
 use probatio_svm_harness::policy::{CrucibleMomentum, Honest, MeasurementGamer, PhantomHider, Policy};
 use probatio_svm_harness::jupiter::{
-    jupiter_to_snapshots, sample_drift, sample_neutral, JupPosition, JupSide, JupSlot,
+    fetch_owner_positions, jupiter_to_snapshots, live_slot, sample_drift, sample_neutral, JupPosition,
+    JupSide, JupSlot,
 };
 use probatio_svm_harness::world::EpisodeResult;
 use probatio_svm_harness::{
@@ -232,6 +233,10 @@ fn write_core_hostile(label: &'static str, policy: &mut dyn Policy, mandate: &Ma
 }
 
 fn run_certify_jupiter(args: Vec<String>) {
+    if args.first().map(String::as_str) == Some("--live") {
+        run_certify_jupiter_live(&args[1..]);
+        return;
+    }
     match args.as_slice() {
         [flag] if flag == "--sample" => {
             let (r1, t1) = certify_jupiter("jupiter-neutral", &sample_neutral(N_SLOTS));
@@ -260,6 +265,87 @@ fn run_certify_jupiter(args: Vec<String>) {
             std::process::exit(2);
         }
     }
+}
+
+/// Live certification: fetch an owner's real Jupiter positions on-chain, certify the current snapshot
+/// against the delta-neutral mandate, and write a (gitignored) gallery card.
+///
+/// HONESTY: this is an **unsolicited due-diligence** check — the wallet operator made no neutrality
+/// claim to us. A FLAG means "these live positions do not satisfy a delta-neutral mandate", never "the
+/// operator lied". The card is a point-in-time attestation (net signed notional is USD-denominated and
+/// mark-independent, so the delta verdict needs no oracle); liquidation modeling uses `--mark` if given.
+fn run_certify_jupiter_live(args: &[String]) {
+    let mut owner: Option<String> = None;
+    let mut rpc: Option<String> = None;
+    let mut mark: Option<i64> = None;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--rpc" => rpc = it.next().cloned(),
+            "--mark" => {
+                mark = match it.next().and_then(|s| s.parse::<i64>().ok()) {
+                    Some(m) if m > 0 => Some(m),
+                    _ => {
+                        eprintln!("error: --mark requires a positive integer USD price");
+                        std::process::exit(2);
+                    }
+                };
+            }
+            other if !other.starts_with('-') && owner.is_none() => owner = Some(other.to_string()),
+            other => {
+                eprintln!("error: unexpected argument `{other}`");
+                std::process::exit(2);
+            }
+        }
+    }
+    let Some(owner) = owner else {
+        eprintln!("error: usage: certify-jupiter --live <owner_pubkey> [--rpc <url>] [--mark <usd>]");
+        std::process::exit(2);
+    };
+    let rpc_url = rpc
+        .or_else(|| std::env::var("PROBATIO_RPC_URL").ok())
+        .unwrap_or_else(|| "https://api.mainnet-beta.solana.com".to_string());
+
+    let positions = match fetch_owner_positions(&rpc_url, &owner) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("error: could not fetch Jupiter positions for {owner}: {e}");
+            std::process::exit(1);
+        }
+    };
+    if positions.is_empty() {
+        println!("{owner} has no open Jupiter positions — nothing to certify.");
+        return;
+    }
+
+    let slot = live_slot(positions.clone(), mark);
+    let net: i64 = positions.iter().map(|p| p.signed_notional()).sum();
+    let label = format!("jupiter-live-{}", &owner[..owner.len().min(8)]);
+    let (report, transcript) = certify_jupiter_labeled(&label, &[slot]);
+
+    println!("Probatio SVM — LIVE Jupiter Perps certification (unsolicited due-diligence)\n");
+    println!("  owner       {owner}");
+    println!("  positions   {} open, net signed notional ${net}", positions.len());
+    println!("  mandate     delta-neutral (claimed_delta 0) — declared by us, not the operator");
+    println!("  mark        {}\n", if mark.is_some() { "user-supplied mark override (advisory liquidation only)" } else { "size-weighted entry (advisory liquidation only)" });
+    print_report(&report);
+
+    let path = format!("gallery/{label}.json");
+    write_transcript(&path, &transcript);
+    println!("\nwrote {path} — verdict {:?}", report.verdict);
+}
+
+/// Like `certify_jupiter` but with a runtime label (for owner-derived live cards).
+fn certify_jupiter_labeled(
+    label: &str,
+    measured: &[JupSlot],
+) -> (probatio_svm_harness::ShortcutReport, Transcript) {
+    let snaps = jupiter_to_snapshots(measured, &[]);
+    let claim = NEUTRAL_MM.claim();
+    let report = verify("jupiter-live", &snaps, &claim);
+    let ep = EpisodeResult { policy: "jupiter-live", trace: snaps, claim };
+    let transcript = Transcript::capture(label, &NEUTRAL_MM, "jupiter-live", &ep, &report);
+    (report, transcript)
 }
 
 /// Map a Jupiter position trace → snapshots, certify against the delta-neutral mandate, build a transcript.
