@@ -12,7 +12,7 @@
 import { readFileSync } from 'node:fs';
 
 const REPUTATION_PROGRAM_MAINNET = '8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ';
-const BASE58 = /^[1-9A-HJ-NP-Za-km-z]+$/;
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 function die(msg, code = 2) {
   console.error(`error: ${msg}`);
@@ -45,14 +45,34 @@ function parseArgs(argv) {
   return a;
 }
 
+// Decode base58 → bytes (null on any invalid character). No dependency.
+function base58Decode(s) {
+  let num = 0n;
+  for (const ch of s) {
+    const idx = BASE58_ALPHABET.indexOf(ch);
+    if (idx === -1) return null;
+    num = num * 58n + BigInt(idx);
+  }
+  const bytes = [];
+  while (num > 0n) {
+    bytes.unshift(Number(num & 0xffn));
+    num >>= 8n;
+  }
+  for (let i = 0; i < s.length && s[i] === '1'; i++) bytes.unshift(0); // leading '1' → leading zero byte
+  return bytes;
+}
+
+// A Solana asset pubkey must decode to EXACTLY 32 bytes — not merely look base58 (Codex review 022 P2).
 function isBase58Pubkey(s) {
-  return typeof s === 'string' && s.length >= 32 && s.length <= 44 && BASE58.test(s);
+  if (typeof s !== 'string' || s.length === 0) return false;
+  const bytes = base58Decode(s);
+  return bytes !== null && bytes.length === 32;
 }
 
 // Bind the bridge to Task 021's FeedbackCall shape — never sign arbitrary JSON.
 function validateCall(call, feedbackUri) {
   const errs = [];
-  if (!isBase58Pubkey(call.agent)) errs.push('agent must be a base58 pubkey (32–44 chars)');
+  if (!isBase58Pubkey(call.agent)) errs.push('agent must be a base58 string that decodes to a 32-byte pubkey');
   if (!Number.isInteger(call.value) || call.value < 0 || call.value > 100)
     errs.push('value must be an integer in 0..=100');
   if (call.tag !== 're-exec') errs.push('tag must be exactly "re-exec"');
