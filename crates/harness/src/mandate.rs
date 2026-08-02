@@ -4,9 +4,10 @@ use probatio_contract::MandateSpec;
 
 /// Return the Stage 0 mandate identity tag.
 ///
-/// The exact preimage is `MandateSpec::encode()`'s nine canonical bytes: `max_size` as signed
-/// little-endian `i64`, followed by `instrument` as `u8`. FNV-1a-64 is zero-extended in the first
-/// eight bytes of the returned value. This is an identity tag, not a security hash.
+/// The exact preimage is `MandateSpec::encode()`'s seventeen canonical bytes: `max_size` as signed
+/// little-endian `i64`, then `instrument` as `u8`, then `max_value_out` as little-endian `u64`. FNV-1a-64
+/// is zero-extended in the first eight bytes of the returned value. This is an identity tag, not a
+/// security hash.
 // TODO(reexec-core): replace with keccak256 when the shared engine is extracted (Reckn already ships it).
 pub fn spec_hash(spec: &MandateSpec) -> [u8; 32] {
     const OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
@@ -39,5 +40,6 @@ mod tests {
         assert_eq!(spec_hash(&spec), spec_hash(&spec));
         assert_ne!(spec_hash(&spec), spec_hash(&MandateSpec { max_size: 99, ..spec }));
         assert_ne!(spec_hash(&spec), spec_hash(&MandateSpec { instrument: 1, ..spec }));
+        assert_ne!(spec_hash(&spec), spec_hash(&MandateSpec { max_value_out: 0, ..spec }));
     }
 }

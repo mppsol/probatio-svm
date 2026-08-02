@@ -330,7 +330,7 @@ mod tests {
         );
         assert!(!kinds(&default_report).contains(&FindingKind::MandateDeviation));
 
-        let tight = MandateSpec { max_size: 5, instrument: 0 };
+        let tight = MandateSpec { max_size: 5, instrument: 0, ..MandateSpec::stage0_default() };
         let tight_episode = run_episode_with_mandate(&mut Honest, &tight);
         let tight_report = verify(tight_episode.policy, &tight_episode.trace, &tight_episode.claim);
         assert!(kinds(&tight_report).contains(&FindingKind::MandateDeviation));

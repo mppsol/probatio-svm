@@ -16,11 +16,12 @@ pub type Address = [u8; 32];
 pub const MM_BPS: i64 = 500; // 5%
 /// Initial-margin requirement, in basis points of notional.
 pub const IM_BPS: i64 = 1_000; // 10%
-/// Mandate envelope: max absolute position size an agent may hold (Stage 0 mandate check).
-pub const MAX_MANDATE_SIZE: i64 = 100;
-/// Mandate envelope: the only instrument id an agent may trade in Stage 0.
-pub const MANDATE_INSTRUMENT: u8 = 0;
 pub const INITIAL_FUNDING_RATE_BPS_PER_SLOT: i64 = 0;
+
+/// The shared authored mandate now lives in `reexec-spec` (the tri-lane `reexec-core` seed). Re-exported
+/// here so `probatio_contract::{MandateSpec, MAX_MANDATE_SIZE, MANDATE_INSTRUMENT}` keep resolving for
+/// the perp/guard/verifier readers unchanged.
+pub use reexec_spec::{MandateSpec, MANDATE_INSTRUMENT, MAX_MANDATE_SIZE};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ContractError {
@@ -72,43 +73,6 @@ fn put(dst: &mut [u8], offset: usize, src: &[u8]) -> Result<(), ContractError> {
         i += 1;
     }
     Ok(())
-}
-
-/// The declared trading envelope for an agent.
-///
-/// Its fixed-offset little-endian encoding is canonical and is the preimage for the host-side
-/// Stage 0 identity tag. It is deliberately separate from the `Position` account layout so a
-/// later task can provision an authored mandate without changing existing account data.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct MandateSpec {
-    pub max_size: i64,
-    pub instrument: u8,
-}
-
-impl MandateSpec {
-    pub const LEN: usize = 8 + 1;
-
-    /// The Stage 0 envelope, preserving the historic hardcoded mandate exactly.
-    pub const fn stage0_default() -> Self {
-        Self { max_size: MAX_MANDATE_SIZE, instrument: MANDATE_INSTRUMENT }
-    }
-
-    pub fn encode(&self, out: &mut [u8]) -> Result<(), ContractError> {
-        if out.len() < Self::LEN {
-            return Err(ContractError::BufferTooSmall);
-        }
-        put(out, 0, &self.max_size.to_le_bytes())?;
-        out[8] = self.instrument;
-        Ok(())
-    }
-
-    pub fn decode(data: &[u8]) -> Result<Self, ContractError> {
-        let mut offset = 0;
-        Ok(Self {
-            max_size: i64::from_le_bytes(take::<8>(data, &mut offset)?),
-            instrument: take::<1>(data, &mut offset)?[0],
-        })
-    }
 }
 
 // --- Account layouts (the on-chain state) ---------------------------------------------------------
@@ -456,21 +420,14 @@ mod tests {
         assert_eq!(Position::decode(&buf).unwrap(), pos);
     }
 
-    #[test]
-    fn mandate_spec_roundtrip() {
-        let spec = MandateSpec { max_size: -42, instrument: 7 };
-        let mut buf = [0u8; MandateSpec::LEN];
-        spec.encode(&mut buf).unwrap();
-        assert_eq!(buf, [-42i64 as u8, 255, 255, 255, 255, 255, 255, 255, 7]);
-        assert_eq!(MandateSpec::decode(&buf).unwrap(), spec);
-    }
+    // `MandateSpec` encode/decode canonical-bytes roundtrip now lives with the type in `reexec-spec`.
 
     #[test]
     fn within_mandate_uses_authored_spec() {
         let mut position = Position::flat([0; 32], 2_000);
         position.size = 10;
-        let tight = MandateSpec { max_size: 5, instrument: MANDATE_INSTRUMENT };
-        let loose = MandateSpec { max_size: 10, instrument: MANDATE_INSTRUMENT };
+        let tight = MandateSpec { max_size: 5, ..MandateSpec::stage0_default() };
+        let loose = MandateSpec { max_size: 10, ..MandateSpec::stage0_default() };
         assert!(!position.within_mandate(&tight));
         assert!(position.within_mandate(&loose));
     }
@@ -524,7 +481,7 @@ mod tests {
         let market = Market { mark: 100, funding_index: 0, insurance: 0 };
         let mut position = Position::flat([0; 32], 2_000);
         position.size = 10;
-        let tight = MandateSpec { max_size: 5, instrument: MANDATE_INSTRUMENT };
+        let tight = MandateSpec { max_size: 5, ..MandateSpec::stage0_default() };
         assert_eq!(
             check_position(&market, &position, &tight),
             Err(EnforcementError::MandateDeviation)

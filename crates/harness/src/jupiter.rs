@@ -519,6 +519,7 @@ mod tests {
             &MandateSpec {
                 max_size: 5,
                 instrument: 0,
+                ..MandateSpec::stage0_default()
             },
         )[0]
         .per_account[0]
@@ -529,6 +530,7 @@ mod tests {
             &MandateSpec {
                 max_size: 10,
                 instrument: 1,
+                ..MandateSpec::stage0_default()
             },
         )[0]
         .per_account[0]
