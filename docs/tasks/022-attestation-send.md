@@ -10,16 +10,24 @@ thin bridge that actually writes it on-chain via the **live, permissionless** So
 Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedbackUri })`
 (program `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`, SDK npm `8004-solana`).
 
-## Design (safety-first)
+## Design (safety-first) — resolved to PREPARE-ONLY after Codex review 022
 
-- `attest/send.mjs` — Node ESM, **dry-run by default**: reads the `FeedbackCall` JSON, prints the exact
-  planned call, and **sends nothing**; needs no SDK, no keypair, no network. Runnable immediately
-  (`node attest/send.mjs --call call.json`).
-- **`--send`** is the only path that submits: requires `--keypair <path>` + `--rpc` (default devnet), and
-  **lazily imports** `@solana/web3.js` + `8004-solana` only then. Refuses to send if `feedback_uri` is a
-  placeholder (`ipfs://pending`) — the receipt must be pinned first.
-- No keys in the repo. The SDK constructor/method is annotated **"verify against the installed version
-  before --send"** — the API shape is from `8004-solana` docs, not a verified install.
+- `attest/send.mjs` — Node ESM, **prepare-only**: reads the `FeedbackCall` JSON, strict-validates it, and
+  prints the exact planned `giveFeedback` call. **It submits nothing** — no SDK import, no keypair read,
+  no network, zero runtime deps. Runnable immediately (`node attest/send.mjs --call call.json`).
+- **`--send`** does *strict* validation and prints the send-ready call, then **refuses** ("live submission
+  disabled, task 022b"). This removes the Codex-flagged risk of an unverified wildcard SDK mis-signing
+  with a funded keypair.
+- Strict arg parsing (every value-flag needs a value; duplicates/empty rejected); the call is bound to
+  Task 021's shape (base58 agent, `value` 0..=100, tag `re-exec`, non-placeholder URI) — never arbitrary
+  JSON. No keys in the repo.
+
+## Task 022b — enable the real submit (deferred)
+
+Pin an audited `8004-solana` version + commit its lockfile; verify the exact `giveFeedback`
+export/signature in a non-sending fixture; reject an unexpected SDK surface before building a tx; then
+wire the lazy `@solana/web3.js` + SDK submit behind `--send`. Do the first real devnet `--send` together
+with Hiro's funded keypair, and record the resulting on-chain signature.
 
 ## Flow
 

@@ -1,109 +1,110 @@
 #!/usr/bin/env node
-// Probatio → Solana Agent Registry (Reputation) attestation sender — Path A.
+// Probatio → Solana Agent Registry (Reputation) attestation preparer — Path A.
 //
-// DEFAULT = dry-run: no network, no keypair, no SDK import, nothing sent. It just prints the exact
-// giveFeedback call that WOULD be submitted. Actual submission requires --send + --keypair.
+// SAFETY: this tool PREPARES and VALIDATES the giveFeedback call; it does NOT submit. There is no live
+// send path here — no SDK import, no keypair read, no network — because the 8004-solana API is not yet
+// verified against a pinned version (Codex review 022, P1). Enabling the real submit is task 022b, done
+// only after pinning + verifying the SDK in a non-sending fixture.
 //
 // Input: the FeedbackCall JSON emitted by the Rust harness `certify-jupiter --attest <asset>`:
 //   {"agent":"<base58 asset>","value":100,"tag":"re-exec","feedback_uri":"ipfs://<pinned receipt>"}
-//
-// 8004-solana SDK call shape (per docs — VERIFY against the installed version before --send):
-//   sdk.giveFeedback(agentAsset, { value: '100', tag1: 're-exec', feedbackUri: '<uri>' })
 
 import { readFileSync } from 'node:fs';
 
+const REPUTATION_PROGRAM_MAINNET = '8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ';
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]+$/;
+
+function die(msg, code = 2) {
+  console.error(`error: ${msg}`);
+  process.exit(code);
+}
+
 function parseArgs(argv) {
   const a = { rpc: 'https://api.devnet.solana.com', send: false };
+  const seen = new Set();
+  const takeValue = (i, flag) => {
+    const v = argv[i + 1];
+    if (v === undefined || v.startsWith('--')) die(`${flag} requires a value`);
+    return v;
+  };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
+    const valueFlag = (flag, key) => {
+      if (seen.has(flag)) die(`duplicate ${flag}`);
+      seen.add(flag);
+      a[key] = takeValue(i, flag);
+      i += 1;
+    };
     if (k === '--send') a.send = true;
-    else if (k === '--call') a.call = argv[++i];
-    else if (k === '--receipt') a.receipt = argv[++i];
-    else if (k === '--feedback-uri') a.feedbackUri = argv[++i];
-    else if (k === '--keypair') a.keypair = argv[++i];
-    else if (k === '--rpc') a.rpc = argv[++i];
-    else { console.error(`unknown arg: ${k}`); process.exit(2); }
+    else if (k === '--call') valueFlag('--call', 'call');
+    else if (k === '--feedback-uri') valueFlag('--feedback-uri', 'feedbackUri');
+    else if (k === '--keypair') valueFlag('--keypair', 'keypair');
+    else if (k === '--rpc') valueFlag('--rpc', 'rpc');
+    else die(`unknown arg: ${k}`);
   }
   return a;
 }
 
-function readJson(path) {
-  // '-' or omitted → stdin (fd 0), so the Rust CLI's FeedbackCall line can be piped in.
-  return JSON.parse(readFileSync(path === undefined || path === '-' ? 0 : path, 'utf8'));
+function isBase58Pubkey(s) {
+  return typeof s === 'string' && s.length >= 32 && s.length <= 44 && BASE58.test(s);
+}
+
+// Bind the bridge to Task 021's FeedbackCall shape — never sign arbitrary JSON.
+function validateCall(call, feedbackUri) {
+  const errs = [];
+  if (!isBase58Pubkey(call.agent)) errs.push('agent must be a base58 pubkey (32–44 chars)');
+  if (!Number.isInteger(call.value) || call.value < 0 || call.value > 100)
+    errs.push('value must be an integer in 0..=100');
+  if (call.tag !== 're-exec') errs.push('tag must be exactly "re-exec"');
+  const placeholder = feedbackUri === undefined || feedbackUri === '' || feedbackUri === 'ipfs://pending';
+  return { errs, placeholder };
 }
 
 const args = parseArgs(process.argv.slice(2));
 if (args.call === undefined) {
-  console.error(
+  die(
     'usage: node send.mjs --call <feedbackcall.json|-> [--feedback-uri <uri>] [--rpc <url>] [--send --keypair <path>]'
   );
-  process.exit(2);
 }
 
-const call = readJson(args.call);
-if (!call.agent) {
-  console.error('call JSON missing "agent" (base58 asset pubkey)');
-  process.exit(2);
+let call;
+try {
+  call = JSON.parse(readFileSync(args.call === '-' ? 0 : args.call, 'utf8'));
+} catch (e) {
+  die(`could not read/parse --call JSON: ${e.message}`);
+}
+
+// An explicitly supplied empty --feedback-uri is invalid, not a fallback to the call's URI.
+if (Object.prototype.hasOwnProperty.call(args, 'feedbackUri') && args.feedbackUri === '') {
+  die('--feedback-uri was empty');
 }
 const feedbackUri = args.feedbackUri ?? call.feedback_uri;
-const value = String(call.value);
-const tag = call.tag ?? 're-exec';
-const placeholder = feedbackUri === undefined || feedbackUri === '' || feedbackUri === 'ipfs://pending';
+const { errs, placeholder } = validateCall(call, feedbackUri);
 
 const plan = {
   registry: 'Solana Agent Registry — Reputation (giveFeedback)',
-  program_mainnet: '8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ',
+  program_mainnet: REPUTATION_PROGRAM_MAINNET,
   rpc: args.rpc,
   agentAsset: call.agent,
-  value,
-  tag1: tag,
+  value: String(call.value),
+  tag1: call.tag,
   feedbackUri: feedbackUri ?? null,
 };
 
 if (!args.send) {
   console.log('DRY RUN — nothing sent. Planned giveFeedback:');
   console.log(JSON.stringify(plan, null, 2));
-  if (placeholder) {
-    console.log('\nNOTE: feedback_uri is a placeholder — pin the receipt (IPFS/HTTPS) and pass --feedback-uri before --send.');
-  }
-  console.log('\nTo submit: node send.mjs --call <file> --feedback-uri <pinned-uri> --send --keypair <path> [--rpc <url>]');
-  console.log('(requires: `npm install` in attest/; a funded devnet keypair; verify the 8004-solana method signature.)');
+  if (errs.length) console.log('\nvalidation warnings:\n - ' + errs.join('\n - '));
+  if (placeholder) console.log('\nNOTE: feedback_uri is a placeholder — pin the receipt and pass --feedback-uri before enabling a send.');
   process.exit(0);
 }
 
-// ---- live submission (only reached with --send) --------------------------------------------------
-if (!args.keypair) {
-  console.error('--send requires --keypair <path to a solana keypair json>');
-  process.exit(2);
-}
-if (placeholder) {
-  console.error('refusing to send: pin the receipt and pass a real --feedback-uri first (not ipfs://pending).');
-  process.exit(2);
-}
+// ---- --send: strict validate, then REFUSE (live submit is disabled until task 022b) --------------
+if (errs.length) die('invalid FeedbackCall:\n - ' + errs.join('\n - '));
+if (placeholder) die('feedback_uri is a placeholder — pin the receipt and pass a real --feedback-uri first');
+if (!args.keypair) die('--send would require --keypair <path> once live submit is enabled');
 
-let web3, sdkmod;
-try {
-  web3 = await import('@solana/web3.js');
-  sdkmod = await import('8004-solana');
-} catch (e) {
-  console.error('missing deps — run `npm install` in attest/ first. Import error:', e.message);
-  process.exit(1);
-}
-
-try {
-  const { Connection, Keypair } = web3;
-  const secret = JSON.parse(readFileSync(args.keypair, 'utf8'));
-  const kp = Keypair.fromSecretKey(Uint8Array.from(secret));
-  const connection = new Connection(args.rpc, 'confirmed');
-  // VERIFY this constructor + method against the installed 8004-solana version before trusting a send.
-  const Sdk = sdkmod.default ?? sdkmod.Sdk ?? sdkmod.AgentRegistry;
-  if (typeof Sdk !== 'function') {
-    throw new Error('could not resolve the 8004-solana SDK constructor — check the installed package exports');
-  }
-  const sdk = new Sdk({ connection, keypair: kp });
-  const res = await sdk.giveFeedback(call.agent, { value, tag1: tag, feedbackUri });
-  console.log('submitted giveFeedback:', JSON.stringify(res));
-} catch (e) {
-  console.error('send failed (verify SDK API/version, keypair funding, and RPC):', e?.message ?? e);
-  process.exit(1);
-}
+console.log('VALIDATED & READY — but LIVE SUBMISSION IS DISABLED (task 022b, pending pinned+verified 8004-solana SDK).');
+console.log('Nothing was sent. The call that will be submitted once enabled:');
+console.log(JSON.stringify(plan, null, 2));
+process.exit(0);

@@ -1,8 +1,11 @@
-# attest/ — Path A on-chain attestation sender
+# attest/ — Path A attestation preparer
 
-Bridges the offline receipt from `certify-jupiter --attest` (task 021) to the **live, permissionless**
-Solana Agent Registry **Reputation Registry** (`giveFeedback`). **Dry-run by default — it sends nothing
-and needs no SDK, keypair, or network.**
+Takes the offline `FeedbackCall` from `certify-jupiter --attest` (task 021) and prepares the
+`giveFeedback` call for the **live, permissionless** Solana Agent Registry **Reputation Registry**.
+
+**Prepare-only. It does NOT submit** — no SDK import, no keypair read, no network. Enabling the real
+on-chain submit is **task 022b**, done only after pinning + verifying the `8004-solana` SDK against a
+fixed version (Codex review 022). Zero runtime dependencies; runs on Node 18 as-is.
 
 ## Flow
 
@@ -12,24 +15,28 @@ cargo run -p probatio-svm-harness -- certify-jupiter --attest <AGENT_ASSET_BASE5
   --feedback-uri ipfs://<PINNED_RECEIPT_CID> --sample
 #    → prints the receipt JSON, then the FeedbackCall JSON. Save the FeedbackCall line to call.json.
 
-# 2. DRY RUN (default): see exactly what would be submitted — no network, no keys:
+# 2. Prepare + inspect the exact planned giveFeedback (no network, no keys):
 node attest/send.mjs --call call.json
 #    (or pipe: `... | node attest/send.mjs --call -`)
 
-# 3. SUBMIT (only when you mean it): needs a funded devnet keypair + the deps installed:
-cd attest && npm install
-node send.mjs --call ../call.json --feedback-uri ipfs://<PINNED_RECEIPT_CID> \
-  --send --keypair <PATH_TO_KEYPAIR_JSON> --rpc https://api.devnet.solana.com
+# 3. Strict-validate the call as send-ready (still submits nothing; live path disabled until 022b):
+node attest/send.mjs --call call.json --feedback-uri ipfs://<CID> --send --keypair <PATH>
 ```
 
 ## Safety / honesty
 
-- **Dry-run is the default.** `--send` is the only path that touches the network or a key.
-- **No keys in the repo.** Pass `--keypair`; it is read at run time only.
-- **Pin first.** `--send` refuses a placeholder `feedback_uri` (`ipfs://pending`) — the receipt content
-  must be pinned (IPFS/HTTPS) so third parties can fetch and **re-run** the verdict.
-- **Verify the SDK.** The `8004-solana` `giveFeedback` shape here is from the package docs, not a
-  verified install; confirm the constructor/method against the version you `npm install` before trusting
-  a real send. Program (mainnet): `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`.
-- The Validation Registry is archived; this uses the **Reputation** path (Path A). When Validation ships,
-  swap `giveFeedback` for the `validationResponse`-shaped call (same `value`/`uri` semantics).
+- **No live send here.** `--send` strict-validates and prints the ready call, then refuses — nothing is
+  submitted. This removes the risk of an unverified SDK mis-signing with a funded keypair.
+- **Bound to Task 021's `FeedbackCall`:** rejects a bad base58 agent, a `value` outside `0..=100`, a tag
+  other than `"re-exec"`, and a placeholder `feedback_uri` — never signs arbitrary JSON.
+- **Strict args:** every value-taking flag requires a following value; duplicates and empty `--feedback-uri`
+  are errors — a malformed command fails instead of silently falling back.
+- **No keys in the repo.** Program (mainnet): `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`.
+
+## Task 022b (to enable the real submit)
+
+Pin an audited `8004-solana` version + commit its lockfile; verify the exact `giveFeedback`
+export/signature in a non-sending fixture; make the sender reject an unexpected SDK surface before
+building a transaction; then wire the lazy `@solana/web3.js` + SDK submit behind `--send`. The
+Validation Registry is archived, so this stays on the **Reputation** path; when it ships, swap to the
+`validationResponse`-shaped call (same `value`/`uri` semantics).
