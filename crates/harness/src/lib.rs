@@ -3,6 +3,7 @@
 //! program driven through LiteSVM behind the same `contract` account layout.
 
 pub mod agent;
+pub mod attest;
 pub mod hostile;
 pub mod jupiter;
 pub mod llm;
@@ -14,6 +15,7 @@ pub mod verifier;
 pub mod world;
 
 pub use agent::{ClaudeAgent, Decider, Mandate, ScriptedDecider, NEUTRAL_MM};
+pub use attest::{attest, report_hash, Attestation, FeedbackCall, Reproduce};
 pub use transcript::Transcript;
 pub use hostile::{HostileParams, MarkScenario};
 pub use jupiter::{

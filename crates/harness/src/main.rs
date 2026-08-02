@@ -9,10 +9,19 @@ use probatio_svm_harness::jupiter::{
 };
 use probatio_svm_harness::world::EpisodeResult;
 use probatio_svm_harness::{
-    demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend, verify,
-    Backend, CurlClaude, HostileParams, Mandate, Transcript, Verdict, N_SLOTS, NEUTRAL_MM,
+    attest, demonstrate, discover, run_episode, run_episode_ref_hostile, run_episode_with_backend,
+    verify, Backend, CurlClaude, HostileParams, Mandate, Reproduce, Transcript, Verdict, N_SLOTS,
+    NEUTRAL_MM,
 };
-use probatio_contract::{Action, AgentAccountRef, Side};
+use probatio_contract::{Action, AgentAccountRef, MandateSpec, Side};
+use solana_address::Address;
+use std::str::FromStr;
+
+struct AttestArgs {
+    agent_asset: [u8; 32],
+    feedback_uri: String,
+    captured_at: u64,
+}
 
 fn main() {
     let mut raw_args = std::env::args().skip(1);
@@ -233,16 +242,29 @@ fn write_core_hostile(label: &'static str, policy: &mut dyn Policy, mandate: &Ma
 }
 
 fn run_certify_jupiter(args: Vec<String>) {
-    if args.first().map(String::as_str) == Some("--live") {
-        run_certify_jupiter_live(&args[1..]);
+    let (attestation, certify_args) = match parse_attest_args(args) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            eprintln!("error: {message}");
+            std::process::exit(2);
+        }
+    };
+    if certify_args.first().map(String::as_str) == Some("--live") {
+        if attestation.is_some() {
+            eprintln!("error: --attest is offline-only and cannot be combined with certify-jupiter --live");
+            std::process::exit(2);
+        }
+        run_certify_jupiter_live(&certify_args[1..]);
         return;
     }
-    match args.as_slice() {
+    match certify_args.as_slice() {
         [flag] if flag == "--sample" => {
             let (r1, t1) = certify_jupiter("jupiter-neutral", &sample_neutral(N_SLOTS));
+            print_attestation(attestation.as_ref(), &r1, "jupiter", N_SLOTS);
             write_transcript("gallery/jupiter-neutral.json", &t1);
             println!("wrote gallery/jupiter-neutral.json — verdict {:?}", r1.verdict);
             let (r2, t2) = certify_jupiter("jupiter-drift", &sample_drift(N_SLOTS));
+            print_attestation(attestation.as_ref(), &r2, "jupiter", N_SLOTS);
             write_transcript("gallery/jupiter-drift.json", &t2);
             println!("wrote gallery/jupiter-drift.json — verdict {:?}", r2.verdict);
         }
@@ -257,14 +279,88 @@ fn run_certify_jupiter(args: Vec<String>) {
             let (report, transcript) = certify_jupiter("jupiter-agent", &slots);
             println!("Probatio SVM — Jupiter Perps certification ({} slots)\n", slots.len());
             print_report(&report);
+            print_attestation(attestation.as_ref(), &report, "jupiter", slots.len() as u64);
             write_transcript("gallery/jupiter-certification.json", &transcript);
             println!("\nwrote gallery/jupiter-certification.json");
         }
         _ => {
-            eprintln!("error: usage: certify-jupiter [--sample | <trace.json>]");
+            eprintln!(
+                "error: usage: certify-jupiter [--attest <agent_asset_base58> [--feedback-uri <uri>] [--captured-at <secs>]] [--sample | <trace.json>]"
+            );
             std::process::exit(2);
         }
     }
+}
+
+fn parse_attest_args(args: Vec<String>) -> Result<(Option<AttestArgs>, Vec<String>), String> {
+    let mut agent_asset = None;
+    let mut feedback_uri = "ipfs://pending".to_string();
+    let mut captured_at = 0;
+    let mut certify_args = Vec::new();
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--attest" => {
+                let value = args.get(index + 1).ok_or("--attest requires an agent asset base58 address")?;
+                let address = Address::from_str(value)
+                    .map_err(|_| format!("invalid --attest agent asset `{value}`"))?;
+                agent_asset = Some(address.to_bytes());
+                index += 2;
+            }
+            "--feedback-uri" => {
+                feedback_uri = args
+                    .get(index + 1)
+                    .ok_or("--feedback-uri requires a URI")?
+                    .clone();
+                index += 2;
+            }
+            "--captured-at" => {
+                let value = args.get(index + 1).ok_or("--captured-at requires epoch seconds")?;
+                captured_at = value
+                    .parse()
+                    .map_err(|_| format!("invalid --captured-at epoch seconds `{value}`"))?;
+                index += 2;
+            }
+            _ => {
+                certify_args.push(args[index].clone());
+                index += 1;
+            }
+        }
+    }
+    if agent_asset.is_none() && (feedback_uri != "ipfs://pending" || captured_at != 0) {
+        return Err("--feedback-uri and --captured-at require --attest".to_string());
+    }
+    Ok((
+        agent_asset.map(|agent_asset| AttestArgs {
+            agent_asset,
+            feedback_uri,
+            captured_at,
+        }),
+        certify_args,
+    ))
+}
+
+fn print_attestation(
+    args: Option<&AttestArgs>,
+    report: &probatio_svm_harness::ShortcutReport,
+    backend: &str,
+    n_slots: u64,
+) {
+    let Some(args) = args else { return };
+    let attestation = attest(
+        args.agent_asset,
+        &MandateSpec::stage0_default(),
+        report,
+        Reproduce {
+            policy: report.policy.clone(),
+            backend: backend.to_string(),
+            n_slots,
+        },
+        args.feedback_uri.clone(),
+        args.captured_at,
+    );
+    println!("{}", attestation.receipt_json);
+    println!("{}", attestation.call.to_json());
 }
 
 /// Live certification: fetch an owner's real Jupiter positions on-chain, certify the current snapshot
