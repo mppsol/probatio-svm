@@ -6,7 +6,9 @@ use pinocchio::{
     pubkey::Pubkey,
     ProgramResult,
 };
-use probatio_contract::{check_position, ContractError, EnforcementError, GuardInstruction, Market, Position};
+use probatio_contract::{
+    check_position, ContractError, EnforcementError, GuardInstruction, MandateSpec, Market, Position,
+};
 
 pinocchio_pubkey::declare_id!("1111111QLbz7JHiBTspS962RLKV8GndWFwiEaqKM");
 
@@ -55,7 +57,8 @@ pub fn process_instruction(
             };
             let market = read_market(market_acc)?;
             let position = read_position(position_acc)?;
-            check_position(&market, &position).map_err(map_enforcement_error)
+            check_position(&market, &position, &MandateSpec::stage0_default())
+                .map_err(map_enforcement_error)
         }
     }
 }

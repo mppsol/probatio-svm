@@ -13,7 +13,7 @@ use std::{
 
 use litesvm::LiteSVM;
 use probatio_contract::{
-    Action, AgentAccountRef, GuardInstruction, Market, PerpInstruction, Position, Side,
+    Action, AgentAccountRef, GuardInstruction, MandateSpec, Market, PerpInstruction, Position, Side,
 };
 use solana_account::Account;
 use solana_address::{address, Address};
@@ -108,7 +108,12 @@ pub struct GuardComputeUnitReport {
 
 /// Preserve the original Task 001 surface: default to the reference backend.
 pub fn run_episode(policy: &mut dyn Policy) -> EpisodeResult {
-    run_episode_with_backend(policy, Backend::Ref).expect("reference backend cannot fail")
+    run_episode_with_mandate(policy, &MandateSpec::stage0_default())
+}
+
+/// Run a deterministic reference episode and capture its trace against an authored mandate.
+pub fn run_episode_with_mandate(policy: &mut dyn Policy, mandate: &MandateSpec) -> EpisodeResult {
+    run_episode_ref_with_mandate(policy, mandate)
 }
 
 pub fn run_episode_with_backend(
@@ -260,10 +265,15 @@ fn apply_with(world: &mut RefWorld, action: Action, slippage: i64) {
     }
 }
 
-fn capture(slot: u64, market: &Market, accounts: &[Position]) -> StateSnapshot {
+fn capture(
+    slot: u64,
+    market: &Market,
+    accounts: &[Position],
+    mandate: &MandateSpec,
+) -> StateSnapshot {
     let mark = market.mark;
     let per_account: Vec<AccountState> =
-        accounts.iter().map(|p| AccountState::capture(p, mark)).collect();
+        accounts.iter().map(|p| AccountState::capture(p, mark, mandate)).collect();
     let measured_delta = accounts[0].size;
     let aggregate_delta: i64 = accounts.iter().map(|p| p.size).sum();
     let any_liquidatable = accounts.iter().any(|p| p.is_liquidatable(mark));
@@ -283,6 +293,10 @@ fn capture(slot: u64, market: &Market, accounts: &[Position]) -> StateSnapshot {
 }
 
 fn run_episode_ref(policy: &mut dyn Policy) -> EpisodeResult {
+    run_episode_ref_with_mandate(policy, &MandateSpec::stage0_default())
+}
+
+fn run_episode_ref_with_mandate(policy: &mut dyn Policy, mandate: &MandateSpec) -> EpisodeResult {
     let prov = policy.provisioning();
     let owner = [0xA6u8; 32];
     let mut world = RefWorld {
@@ -306,7 +320,7 @@ fn run_episode_ref(policy: &mut dyn Policy) -> EpisodeResult {
             apply(&mut world, action);
         }
         let accounts: Vec<Position> = world.accounts().copied().collect();
-        trace.push(capture(slot, &world.market, &accounts));
+        trace.push(capture(slot, &world.market, &accounts, mandate));
     }
 
     EpisodeResult { policy: policy.name(), trace, claim: policy.claim() }
@@ -317,6 +331,15 @@ fn run_episode_ref(policy: &mut dyn Policy) -> EpisodeResult {
 pub fn run_episode_ref_hostile(
     policy: &mut dyn Policy,
     params: &crate::hostile::HostileParams,
+) -> EpisodeResult {
+    run_episode_ref_hostile_with_mandate(policy, params, &MandateSpec::stage0_default())
+}
+
+/// Run a hostile reference episode and capture its trace against an authored mandate.
+pub fn run_episode_ref_hostile_with_mandate(
+    policy: &mut dyn Policy,
+    params: &crate::hostile::HostileParams,
+    mandate: &MandateSpec,
 ) -> EpisodeResult {
     let prov = policy.provisioning();
     let owner = [0xA6u8; 32];
@@ -341,7 +364,7 @@ pub fn run_episode_ref_hostile(
             apply_with(&mut world, action, params.slippage);
         }
         let accounts: Vec<Position> = world.accounts().copied().collect();
-        trace.push(capture(slot, &world.market, &accounts));
+        trace.push(capture(slot, &world.market, &accounts, mandate));
     }
 
     EpisodeResult { policy: policy.name(), trace, claim: policy.claim() }
@@ -819,7 +842,7 @@ fn run_episode_svm(policy: &mut dyn Policy) -> Result<EpisodeResult, WorldError>
 
         let market = world.read_market()?;
         let accounts = world.read_positions()?;
-        trace.push(capture(slot, &market, &accounts));
+        trace.push(capture(slot, &market, &accounts, &MandateSpec::stage0_default()));
     }
 
     Ok(EpisodeResult { policy: policy.name(), trace, claim: policy.claim() })
@@ -836,6 +859,13 @@ mod tests {
         let a = run_episode(&mut Honest);
         let b = run_episode(&mut Honest);
         assert_eq!(a.trace, b.trace);
+    }
+
+    #[test]
+    fn default_mandate_preserves_episode_trace() {
+        let default_trace = run_episode(&mut Honest).trace;
+        let explicit_trace = run_episode_with_mandate(&mut Honest, &MandateSpec::stage0_default()).trace;
+        assert_eq!(default_trace, explicit_trace);
     }
 
     #[test]

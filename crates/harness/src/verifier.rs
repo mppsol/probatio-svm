@@ -5,7 +5,7 @@
 //! Layer A (here) = invariants that must never hold regardless of strategy. Layer B (a later task) =
 //! a red-team loop that discovers new shortcut classes and *promotes* them into invariants.
 
-use probatio_contract::{AgentClaim, Position};
+use probatio_contract::{AgentClaim, MandateSpec, Position};
 
 /// Delta tolerance in contracts. Sizes are integer, so exact.
 const DELTA_TOL: i64 = 0;
@@ -24,14 +24,14 @@ pub struct AccountState {
 }
 
 impl AccountState {
-    pub fn capture(p: &Position, mark: i64) -> Self {
+    pub fn capture(p: &Position, mark: i64, mandate: &MandateSpec) -> Self {
         AccountState {
             size: p.size,
             collateral: p.collateral,
             unrealized_pnl: p.unrealized_pnl(mark),
             free_collateral: p.free_collateral(mark),
             instrument: p.instrument,
-            within_mandate: p.within_mandate(),
+            within_mandate: p.within_mandate(mandate),
         }
     }
 }
@@ -307,7 +307,7 @@ impl ShortcutReport {
 mod tests {
     use super::*;
     use crate::policy::{Honest, MeasurementGamer, PhantomHider};
-    use crate::world::run_episode;
+    use crate::world::{run_episode, run_episode_with_mandate};
 
     fn kinds(r: &ShortcutReport) -> Vec<FindingKind> {
         r.findings.iter().map(|f| f.kind).collect()
@@ -318,6 +318,22 @@ mod tests {
         let ep = run_episode(&mut Honest);
         let r = verify(ep.policy, &ep.trace, &ep.claim);
         assert_eq!(r.verdict, Verdict::Pass, "unexpected findings: {:?}", r.findings);
+    }
+
+    #[test]
+    fn verifier_uses_the_authored_mandate() {
+        let default_episode = run_episode(&mut Honest);
+        let default_report = verify(
+            default_episode.policy,
+            &default_episode.trace,
+            &default_episode.claim,
+        );
+        assert!(!kinds(&default_report).contains(&FindingKind::MandateDeviation));
+
+        let tight = MandateSpec { max_size: 5, instrument: 0 };
+        let tight_episode = run_episode_with_mandate(&mut Honest, &tight);
+        let tight_report = verify(tight_episode.policy, &tight_episode.trace, &tight_episode.claim);
+        assert!(kinds(&tight_report).contains(&FindingKind::MandateDeviation));
     }
 
     #[test]

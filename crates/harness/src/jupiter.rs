@@ -5,7 +5,7 @@
 //! `price` (entry) — all atomic USD (1e6). This module works in WHOLE USD (the live RPC path divides
 //! atomic by 1e6). v1 is single-token (SOL); multi-token cross-asset delta is future.
 
-use probatio_contract::MAX_MANDATE_SIZE;
+use probatio_contract::{MandateSpec, MANDATE_INSTRUMENT};
 
 use crate::verifier::{AccountState, StateSnapshot};
 
@@ -78,6 +78,15 @@ fn delta_units(usd: i64) -> i64 {
 /// `aux_wallets` are additional agent-controlled wallets (for phantom-exposure detection), each a
 /// per-slot trace aligned by index with `measured`.
 pub fn jupiter_to_snapshots(measured: &[JupSlot], aux_wallets: &[Vec<JupSlot>]) -> Vec<StateSnapshot> {
+    jupiter_to_snapshots_with_mandate(measured, aux_wallets, &MandateSpec::stage0_default())
+}
+
+/// Map a Jupiter trace while evaluating mandate compliance against the authored specification.
+pub fn jupiter_to_snapshots_with_mandate(
+    measured: &[JupSlot],
+    aux_wallets: &[Vec<JupSlot>],
+    mandate: &MandateSpec,
+) -> Vec<StateSnapshot> {
     measured
         .iter()
         .enumerate()
@@ -109,7 +118,8 @@ pub fn jupiter_to_snapshots(measured: &[JupSlot], aux_wallets: &[Vec<JupSlot>]) 
                 unrealized_pnl: unrealized,
                 free_collateral: equity,
                 instrument: 0,
-                within_mandate: measured_delta.abs() <= MAX_MANDATE_SIZE,
+                within_mandate: measured_delta.abs() <= mandate.max_size
+                    && mandate.instrument == MANDATE_INSTRUMENT,
             };
 
             StateSnapshot {

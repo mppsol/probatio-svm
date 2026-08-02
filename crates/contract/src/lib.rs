@@ -74,6 +74,43 @@ fn put(dst: &mut [u8], offset: usize, src: &[u8]) -> Result<(), ContractError> {
     Ok(())
 }
 
+/// The declared trading envelope for an agent.
+///
+/// Its fixed-offset little-endian encoding is canonical and is the preimage for the host-side
+/// Stage 0 identity tag. It is deliberately separate from the `Position` account layout so a
+/// later task can provision an authored mandate without changing existing account data.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MandateSpec {
+    pub max_size: i64,
+    pub instrument: u8,
+}
+
+impl MandateSpec {
+    pub const LEN: usize = 8 + 1;
+
+    /// The Stage 0 envelope, preserving the historic hardcoded mandate exactly.
+    pub const fn stage0_default() -> Self {
+        Self { max_size: MAX_MANDATE_SIZE, instrument: MANDATE_INSTRUMENT }
+    }
+
+    pub fn encode(&self, out: &mut [u8]) -> Result<(), ContractError> {
+        if out.len() < Self::LEN {
+            return Err(ContractError::BufferTooSmall);
+        }
+        put(out, 0, &self.max_size.to_le_bytes())?;
+        out[8] = self.instrument;
+        Ok(())
+    }
+
+    pub fn decode(data: &[u8]) -> Result<Self, ContractError> {
+        let mut offset = 0;
+        Ok(Self {
+            max_size: i64::from_le_bytes(take::<8>(data, &mut offset)?),
+            instrument: take::<1>(data, &mut offset)?[0],
+        })
+    }
+}
+
 // --- Account layouts (the on-chain state) ---------------------------------------------------------
 
 /// The single perp market PDA.
@@ -161,8 +198,8 @@ impl Position {
         self.equity(mark) - self.notional(mark) * IM_BPS / 10_000
     }
     /// Mandate compliance: within size envelope and on the permitted instrument.
-    pub fn within_mandate(&self) -> bool {
-        self.size.abs() <= MAX_MANDATE_SIZE && self.instrument == MANDATE_INSTRUMENT
+    pub fn within_mandate(&self, spec: &MandateSpec) -> bool {
+        self.size.abs() <= spec.max_size && self.instrument == spec.instrument
     }
 
     pub fn encode(self, out: &mut [u8]) -> Result<(), ContractError> {
@@ -191,8 +228,12 @@ impl Position {
     }
 }
 
-pub fn check_position(market: &Market, position: &Position) -> Result<(), EnforcementError> {
-    if !position.within_mandate() {
+pub fn check_position(
+    market: &Market,
+    position: &Position,
+    spec: &MandateSpec,
+) -> Result<(), EnforcementError> {
+    if !position.within_mandate(spec) {
         return Err(EnforcementError::MandateDeviation);
     }
     if position.is_liquidatable(market.mark) {
@@ -416,6 +457,25 @@ mod tests {
     }
 
     #[test]
+    fn mandate_spec_roundtrip() {
+        let spec = MandateSpec { max_size: -42, instrument: 7 };
+        let mut buf = [0u8; MandateSpec::LEN];
+        spec.encode(&mut buf).unwrap();
+        assert_eq!(buf, [-42i64 as u8, 255, 255, 255, 255, 255, 255, 255, 7]);
+        assert_eq!(MandateSpec::decode(&buf).unwrap(), spec);
+    }
+
+    #[test]
+    fn within_mandate_uses_authored_spec() {
+        let mut position = Position::flat([0; 32], 2_000);
+        position.size = 10;
+        let tight = MandateSpec { max_size: 5, instrument: MANDATE_INSTRUMENT };
+        let loose = MandateSpec { max_size: 10, instrument: MANDATE_INSTRUMENT };
+        assert!(!position.within_mandate(&tight));
+        assert!(position.within_mandate(&loose));
+    }
+
+    #[test]
     fn instruction_roundtrip() {
         let cases = [
             PerpInstruction::Deposit { amount: 5 },
@@ -446,7 +506,7 @@ mod tests {
         let mut mandate = Position::flat([0; 32], 2_000);
         mandate.size = 101;
         assert_eq!(
-            check_position(&market, &mandate),
+            check_position(&market, &mandate, &MandateSpec::stage0_default()),
             Err(EnforcementError::MandateDeviation)
         );
 
@@ -454,8 +514,20 @@ mod tests {
         insolvent.size = 10;
         insolvent.entry = 100;
         assert_eq!(
-            check_position(&market, &insolvent),
+            check_position(&market, &insolvent, &MandateSpec::stage0_default()),
             Err(EnforcementError::SelfInflictedInsolvency)
+        );
+    }
+
+    #[test]
+    fn check_position_honours_passed_spec() {
+        let market = Market { mark: 100, funding_index: 0, insurance: 0 };
+        let mut position = Position::flat([0; 32], 2_000);
+        position.size = 10;
+        let tight = MandateSpec { max_size: 5, instrument: MANDATE_INSTRUMENT };
+        assert_eq!(
+            check_position(&market, &position, &tight),
+            Err(EnforcementError::MandateDeviation)
         );
     }
 }
