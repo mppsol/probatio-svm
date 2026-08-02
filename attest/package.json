@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Prepare + validate a Probatio re-exec attestation (giveFeedback) for the Solana Agent Registry Reputation Registry. Prepare-only; no SDK/keys/network. Live submit = task 022b.",
-  "bin": { "probatio-attest": "send.mjs" }
+  "description": "Prepare/validate + (env-permitting) submit a Probatio re-exec attestation via giveFeedback to the Solana Agent Registry Reputation Registry. Prepare is dependency-free; --send needs these SDKs.",
+  "bin": { "probatio-attest": "send.mjs" },
+  "dependencies": {
+    "@solana/web3.js": "1.98.4",
+    "8004-solana": "0.8.3"
+  }
 }

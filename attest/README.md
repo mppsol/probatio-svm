@@ -33,10 +33,19 @@ node attest/send.mjs --call call.json --feedback-uri ipfs://<CID> --send --keypa
   are errors — a malformed command fails instead of silently falling back.
 - **No keys in the repo.** Program (mainnet): `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`.
 
-## Task 022b (to enable the real submit)
+## `--send` status (task 022b)
 
-Pin an audited `8004-solana` version + commit its lockfile; verify the exact `giveFeedback`
-export/signature in a non-sending fixture; make the sender reject an unexpected SDK surface before
-building a transaction; then wire the lazy `@solana/web3.js` + SDK submit behind `--send`. The
-Validation Registry is archived, so this stays on the **Reputation** path; when it ships, swap to the
+`--send` is **wired to the verified `8004-solana@0.8.3` API** and fails safe:
+`new SolanaSDK({ cluster, rpcUrl, signer }).giveFeedback(assetPubkey, { value, score, tag1, feedbackUri })`,
+mapping PASS=100/FLAG=0 to the SDK's direct 0–100 `score`. A runtime guard rejects an unexpected SDK
+surface, and the import is in a try/catch so a broken/absent SDK errors cleanly — never a partial send.
+
+**Known blocker:** the SDK does not load in the tested environments (Node 18/20/22) because
+`@solana/web3.js@1.98.4` pulls a `rpc-websockets` whose nested `uuid` (ESM) is `require()`d from CJS. So
+the real send is not yet runnable here. To finish: resolve that dep load (an `overrides`/resolution
+giving one CJS-consistent `uuid`, a compatible web3.js pin, or `bun`/`pnpm`), `npm install`, smoke-test
+`import('8004-solana')`, then run one `--send` with a **funded devnet keypair** against a **registered
+agent** and record the signature. `node_modules`/lockfile are not committed (the tree does not load).
+
+The Validation Registry is archived, so this stays on the **Reputation** path; when it ships, swap to the
 `validationResponse`-shaped call (same `value`/`uri` semantics).

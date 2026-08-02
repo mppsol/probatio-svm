@@ -119,12 +119,57 @@ if (!args.send) {
   process.exit(0);
 }
 
-// ---- --send: strict validate, then REFUSE (live submit is disabled until task 022b) --------------
+// ---- --send: strict validate, then submit via the verified 8004-solana@0.8.3 API -----------------
 if (errs.length) die('invalid FeedbackCall:\n - ' + errs.join('\n - '));
 if (placeholder) die('feedback_uri is a placeholder — pin the receipt and pass a real --feedback-uri first');
-if (!args.keypair) die('--send would require --keypair <path> once live submit is enabled');
+if (!args.keypair) die('--send requires --keypair <path to a solana keypair json>');
 
-console.log('VALIDATED & READY — but LIVE SUBMISSION IS DISABLED (task 022b, pending pinned+verified 8004-solana SDK).');
-console.log('Nothing was sent. The call that will be submitted once enabled:');
-console.log(JSON.stringify(plan, null, 2));
-process.exit(0);
+let web3, sdkmod;
+try {
+  web3 = await import('@solana/web3.js');
+  sdkmod = await import('8004-solana');
+} catch (e) {
+  die(`missing deps — run \`npm install\` in attest/ first. Import error: ${e.message}`, 1);
+}
+const { Keypair, PublicKey } = web3;
+const { SolanaSDK } = sdkmod;
+
+// Runtime contract check against the pinned 0.8.3 surface — fail safe if the SDK changed under us.
+if (typeof SolanaSDK !== 'function' || typeof SolanaSDK.prototype?.giveFeedback !== 'function') {
+  die('8004-solana surface changed (SolanaSDK/giveFeedback) — re-verify the pinned version before sending', 1);
+}
+
+let kp, agentPk;
+try {
+  kp = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(args.keypair, 'utf8'))));
+} catch (e) {
+  die(`could not load --keypair: ${e.message}`);
+}
+try {
+  agentPk = new PublicKey(call.agent);
+} catch (e) {
+  die(`agent is not a valid pubkey: ${e.message}`);
+}
+
+const cluster = args.rpc.includes('devnet')
+  ? 'devnet'
+  : args.rpc.includes('mainnet')
+    ? 'mainnet-beta'
+    : undefined;
+const sdk = new SolanaSDK({ cluster, rpcUrl: args.rpc, signer: kp });
+
+console.error(
+  `submitting giveFeedback on-chain — rpc=${args.rpc} signer=${kp.publicKey.toBase58()} agent=${call.agent} score=${call.value} ...`
+);
+try {
+  // score = the direct 0..100 metric (PASS=100 / FLAG=0); value mirrors it; feedbackUri anchors the receipt.
+  const res = await sdk.giveFeedback(agentPk, {
+    value: call.value,
+    score: call.value,
+    tag1: call.tag,
+    feedbackUri,
+  });
+  console.log('submitted giveFeedback:', JSON.stringify(res?.signature ?? res));
+} catch (e) {
+  die(`giveFeedback failed (verify signer funding, agent registration, and RPC): ${e?.message ?? e}`, 1);
+}

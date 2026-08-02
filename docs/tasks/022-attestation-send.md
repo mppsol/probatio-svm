@@ -22,12 +22,30 @@ Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedb
   Task 021's shape (base58 agent, `value` 0..=100, tag `re-exec`, non-placeholder URI) — never arbitrary
   JSON. No keys in the repo.
 
-## Task 022b — enable the real submit (deferred)
+## Task 022b — real submit: API verified + wired; runtime BLOCKED on a web3.js dep bug
 
-Pin an audited `8004-solana` version + commit its lockfile; verify the exact `giveFeedback`
-export/signature in a non-sending fixture; reject an unexpected SDK surface before building a tx; then
-wire the lazy `@solana/web3.js` + SDK submit behind `--send`. Do the first real devnet `--send` together
-with Hiro's funded keypair, and record the resulting on-chain signature.
+**Done:** the `8004-solana@0.8.3` API was verified from its shipped types and `--send` is wired to it
+(with a runtime surface guard + fail-safe import):
+- `new SolanaSDK({ cluster, rpcUrl, signer: Keypair })` (`dist/core/sdk-solana.d.ts`).
+- `giveFeedback(asset: PublicKey, params: GiveFeedbackParams, options?)` where `GiveFeedbackParams` has
+  `value` (string|number|bigint, required), **`score?` — a direct 0–100 integer (perfect for PASS=100 /
+  FLAG=0)**, `tag1?`, `feedbackUri?` (≤250 bytes). We map: `score = value = 0|100`, `tag1 = "re-exec"`,
+  `feedbackUri = <pinned receipt>`.
+- Versions pinned in `package.json` (`8004-solana@0.8.3`, `@solana/web3.js@1.98.4`).
+
+**BLOCKER (not yet resolved):** the SDK will not load in this environment — `@solana/web3.js@1.98.4`
+pulls `rpc-websockets` whose nested `uuid` is ESM but is `require()`d from CJS
+(`require() of ES Module rpc-websockets/node_modules/uuid/dist-node/index.js not supported`). Reproduced
+on Node 18/20/22; a `uuid` override did not dedupe it; `bun` not available here. So the import — and thus
+any real send — cannot run/smoke-test in this environment. `--send` fails **safe** (the import is in a
+try/catch → clean error, never a partial send).
+
+**To finish (in the send environment, with Hiro):** resolve the web3.js dep load (e.g. an `overrides`/
+resolution that gives `rpc-websockets` a single CJS-consistent `uuid`, a compatible `@solana/web3.js`
+pin, or a runtime like `bun`/`pnpm` that resolves it), `npm install`, smoke-test `import('8004-solana')`
+(no send), then run one real `--send` with a **funded devnet keypair** against a **registered agent**, and
+record the on-chain signature here. `node_modules`/lockfile are intentionally not committed (the tree
+above does not load).
 
 ## Flow
 
