@@ -1,0 +1,12 @@
+{
+  "name": "probatio-attest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Send a Probatio re-exec attestation to the Solana Agent Registry Reputation Registry (Path A). Dry-run by default; --send submits.",
+  "bin": { "probatio-attest": "send.mjs" },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "8004-solana": "*"
+  }
+}
