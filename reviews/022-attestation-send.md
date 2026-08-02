@@ -1,35 +1,26 @@
-# Re-review 022 — Path A attestation preparer
+# Final re-review 022 — Path A attestation preparer
 
-**Branch:** `task/022-attestation-send` (`2782252`, fix `9fa891f`) · **Reviewer:** Codex · **Verdict: CHANGES**
+**Branch:** `task/022-attestation-send` (`2782252`, fixes `9fa891f`, `a5d86e3`) · **Reviewer:** Codex · **Verdict: APPROVE**
 
-The two P1 findings are resolved:
+The P2 public-key validation defect is fixed.  `base58Decode` is dependency-free and
+`isBase58Pubkey` now requires its decoded output to be exactly 32 bytes.  A FeedbackCall with an
+agent of 44 `1` characters is rejected as not a 32-byte public key; the valid 32-byte all-zero
+public key (`11111111111111111111111111111111`, the System Program ID) passes.
 
-- Value-taking options now require a following non-flag argument and reject duplicates.  A missing
-  `--feedback-uri` now fails before call parsing rather than falling back to the JSON URI.
-- The live sender, SDK dependencies/imports, keypair read, and every network path are removed.
-  `--send` only validates/prepares and explicitly refuses to submit, so even a supplied keypair path is
-  never opened.  This is Node 18-compatible and uses only `node:fs` to read the declared call input.
+The previous P1 findings remain resolved:
 
-## P2 — `isBase58Pubkey` does not actually validate a 32-byte Solana public key
+- Every value-taking option requires a following non-flag value and rejects duplicates; an empty
+  `--feedback-uri` is an error rather than a silent fallback.
+- There is no SDK dependency or import, keypair read, RPC/network operation, or submit path.  Even
+  with `--send --keypair does-not-exist.json`, the tool only validates and prints its explicit
+  "LIVE SUBMISSION IS DISABLED" plan.  The nonexistent key file is not opened and nothing is sent.
 
-The validator checks only base58 alphabet and a 32–44 character length.  It accepts strings that do not
-decode to 32 bytes.  For example, a 44-character string of `z` characters is too large for a 32-byte
-Solana public key, but this command reports `VALIDATED & READY`:
-
-```sh
-printf '%s\n' '{"agent":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","value":100,"tag":"re-exec","feedback_uri":"ipfs://pinned"}' \
-  | node attest/send.mjs --call - --send --keypair does-not-exist.json
-```
-
-No transaction is possible in this task, but the tool's claimed strict binding to Task 021's
-`agent_asset: [u8; 32]` is false and would carry directly into 022b.  Decode base58 and require exactly
-32 output bytes (without adding an SDK/key/network dependency) before labeling a call send-ready.  Also
-reject a duplicate `--send` flag if the documented duplicate-rejection guarantee is intended to cover all
-flags, not just value-taking flags.
+The script remains Node 18-compatible and uses only `node:fs` for the declared FeedbackCall input.
 
 ## Validation performed
 
-- Dry-run with a valid piped FeedbackCall: prints a plan only; no SDK/key/network access.
-- Missing `--feedback-uri` value: errors; no fallback.
-- Duplicate `--call`: errors.
-- Source audit confirms no SDK imports, keypair reads, `fetch`, RPC client, or submit call remains.
+- Piped a 44-character `1` agent into `--send`: rejected with the exact-32-byte validation error.
+- Piped the 32-byte System Program public key into `--send --keypair does-not-exist.json`: accepted,
+  printed the disabled submission plan, and performed no key or network access.
+- Audited `attest/send.mjs` and `attest/package.json`: no Solana/8004 SDK, `fetch`, connection,
+  keypair-read, or submission code remains.
