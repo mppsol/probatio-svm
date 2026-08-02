@@ -36,8 +36,12 @@ so far is either off-chain or adjacent:
 - **Runtime guardrails** (Autonex, Blockaid) constrain or screen an agent's transactions *live*, against
   hand-written policies. Probatio is **pre-capital**: it certifies whether an agent honored its *mandate*,
   and its invariant set **self-repairs** via the red-team loop rather than being a fixed policy list.
-- **Solana's Agent Registry** is an identity/reputation trust layer, not a certifier — but its *Validation
-  Registry* is a hook for attestations, so Probatio can be **the certifier that feeds it**.
+- **Solana's Agent Registry** is an identity/reputation trust layer, not a certifier. Its *Validation
+  Registry* (the natural home for "stakers re-running a job") is **archived / not yet deployed**, and
+  ERC-8004's is under active revision — so the re-execution-validation socket isn't callable yet. That is
+  the opening: the **Reputation Registry is live and permissionless**, so Probatio can write an on-chain,
+  agent-identity-tied re-execution verdict **today**, and be the drop-in validator when the Validation
+  module ships (see [`docs/GTM-agent-registry.md`](./docs/GTM-agent-registry.md)).
 - Among 2026 Colosseum agentic-finance projects, the verification/safety layer is essentially empty —
   everyone is building agents; almost no one is building the thing that checks them.
 
@@ -67,6 +71,21 @@ A separate composable `programs/guard` reuses the same `check_position()` for th
 The two layers are complementary: **enforcement blocks bad *actions* in-block; the verifier catches bad
 *states/behaviors*** over the episode (measurement gaming, phantom exposure, and passive oracle-driven
 insolvency that no single tx causes and no guard can revert).
+
+## One authored mandate, checked at two stations
+
+The mandate an agent must honor is an **authored, hashable `MandateSpec`** (in the dependency-free
+[`crates/reexec-spec`](./crates/reexec-spec) crate — the seed of a shared re-execution core), not a
+hardcoded constant. The *same* spec is checked at two stations:
+
+- **certify** (this repo): an episode stays within `max_size` / `instrument` over the whole run.
+- **screen** (sibling [Custos](https://github.com/psyto/custos)): its `MandateConformance` invariant
+  re-simulates the *next* transaction against real mainnet state and fires **RED** when realized token
+  outflow exceeds the same authored **`max_value_out`** — so a tricked agent still cannot move more than
+  its mandate allows (the Grok/Bankr prompt-injection drain class).
+
+`stage0_default()` leaves `max_value_out` uncapped, so certify behavior is unchanged; the field is a
+screen-station cap. One spec, authored once, checked at certify time and pre-broadcast.
 
 ## Certifying real on-chain positions (live path)
 
@@ -128,9 +147,10 @@ after`):
 | self-inflicted insolvency `Open` (collateral=10) | reverted `Custom(11)` SelfInflictedInsolvency |
 
 Perp instruction CU (with inline enforcement): `Open`=583, `Hedge`=758, `SettleFunding`=356 — far under
-the 200k/instruction budget. **78 tests green offline** across the workspace (harness alone: 69 lib + 2
-binary, covering the live-ingestion decode/parse boundary against real mainnet long *and* short fixtures,
-withContext slot recovery, and credential redaction).
+the 200k/instruction budget. **87 tests green offline** across the workspace (harness 73 lib + 2 binary;
+contract 7; `reexec-spec` 3; perp + guard 1 each) — covering the live-ingestion decode/parse boundary
+against real mainnet long *and* short fixtures, withContext slot recovery, credential redaction, and the
+authored-mandate `MandateSpec` roundtrip / `spec_hash` / tightened-mandate certify path.
 
 ## Quickstart
 
@@ -159,9 +179,11 @@ Requires the Rust toolchain (pinned in `rust-toolchain.toml`) and the Solana SBF
 ## Layout
 
 ```
+crates/reexec-spec  the authored, hashable MandateSpec (max_size/instrument/max_value_out) shared across
+                  stations — dependency-free #![no_std], the seed of a shared re-execution core
 crates/contract   shared account layout (Market, Position) + instruction codecs + check_position()
                   enforcement predicate — the load-bearing contract, read by the perp, the guard, AND
-                  the verifier (#![no_std])
+                  the verifier (#![no_std]); re-exports MandateSpec from reexec-spec
 crates/harness    episode driver (ref + LiteSVM backends), scripted policies, invariant-set verifier,
                   Jupiter live on-chain ingestion (getProgramAccounts → decode → certify)
 programs/perp     Pinocchio perp; inline-enforces check_position() on every mutating instruction
@@ -205,6 +227,11 @@ STAGE0_DESIGN.md  the design + honest scope notes + roadmap
 - ✅ **Real short/multi-custody fixture + snapshot-slot provenance** — a real *short* Position fixture on a
   different custody, plus `withContext` slot / capture time / credential-redacted host stamped into the
   card, fail-closed when the snapshot slot is missing.
+- ✅ **Authored mandate + screen station** — `MandateSpec` extracted to the shared `reexec-spec` crate
+  (+ `max_value_out`); the sibling Custos screen station enforces the *same* mandate on the next tx
+  pre-broadcast. One spec, two stations.
+- **On-chain attestation** — write the re-execution verdict to Solana's (permissionless) Reputation
+  Registry today, and to the ERC-8004 `validationResponse` shape for the Validation socket when it ships.
 - **CPI guard promotion** — unbypassable enforcement for third-party-owned accounts.
 - **Live cert web card + multi-slot polling + on-chain Custody mark** — dashboard surface for a live cert,
   a time-series live trace, and an oracle mark read from the Custody account (today `--mark`).
