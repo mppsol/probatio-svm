@@ -13,9 +13,10 @@ pub fn spec_hash(spec: &MandateSpec) -> [u8; 32] {
     const PRIME: u64 = 0x0000_0100_0000_01b3;
 
     let mut encoded = [0u8; MandateSpec::LEN];
-    // A fixed-size buffer cannot fail this encode; preserve the impossible branch without panicking.
-    if spec.encode(&mut encoded).is_err() {
-        return [0; 32];
+    let encoded_result = spec.encode(&mut encoded);
+    debug_assert!(encoded_result.is_ok(), "MandateSpec::LEN always fits its canonical encoding");
+    if encoded_result.is_err() {
+        unreachable!("MandateSpec::LEN always fits its canonical encoding");
     }
 
     let mut hash = OFFSET_BASIS;

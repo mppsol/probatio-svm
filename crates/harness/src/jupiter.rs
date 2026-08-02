@@ -5,7 +5,7 @@
 //! `price` (entry) — all atomic USD (1e6). This module works in WHOLE USD (the live RPC path divides
 //! atomic by 1e6). v1 is single-token (SOL); multi-token cross-asset delta is future.
 
-use probatio_contract::{MandateSpec, MANDATE_INSTRUMENT};
+use probatio_contract::MandateSpec;
 
 use crate::verifier::{AccountState, StateSnapshot};
 
@@ -112,14 +112,16 @@ pub fn jupiter_to_snapshots_with_mandate(
             let collateral: i64 = slot.positions.iter().map(|p| p.collateral_usd).sum();
             let unrealized: i64 = slot.positions.iter().map(|p| p.unrealized_pnl(mark)).sum();
             let equity: i64 = slot.positions.iter().map(|p| p.equity(mark)).sum();
+            // Jupiter v1 only maps SOL, represented by instrument 0 in this snapshot.
+            let instrument = 0;
             let measured_account = AccountState {
                 size: measured_delta,
                 collateral: collateral.max(0) as u64,
                 unrealized_pnl: unrealized,
                 free_collateral: equity,
-                instrument: 0,
+                instrument,
                 within_mandate: measured_delta.abs() <= mandate.max_size
-                    && mandate.instrument == MANDATE_INSTRUMENT,
+                    && instrument == mandate.instrument,
             };
 
             StateSnapshot {
@@ -489,6 +491,48 @@ mod tests {
         assert!(report.findings.iter().any(|f| f.kind == FindingKind::ClaimTracksExposure));
         // net long $8k ⇒ measured_delta 80 units.
         assert_eq!(snaps[0].measured_delta, 80);
+    }
+
+    #[test]
+    fn authored_mandate_controls_jupiter_snapshot_compliance() {
+        let trace = vec![JupSlot {
+            slot: 1,
+            mark_usd: 100,
+            positions: vec![JupPosition {
+                side: JupSide::Long,
+                size_usd: 1_000,
+                collateral_usd: 1_000,
+                entry_usd: 100,
+            }],
+        }];
+
+        assert!(jupiter_to_snapshots_with_mandate(
+            &trace,
+            &[],
+            &MandateSpec::stage0_default(),
+        )[0]
+        .per_account[0]
+            .within_mandate);
+        assert!(!jupiter_to_snapshots_with_mandate(
+            &trace,
+            &[],
+            &MandateSpec {
+                max_size: 5,
+                instrument: 0,
+            },
+        )[0]
+        .per_account[0]
+            .within_mandate);
+        assert!(!jupiter_to_snapshots_with_mandate(
+            &trace,
+            &[],
+            &MandateSpec {
+                max_size: 10,
+                instrument: 1,
+            },
+        )[0]
+        .per_account[0]
+            .within_mandate);
     }
 
     // --- Live-path tests: exercise the decode/parse moat against REAL mainnet bytes -----------------
