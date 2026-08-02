@@ -1,49 +1,35 @@
-# Review 022 — Path A attestation sender
+# Re-review 022 — Path A attestation preparer
 
-**Branch:** `task/022-attestation-send` (`2782252`) · **Reviewer:** Codex · **Verdict: CHANGES**
+**Branch:** `task/022-attestation-send` (`2782252`, fix `9fa891f`) · **Reviewer:** Codex · **Verdict: CHANGES**
 
-The dry-run boundary is good: the default module import is only `node:fs`; it does not read a keypair,
-import either SDK, or make an RPC call.  `--send` also checks both a keypair and the exact
-`ipfs://pending` placeholder before its lazy imports.  The following live-path issues need correction
-before a real submission is safe.
+The two P1 findings are resolved:
 
-## P1 — Missing option values can silently fall back to a sendable call
+- Value-taking options now require a following non-flag argument and reject duplicates.  A missing
+  `--feedback-uri` now fails before call parsing rather than falling back to the JSON URI.
+- The live sender, SDK dependencies/imports, keypair read, and every network path are removed.
+  `--send` only validates/prepares and explicitly refuses to submit, so even a supplied keypair path is
+  never opened.  This is Node 18-compatible and uses only `node:fs` to read the declared call input.
 
-`parseArgs()` consumes values with `argv[++i]` without checking that one exists.  In particular,
-`--feedback-uri` at the end of the command assigns `undefined`; later
-`args.feedbackUri ?? call.feedback_uri` silently uses the URI embedded in the call file.  I reproduced
-this in dry-run with `node attest/send.mjs --call - --feedback-uri`: it printed a valid plan using the
-stdin call's URI rather than rejecting the malformed command.  The same issue applies to `--rpc` (and
-every value-taking flag), so a malformed `--send` invocation can use an unintended URI/RPC.
+## P2 — `isBase58Pubkey` does not actually validate a 32-byte Solana public key
 
-Require a following, non-flag value for every value-taking option, reject duplicates, and fail before
-reading the call/key or importing SDKs when parsing is malformed.  Treat an explicitly supplied empty URI
-as invalid rather than as a fallback.
+The validator checks only base58 alphabet and a 32–44 character length.  It accepts strings that do not
+decode to 32 bytes.  For example, a 44-character string of `z` characters is too large for a 32-byte
+Solana public key, but this command reports `VALIDATED & READY`:
 
-## P1 — Wildcard, unverified SDK can still silently change the live call semantics
+```sh
+printf '%s\n' '{"agent":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","value":100,"tag":"re-exec","feedback_uri":"ipfs://pinned"}' \
+  | node attest/send.mjs --call - --send --keypair does-not-exist.json
+```
 
-`attest/package.json` declares `"8004-solana": "*"`, then `--send` invokes the documented-but-unverified
-constructor and `giveFeedback` shape after checking only that a constructor export exists.  A future SDK
-can retain a callable `giveFeedback` method while changing argument meaning; this code would submit it,
-not fail safely.  The source comment asking the operator to verify it is not an executable guard.
-
-Pin an audited SDK version (and commit its lockfile), verify the exact export/method contract in a
-non-sending fixture, and make the sender reject an unexpected SDK surface before constructing a
-transaction.  Until then the script should remain dry-run-only rather than expose a live `--send` path.
-
-## P2 — Validate the FeedbackCall before a live submission
-
-The sender only checks truthiness of `call.agent` and stringifies `call.value`; it accepts out-of-range,
-non-integer values and arbitrary tags.  Before `--send`, require a valid base58 public key, integer
-`value` in `0..=100`, exact `tag === "re-exec"`, and a non-placeholder URI.  This keeps the live bridge
-bound to Task 021's `FeedbackCall` instead of signing arbitrary JSON.
-
-`--receipt` is also parsed but never used; remove it or implement it so callers do not believe it affects
-the receipt bound to a send.
+No transaction is possible in this task, but the tool's claimed strict binding to Task 021's
+`agent_asset: [u8; 32]` is false and would carry directly into 022b.  Decode base58 and require exactly
+32 output bytes (without adding an SDK/key/network dependency) before labeling a call send-ready.  Also
+reject a duplicate `--send` flag if the documented duplicate-rejection guarantee is intended to cover all
+flags, not just value-taking flags.
 
 ## Validation performed
 
-- `node attest/send.mjs --call -` with a piped FeedbackCall: dry-run only; no SDK/key/network access.
-- Missing `--call` reports usage.
-- `node attest/send.mjs --call - --feedback-uri` reproduced the P1 fallback above.
-- Node ESM syntax is compatible with Node 18 (built-in `node:fs`, top-level `await`, optional chaining).
+- Dry-run with a valid piped FeedbackCall: prints a plan only; no SDK/key/network access.
+- Missing `--feedback-uri` value: errors; no fallback.
+- Duplicate `--call`: errors.
+- Source audit confirms no SDK imports, keypair reads, `fetch`, RPC client, or submit call remains.
