@@ -78,5 +78,5 @@ certify-jupiter --attest <asset> --feedback-uri <pinned-uri>   # (task 021) prin
 
 - Automatic IPFS pinning of the receipt (bring your own pinned `feedback_uri` for now).
 - ERC-8004 `validationResponse` EVM emitter (Reckn/EVM lane).
-- A verified end-to-end devnet submission — that needs Hiro's funded keypair and one manual `--send`;
-  do it together, then record the resulting on-chain signature here.
+- (Done in task 022d: the verified end-to-end devnet submission — see the "DONE on-chain" section above.)
+- Mainnet submission + pinning the real `receipt_json` at `feedback_uri` (devnet used a placeholder URL).
