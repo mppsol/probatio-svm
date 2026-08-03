@@ -26,7 +26,7 @@ Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedb
   refuse-only stub after review 022 while the SDK was unverified; task 022b verified `8004-solana@0.8.3`
   and wired the real submit — see below.)
 
-## Task 022b — real submit: API verified + wired; runtime BLOCKED on a web3.js dep bug
+## Task 022b/022c — real submit: API verified + wired; SDK load resolved; only the funded send remains
 
 **Done:** the `8004-solana@0.8.3` API was verified from its shipped types and `--send` is wired to it
 (with a runtime surface guard + fail-safe import):
