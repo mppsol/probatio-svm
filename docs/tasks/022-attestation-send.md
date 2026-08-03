@@ -22,9 +22,10 @@ Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedb
   runtime guard rejecting an unexpected `8004-solana` surface, and a try/catch import that fails safe
   (clean error, never a partial send). Gated, **not disabled** — treat every `--send` as spending the key.
 - Strict arg parsing: every value-flag needs a following value; duplicates and empty `--feedback-uri` are
-  errors. No keys in the repo; `node_modules`/lockfile not committed. (History: `--send` was a
-  refuse-only stub after review 022 while the SDK was unverified; task 022b verified `8004-solana@0.8.3`
-  and wired the real submit — see below.)
+  errors. No keys in the repo; `node_modules` is gitignored and `package-lock.json` is committed (it pins
+  the `uuid@9.0.1` override that fixes the SDK load). (History: `--send` was a refuse-only stub after
+  review 022 while the SDK was unverified; task 022b verified `8004-solana@0.8.3` and wired the real
+  submit; task 022c resolved the SDK load — see below.)
 
 ## Task 022b/022c — real submit: API verified + wired; SDK load resolved; only the funded send remains
 
