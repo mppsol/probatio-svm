@@ -37,19 +37,17 @@ Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedb
   `feedbackUri = <pinned receipt>`.
 - Versions pinned in `package.json` (`8004-solana@0.8.3`, `@solana/web3.js@1.98.4`).
 
-**BLOCKER (not yet resolved):** the SDK will not load in this environment — `@solana/web3.js@1.98.4`
-pulls `rpc-websockets` whose nested `uuid` is ESM but is `require()`d from CJS
-(`require() of ES Module rpc-websockets/node_modules/uuid/dist-node/index.js not supported`). Reproduced
-on Node 18/20/22; a `uuid` override did not dedupe it; `bun` not available here. So the import — and thus
-any real send — cannot run/smoke-test in this environment. `--send` fails **safe** (the import is in a
-try/catch → clean error, never a partial send).
+**SDK load — RESOLVED.** `@solana/web3.js@1.98.4` pulled `rpc-websockets@9.3.9`, which nests `uuid@14.0.1`
+(ESM) and `require()`s it from CJS → import crash (`require() of ES Module …/uuid/dist-node/index.js not
+supported`). Root cause: the nested `uuid` was ESM-only. Fix: `"overrides": { "uuid": "9.0.1" }` (a
+CJS-consistent `uuid`, deduped across the whole tree), committed with `package-lock.json`. Verified on
+Node 18: `import('8004-solana')` loads and `SolanaSDK`/`giveFeedback` resolve as functions — no send.
+`--send` also still fails safe (import in try/catch; surface guard; placeholder/keypair gates).
 
-**To finish (in the send environment, with Hiro):** resolve the web3.js dep load (e.g. an `overrides`/
-resolution that gives `rpc-websockets` a single CJS-consistent `uuid`, a compatible `@solana/web3.js`
-pin, or a runtime like `bun`/`pnpm` that resolves it), `npm install`, smoke-test `import('8004-solana')`
-(no send), then run one real `--send` with a **funded devnet keypair** against a **registered agent**, and
-record the on-chain signature here. `node_modules`/lockfile are intentionally not committed (the tree
-above does not load).
+**Remaining before an attestation exists on-chain — the funded step only:** `cd attest && npm install`,
+then one real `--send` with a **funded devnet keypair** against a **registered agent** and a pinned
+`--feedback-uri`; record the on-chain signature here. `node_modules` stays gitignored; `package-lock.json`
+IS committed (it pins the working resolution).
 
 ## Flow
 

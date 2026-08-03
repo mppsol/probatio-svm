@@ -46,13 +46,14 @@ node send.mjs --call ../call.json --feedback-uri ipfs://<CID> --send --keypair <
 `new SolanaSDK({ cluster, rpcUrl, signer }).giveFeedback(assetPubkey, { value, score, tag1, feedbackUri })`,
 mapping PASS=100/FLAG=0 to the SDK's direct 0–100 `score`. Versions are pinned in `package.json`.
 
-**Known blocker:** the SDK does not load in the tested environments (Node 18/20/22) because
-`@solana/web3.js@1.98.4` pulls a `rpc-websockets` whose nested `uuid` (ESM) is `require()`d from CJS, so
-`--send` currently errors at import here. **Do not treat that as a safety net** — the code path is a real
-send. To finish: resolve the dep load (an `overrides`/resolution giving one CJS-consistent `uuid`, a
-compatible web3.js pin, or `bun`/`pnpm`), `npm install`, smoke-test `import('8004-solana')` (no send),
-then run one `--send` with a **funded devnet keypair** against a **registered agent** and record the
-signature.
+**SDK load — resolved.** `@solana/web3.js@1.98.4` pulled `rpc-websockets@9.3.9`, which nests `uuid@14`
+(ESM) and `require()`s it from CJS → an import crash. Fixed with `"overrides": { "uuid": "9.0.1" }`
+(a CJS-consistent `uuid`, deduped across the tree) — pinned in `package-lock.json`. Verified:
+`import('8004-solana')` loads and `SolanaSDK` / `giveFeedback` resolve as functions on Node 18 (no send).
+
+**Remaining before a real attestation exists on-chain:** only the funded step — `cd attest && npm install`,
+then one `--send` with a **funded devnet keypair** against a **registered agent** (and a pinned
+`--feedback-uri`), then record the signature. That step spends the key, so run it deliberately.
 
 The Validation Registry is archived, so this stays on the **Reputation** path; when it ships, swap to the
 `validationResponse`-shaped call (same `value`/`uri` semantics).
