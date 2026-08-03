@@ -52,9 +52,13 @@ mapping PASS=100/FLAG=0 to the SDK's direct 0–100 `score`. Versions are pinned
 (a CJS-consistent `uuid`, deduped across the tree) — pinned in `package-lock.json`. Verified:
 `import('8004-solana')` loads and `SolanaSDK` / `giveFeedback` resolve as functions on Node 18 (no send).
 
-**Remaining before a real attestation exists on-chain:** only the funded step — `cd attest && npm install`,
-then one `--send` with a **funded devnet keypair** against a **registered agent** (and a pinned
-`--feedback-uri`), then record the signature. That step spends the key, so run it deliberately.
+**Proven on-chain (Solana devnet):** a PASS attestation (score=100) about agent
+`A3DrRkqJoismmVutuCiWvNcCsviZTwemzecTgsAAjTYX` by an independent validator keypair — **Finalized**, tx
+[`5CQsPC2H…Bk97Lqn`](https://explorer.solana.com/tx/5CQsPC2HGNz8yK8LGDZquYcbhxHDh7kyNJ8j7KYEGmPRZkrqhVkSvc7fJgbVKmja86NQ6uPubnokh9fDeBk97Lqn?cluster=devnet).
+The attester keypair must differ from the agent owner (the registry rejects self-feedback); use
+`attest/register.mjs` to create a target agent. A production attestation should pin the task-021
+`receipt_json` at `feedback_uri` so third parties can re-run the verdict (the devnet run used a
+placeholder URL).
 
 The Validation Registry is archived, so this stays on the **Reputation** path; when it ships, swap to the
 `validationResponse`-shaped call (same `value`/`uri` semantics).

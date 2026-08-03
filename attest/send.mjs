@@ -171,7 +171,11 @@ try {
     tag1: call.tag,
     feedbackUri,
   });
-  console.log('submitted giveFeedback:', JSON.stringify(res?.signature ?? res));
+  const sig = res?.signature ?? res?.signatures?.[0] ?? '';
+  // The SDK can return a result with an empty signature when the tx was built but rejected on-chain
+  // (e.g. SelfFeedbackNotAllowed) — treat a missing signature as a failure, never "submitted".
+  if (!sig) die('giveFeedback returned no signature — the transaction likely failed on-chain (see the SDK logs above)', 1);
+  console.log('submitted giveFeedback:', sig);
 } catch (e) {
   die(`giveFeedback failed (verify signer funding, agent registration, and RPC): ${e?.message ?? e}`, 1);
 }

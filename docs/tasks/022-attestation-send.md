@@ -45,10 +45,25 @@ CJS-consistent `uuid`, deduped across the whole tree), committed with `package-l
 Node 18: `import('8004-solana')` loads and `SolanaSDK`/`giveFeedback` resolve as functions — no send.
 `--send` also still fails safe (import in try/catch; surface guard; placeholder/keypair gates).
 
-**Remaining before an attestation exists on-chain — the funded step only:** `cd attest && npm install`,
-then one real `--send` with a **funded devnet keypair** against a **registered agent** and a pinned
-`--feedback-uri`; record the on-chain signature here. `node_modules` stays gitignored; `package-lock.json`
-IS committed (it pins the working resolution).
+## Task 022d — DONE on-chain (Solana devnet)
+
+Path A is proven end-to-end on devnet (`attest/register.mjs` to create a target agent, then `send.mjs
+--send`):
+
+- **Registered agent** (asset): `A3DrRkqJoismmVutuCiWvNcCsviZTwemzecTgsAAjTYX`
+  ([register tx](https://explorer.solana.com/tx/UJXoWFqnHwquGZNs9seqcudJcrKD1XTmjFFNQzXSwtP4uEJJueVfmtTFhBURynAYyft5yBwpDkK4ZJLDhbTvjkw?cluster=devnet), owner `AmSYugrt…`).
+- **giveFeedback attestation** (score=100 / PASS, tag `re-exec`), by an **independent validator** keypair
+  `8TNv14eKhoJctkhpo5aAd7t5ySqqBaJXSfFTyYsNArBT` (≠ the agent owner — the registry enforces
+  `SelfFeedbackNotAllowed`, which we hit first with the owner key, confirming the rule): **Finalized**,
+  tx `5CQsPC2HGNz8yK8LGDZquYcbhxHDh7kyNJ8j7KYEGmPRZkrqhVkSvc7fJgbVKmja86NQ6uPubnokh9fDeBk97Lqn`
+  ([explorer](https://explorer.solana.com/tx/5CQsPC2HGNz8yK8LGDZquYcbhxHDh7kyNJ8j7KYEGmPRZkrqhVkSvc7fJgbVKmja86NQ6uPubnokh9fDeBk97Lqn?cluster=devnet)).
+
+Finding: the attester must differ from the agent owner (self-feedback is rejected on-chain) — so
+Probatio's validator identity is naturally a separate keypair from whoever owns the agent. `send.mjs` was
+hardened to treat an empty/missing signature as a failure (never print "submitted" on a rejected tx).
+The receipt `feedback_uri` here is an unpinned placeholder URL; a production attestation should pin the
+`receipt_json` (task 021 output) at that URI so third parties can fetch and re-run the verdict.
+`node_modules` stays gitignored; `package-lock.json` IS committed (pins the working uuid override).
 
 ## Flow
 
