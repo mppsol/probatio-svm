@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Probatio → Solana Agent Registry (Reputation) attestation preparer — Path A.
+// Probatio → Solana Agent Registry (Reputation) attestation sender — Path A.
 //
-// SAFETY: this tool PREPARES and VALIDATES the giveFeedback call; it does NOT submit. There is no live
-// send path here — no SDK import, no keypair read, no network — because the 8004-solana API is not yet
-// verified against a pinned version (Codex review 022, P1). Enabling the real submit is task 022b, done
-// only after pinning + verifying the SDK in a non-sending fixture.
+// TWO MODES:
+//   default (no --send)  DRY RUN: prepare + validate + print the planned giveFeedback. Imports no SDK,
+//                        reads no keypair, no network. Zero runtime deps.
+//   --send               REAL ON-CHAIN SUBMISSION (not a no-op): signs + submits giveFeedback with the
+//                        8004-solana SDK and a FUNDED keypair. Gated (see the --send block) and fails
+//                        safe on a bad/absent SDK, but it IS a live, funded write — use deliberately.
 //
 // Input: the FeedbackCall JSON emitted by the Rust harness `certify-jupiter --attest <asset>`:
 //   {"agent":"<base58 asset>","value":100,"tag":"re-exec","feedback_uri":"ipfs://<pinned receipt>"}

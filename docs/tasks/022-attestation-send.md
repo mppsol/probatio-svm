@@ -10,17 +10,21 @@ thin bridge that actually writes it on-chain via the **live, permissionless** So
 Reputation Registry — `giveFeedback(agentAsset, { value, tag1:'re-exec', feedbackUri })`
 (program `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`, SDK npm `8004-solana`).
 
-## Design (safety-first) — resolved to PREPARE-ONLY after Codex review 022
+## Design (safety-first) — two modes
 
-- `attest/send.mjs` — Node ESM, **prepare-only**: reads the `FeedbackCall` JSON, strict-validates it, and
-  prints the exact planned `giveFeedback` call. **It submits nothing** — no SDK import, no keypair read,
-  no network, zero runtime deps. Runnable immediately (`node attest/send.mjs --call call.json`).
-- **`--send`** does *strict* validation and prints the send-ready call, then **refuses** ("live submission
-  disabled, task 022b"). This removes the Codex-flagged risk of an unverified wildcard SDK mis-signing
-  with a funded keypair.
-- Strict arg parsing (every value-flag needs a value; duplicates/empty rejected); the call is bound to
-  Task 021's shape (base58 agent, `value` 0..=100, tag `re-exec`, non-placeholder URI) — never arbitrary
-  JSON. No keys in the repo.
+- **Default (no `--send`) — DRY RUN:** `attest/send.mjs` reads the `FeedbackCall` JSON, strict-validates
+  it, and prints the exact planned `giveFeedback` call. It submits nothing, imports no SDK, reads no
+  keypair, makes no network call — zero runtime deps. Runnable immediately (`node attest/send.mjs --call
+  call.json`).
+- **`--send` — REAL ON-CHAIN SUBMISSION** (not a no-op): with the SDK installed and a funded keypair it
+  signs and submits `giveFeedback`. Gated by a required `--keypair`, a non-placeholder `feedback_uri`,
+  strict `FeedbackCall` validation (base58 agent decoding to 32 bytes, `value` 0..=100, tag `re-exec`), a
+  runtime guard rejecting an unexpected `8004-solana` surface, and a try/catch import that fails safe
+  (clean error, never a partial send). Gated, **not disabled** — treat every `--send` as spending the key.
+- Strict arg parsing: every value-flag needs a following value; duplicates and empty `--feedback-uri` are
+  errors. No keys in the repo; `node_modules`/lockfile not committed. (History: `--send` was a
+  refuse-only stub after review 022 while the SDK was unverified; task 022b verified `8004-solana@0.8.3`
+  and wired the real submit — see below.)
 
 ## Task 022b — real submit: API verified + wired; runtime BLOCKED on a web3.js dep bug
 
