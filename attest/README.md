@@ -37,7 +37,8 @@ node send.mjs --call ../call.json --feedback-uri ipfs://<CID> --send --keypair <
   **not disabled** — treat every `--send` as spending from the keypair.
 - **Strict args:** every value-taking flag requires a following value; duplicates and an empty
   `--feedback-uri` are errors — a malformed command fails instead of silently falling back.
-- **No keys in the repo;** `node_modules`/lockfile are not committed. Program (mainnet):
+- **No keys in the repo;** `node_modules` is gitignored, but `package-lock.json` **is committed** (it
+  pins the `uuid@9.0.1` override that fixes the SDK load). Program (mainnet):
   `8oo4dC4JvBLwy5tGgiH3WwK4B9PWxL9Z4XjA2jzkQMbQ`.
 
 ## `--send` status (task 022b)
