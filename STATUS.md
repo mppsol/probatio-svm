@@ -20,7 +20,7 @@ refutation as input.
 | # | Item | Status | Kill number fixed in advance | Evidence |
 |---|---|---|---|---|
 | **G0** | Pre-registration of window, venues, loss definition, thresholds | **not started** | precondition, no verdict | — |
-| G1 | Does the buyer exist, and is the loss poolable? | not started | `N_addr`<1,000 / `N_events`<300 / `L_total`<$50M per 90d / `C_10`≥50% | — |
+| G1 | Does the buyer exist, and is the loss poolable? | not started | `N_addr`<1,000 / `N_events`<300 / `L_total`<$50M per 90d / `C_10`≥50% / `L_und`÷`L_gross`>30% | — |
 | G2 | Is the loss reconstructible and attributable? | not started | `R`<0.95 or `A`<0.95 | — |
 | G3 | Was the outcome undetermined at participation? | not started | `AUC`≥0.90 or `D`≥0.20 | — |
 | G4 | Can payout and loss be made to coincide? | not started | no form with median(e)≤0.20 and p90(e)≤0.50 | — |
@@ -32,8 +32,11 @@ measurement, G4 selects the payout form by measurement. Fixing them by assertion
 **Next action: G0 pre-registration.** Nothing may be measured before it commits, and nothing in it may
 change after. No code is written in this phase.
 
-Open risk flagged to the founder, not decided: H2's six criteria do not test **differentiation** —
-G1–G5 can all pass against a loss an incumbent already covers. See `docs/H2-GATE.md`.
+**Differentiation is resolved into G1, not added as a seventh item** (founder: "推奨で"). `L_total` is
+the **uncovered residual** `L_gross − L_cov − L_und`, and every G1 threshold applies to it — so a loss an
+incumbent already covers cannot pass the gate as if it were addressable. Undetermined coverage counts
+*against* the project. Deferred to H3 by design: *why this rather than the incumbent* (product
+differentiation, pricing, distribution) — answerable only once the room is shown to exist.
 
 ---
 

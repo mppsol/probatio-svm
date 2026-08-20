@@ -100,6 +100,11 @@ recorded in `STATUS.md`:
 - **V** — the venue list: the exact programs whose state will be read, fixed in advance.
 - **The loss definition** — what counts as a loss event, per venue, in bytes: which accounts, which
   fields, which state transition, and how the USD amount is derived.
+- **The coverage determination** — what counts as an *existing remedy* for a loss event (an insurance
+  fund that paid, a protocol backstop, a socialised-loss mechanism, a purchased cover), and exactly how
+  each event is classified `covered` / `uncovered` / `undetermined`. Pre-registered for the same reason
+  as everything else: "covered" defined *after* seeing the number is the easiest place in this gate to
+  manufacture a pass.
 - **Every threshold in G1–G5 below**, unchanged from this document unless changed *before* G0 commits.
 
 > **The anti-延命 rule.** After G0 commits, **W, V, the loss definition and the thresholds are frozen.**
@@ -113,11 +118,24 @@ Over W and V, measure and report:
 
 | symbol | quantity |
 |---|---|
-| `N_addr` | distinct addresses that bore ≥1 loss event |
-| `N_events` | distinct loss events |
-| `L_total` | aggregate loss, USD |
+| `N_addr` | distinct addresses that bore ≥1 **uncovered** loss event |
+| `N_events` | distinct **uncovered** loss events |
+| `L_gross` | aggregate loss, USD — the headline number |
+| `L_cov` | of that, loss an existing remedy actually paid or was contractually available for |
+| `L_und` | of that, loss whose coverage status could not be determined |
+| **`L_total`** | **`L_gross − L_cov − L_und` — the uncovered residual. This, not `L_gross`, is the addressable loss and the number every threshold below is applied to.** |
 | `C_10` | share of `L_total` from the 10 largest events |
 | — | the full loss distribution (deciles), not only the headline |
+
+**Why `L_total` is the residual and not the gross.** This is H1's error in its other form. H1's
+headline was $64.5M of open interest; the number that decided the gate was ~0, because the gross figure
+counted a population the product could not address. Loss that an existing mechanism already makes good
+is not a market — it is someone else's book. Measuring the gross and calling it addressable would
+reproduce exactly the mistake that killed H1, one layer up.
+
+**`L_und` counts against the project, not for it.** Undetermined coverage is subtracted from the
+addressable residual rather than added to it. The burden is on the project, and not-proven is a KILL —
+so a loss we cannot show was uncovered is not counted as ours.
 
 **KILLED if any of:**
 
@@ -127,6 +145,7 @@ Over W and V, measure and report:
 | `N_events` < **300** | below ~300 events a loss frequency cannot be estimated to better than roughly ±6% standard error; pricing would be guesswork presented as a number |
 | `L_total` < **$50M** per 90 days | the arithmetic, stated openly: $50M/90d ⇒ ~$200M/yr insured loss; at a 5–10% premium rate that is a $10–20M/yr *total addressable* premium pool; at a realistic 5–10% share that is $0.5–2M/yr — the floor at which a team is fundable. Below it the business cannot exist even under generous assumptions |
 | `C_10` ≥ **50%** | a book where ten events carry half the loss is not poolable — it is a bet on ten outcomes, not insurance. This is the H1 dust lesson: a passing headline over a degenerate distribution is still a KILL |
+| `L_und` / `L_gross` > **30%** | if nearly a third of the loss cannot be classified as covered or not, the residual carries an error bar wider than the decision it is supposed to make. The measurement cannot decide, and **not-proven is a KILL** — it is not a reason to widen the classifier until it can |
 
 If W is not 90 days, `L_total` is scaled to a 90-day equivalent **before** comparison, and the scaling
 is stated.
@@ -195,7 +214,7 @@ Order is fixed. **Each step stops the phase on failure** — there is no step th
 | step | produces | decided by | on failure |
 |---|---|---|---|
 | **G0** | `docs/H2-preregistration.md` + commit hash in `STATUS.md` | — (precondition) | cannot proceed |
-| **G1** | `N_addr`, `N_events`, `L_total`, `C_10`, decile distribution, all @slot | one script, one command | `KILLED`, stop |
+| **G1** | `N_addr`, `N_events`, `L_gross`/`L_cov`/`L_und`/`L_total`, `C_10`, decile distribution, all @slot | one script, one command | `KILLED`, stop |
 | **G2** | `R`, `A`, itemised shortfall by cause | same event set, one script | `KILLED`, stop |
 | **G3** | `AUC`, `D`, and the `t0` visibility rule used | one script, point-in-time state only | `KILLED`, stop |
 | **G4** | `median(e)`, `p90(e)` × 3 forms; the selected form | one script over the G1–G2 event set | `KILLED`, stop |
@@ -224,18 +243,28 @@ No model reviews its own output. The model that computed a number does not certi
 
 ---
 
-## Stated open risk — differentiation is not a gate item this time
+## Differentiation — resolved into G1, not added as a seventh item
 
-H1's `KILLED` clause was *"the differential cannot be shown, or the adopter is vague."* H2's six
-criteria, as fixed by the founder, test **whether a buyer and a real loss exist** — they do **not** test
-whether an incumbent already covers that loss better.
+H1's `KILLED` clause was *"the differential cannot be shown, or the adopter is vague."* The founder's
+six criteria do not name differentiation, and it is **not** added here as a seventh gate item. It is
+folded into G1's definition instead, for three reasons:
 
-That is a deliberate scope choice and it carries a real risk: G1–G5 can all pass against a population
-already served by an existing cover, and H2 would show `GO` on a question no one needs answered. The
-options are to add a differentiation item to this gate, or to accept the risk knowingly and defer it to
-H3. **This document does not decide that — it is flagged for the founder.**
+1. **It is the same error H1 died of, one layer up.** Gross loss counts a population the product cannot
+   address, exactly as H1's $64.5M of open interest counted a population it could not certify. The fix
+   belongs in the denominator, not in a bolted-on item.
+2. **It costs almost nothing.** Classifying coverage runs over the *same* event set G1–G2 already
+   produce. A separate item would re-derive the same data to ask a question the residual already answers.
+3. **It makes the existing threshold correct rather than merely stricter.** The $50M/90d figure was
+   derived from an *addressable* premium pool. Applying it to gross loss was the sloppy version;
+   applying it to the uncovered residual is what the arithmetic always meant.
 
----
+**What this does test:** whether uncovered loss exists at all. If every measured loss already has a
+remedy, there is no room, and H2 is KILLED at G1 rather than after a full cycle.
+
+**What this deliberately does not test, and is deferred to H3:** *why this rather than the incumbent* —
+product differentiation, pricing, distribution. At gate stage the answerable question is whether the
+room exists; whether our version of the thing is better is a question you can only ask once it does.
+Recorded here so it is a known deferral rather than an omission.
 
 ## On reaching the gate: stop
 
