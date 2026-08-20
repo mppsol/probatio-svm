@@ -19,7 +19,7 @@ refutation as input.
 
 | # | Item | Status | Kill number fixed in advance | Evidence |
 |---|---|---|---|---|
-| **G0** | Pre-registration of window, venues, loss definition, thresholds | **not started** | precondition, no verdict | — |
+| **G0** | Pre-registration of window, venues, loss definition, thresholds | **written, awaiting Codex review** | precondition, no verdict | [`docs/H2-preregistration.md`](docs/H2-preregistration.md) |
 | G1 | Does the buyer exist, and is the loss poolable? | not started | `N_addr`<1,000 / `N_events`<300 / `L_total`<$50M per 90d / `C_10`≥50% / `L_und`÷`L_gross`>30% | — |
 | G2 | Is the loss reconstructible and attributable? | not started | `R`<0.95 or `A`<0.95 | — |
 | G3 | Was the outcome undetermined at participation? | not started | `AUC`≥0.90 or `D`≥0.20 | — |
@@ -29,8 +29,10 @@ refutation as input.
 The buyer and the payout form are **deliberately not fixed by assertion** — G1 names the buyer by
 measurement, G4 selects the payout form by measurement. Fixing them by assertion is what killed H1.
 
-**Next action: G0 pre-registration.** Nothing may be measured before it commits, and nothing in it may
-change after. No code is written in this phase.
+**Next action: independent review of G0 by Codex.** G0 is written and committed; it is not frozen in
+practice until that review is recorded. W = slots 421,060,000 → 440,500,000 (91.79 days, both already
+in the past). V = 6 mainnet-verified programs. Nothing may be measured before the review, and nothing
+in G0 may change after it. G1 is the first code H2 is permitted to write.
 
 **Differentiation is resolved into G1, not added as a seventh item** (founder: "推奨で"). `L_total` is
 the **uncovered residual** `L_gross − L_cov − L_und`, and every G1 threshold applies to it — so a loss an
