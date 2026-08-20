@@ -1,8 +1,13 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY
+# ⛔ PHASE: KILL GATE ONLY — H2
 
-**Read `docs/GATE.md` before doing anything in this repo.** It is binding and it overrides any
-older plan, roadmap or task list you find here.
+**Read [`docs/H2-GATE.md`](docs/H2-GATE.md) before doing anything in this repo.** It is binding and it
+overrides any older plan, roadmap or task list you find here — including `docs/GATE.md`, which is H1's
+gate and is **closed**: H1 is `KILLED` and its verdict is not to be rewritten.
+
+**H2 is at G0 (pre-registration). No code is written in this phase**, and no H1 artifact — verifier,
+attestation, `MandateSpec`, guard, gallery, the agent framing — may be reused as H2's foundation.
+Reusing one because it exists is 延命, not scope.
 
 The only work permitted right now is producing evidence for this project's kill gate. No
 generalisation, no large UI, no peripheral features, no production deployment, until the gate

@@ -1,5 +1,14 @@
 # Kill Gate — Probatio SVM
 
+> **⛔ THIS GATE IS CLOSED. H1 は KILLED。**
+>
+> This is **H1's** gate. Its verdict is final and is not to be rewritten:
+> [`docs/decisions/P1-real-target.md`](./decisions/P1-real-target.md) (P1 `KILLED`, Codex r2 `APPROVE`).
+> The document below is kept verbatim as the record of what was gated and how.
+>
+> **The binding gate is now [`docs/H2-GATE.md`](./H2-GATE.md).** Do not produce evidence for the items
+> below, and do not reuse H1 artifacts as a foundation for H2 — that is 延命, not scope.
+
 The only work permitted in this phase.
 
 > **このプロジェクトは探索無限化を禁止する。**

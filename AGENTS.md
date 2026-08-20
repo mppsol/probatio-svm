@@ -1,8 +1,8 @@
 <!-- KILL-GATE-BANNER -->
 # ⛔ PHASE: KILL GATE ONLY
 
-**Read `docs/GATE.md` before doing anything in this repo.** It is binding and it overrides any
-older plan, roadmap or task list you find here.
+**Read [`docs/H2-GATE.md`](docs/H2-GATE.md) before doing anything in this repo.** It is binding.
+`docs/GATE.md` is H1's gate and is **closed** (H1 `KILLED`). H2 is at G0 — specification only, no code.
 
 The only work permitted right now is producing evidence for this project's kill gate. No
 generalisation, no large UI, no peripheral features, no production deployment, until the gate
