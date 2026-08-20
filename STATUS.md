@@ -5,7 +5,7 @@ One item per run. A verdict is a number or a reproducible experiment.
 
 | # | Item | Status | Evidence | Verdict date |
 |---|---|---|---|---|
-| **P1** | A real target — an actual on-chain agent or agent vault | **KILLED** | [`docs/decisions/P1-real-target.md`](docs/decisions/P1-real-target.md) + Codex review [`reviews/P1-real-target.md`](reviews/P1-real-target.md) | 2026-08-20 |
+| **P1** | A real target — an actual on-chain agent or agent vault | **KILLED** | [`docs/decisions/P1-real-target.md`](docs/decisions/P1-real-target.md) + Codex [r1](reviews/P1-real-target.md) → [r2 `APPROVE`](reviews/P1-real-target-r2.md) | 2026-08-20 |
 | P2 | Reproducible certification | not reached | — | — |
 | P3 | The constraint binds | not reached | — | — |
 | P4 | Differentiation vs an existing sandbox/fuzzer | not reached | — | — |
@@ -13,7 +13,8 @@ One item per run. A verdict is a number or a reproducible experiment.
 ## P1 — KILLED (2026-08-20)
 
 Reproduce: `python3 docs/decisions/repro/p1_real_target.py` (~60s, stdlib only).
-Independently reviewed by Codex: [`reviews/P1-real-target.md`](reviews/P1-real-target.md).
+Independently reviewed by Codex: [r1 `CHANGES`](reviews/P1-real-target.md) (one P0, fixed) →
+[r2 **`APPROVE`**](reviews/P1-real-target-r2.md).
 
 At mainnet slot 440479436, of the **1,767** distinct agent identities carried by the **1,471**
 `AgentAccount` records in the Solana Agent Registry (`8oo4dC4Jv…`) — `creator`, `owner`, `asset`,

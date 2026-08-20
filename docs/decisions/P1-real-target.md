@@ -2,7 +2,9 @@
 
 **Date:** 2026-08-20 · **Chain snapshot:** mainnet registry slot 440479435 / Jupiter slot 440479436
 **Produced by:** Claude (spec/evidence role) · **Independently reviewed by:** Codex —
-[`reviews/P1-real-target.md`](../../reviews/P1-real-target.md) (r1 `CHANGES`, one P0 fixed below)
+[r1 `CHANGES`](../../reviews/P1-real-target.md) (one P0, fixed below) →
+[r2 **`APPROVE`**](../../reviews/P1-real-target-r2.md) (independent recomputation at registry slot
+440482647 / Jupiter slot 440481597 reached `6 ever / 0 live` and the same verdict)
 
 > **P1 (docs/GATE.md):** *A real target — an actual on-chain agent or agent vault, not a fixture we
 > wrote.* Verdict must come from **its address, and a run against it**.
@@ -80,9 +82,12 @@ Perps position at slot 440479436:
 
 The 337 nonexistent accounts are the interesting case: a rent-collected vault PDA would look exactly
 like this. It is decidable without the account, because **a PDA is by construction off the Ed25519
-curve**. Decompressing all 337 keys: **0 are off-curve.** Every one is an ordinary wallet whose account
-has been emptied — not a single vault PDA among them. (The check is in the script; it accepts 50.4% of
-random 32-byte inputs and correctly rejects a real Jupiter `Position` PDA.)
+curve**. Decompressing all 337 keys: **0 are off-curve** — not a single vault PDA among them. (The
+check is in the script; it is the same predicate Solana uses for `bytes_are_curve_point`, it accepts
+50.4% of random 32-byte inputs, and it rejects both a real Jupiter `Position` PDA and PDAs derived
+independently via `findProgramAddressSync`. Being on-curve proves *not a Solana PDA*; with no account
+present it does not by itself prove the holder was an ordinary EOA rather than some other closed
+on-curve account. Either way, no program-controlled vault is hiding in this bucket.)
 
 That leaves 5 program-controlled holders, all zero-data authority accounts, none linkable to the
 registry or identifiable as an agent-vault program, the largest holding $29,897. **99.95% of the live
