@@ -19,7 +19,7 @@ refutation as input.
 
 | # | Item | Status | Kill number fixed in advance | Evidence |
 |---|---|---|---|---|
-| **G0** | Pre-registration of window, venues, loss definition, thresholds | **r2 written, awaiting Codex re-review** | precondition, no verdict | [`docs/H2-preregistration.md`](docs/H2-preregistration.md) · review [r1 `CHANGES`](reviews/H2-G0-prereg.md) |
+| **G0** | Pre-registration of window, venues, loss definition, thresholds | **NOT FROZEN — r2 `CHANGES`, founder decision pending** | precondition, no verdict | [`docs/H2-preregistration.md`](docs/H2-preregistration.md) · reviews [r1](reviews/H2-G0-prereg.md) · [r2](reviews/H2-G0-prereg-r2.md) |
 | G1 | Does the buyer exist, and is the loss poolable? | not started | `N_addr`<1,000 / `N_events`<300 / `L_total`<$50M per 90d / `C_10`≥50% / `L_und`÷`L_gross`>30% | — |
 | G2 | Is the loss reconstructible and attributable? | not started | `R`<0.95 or `A`<0.95 | — |
 | G3 | Was the outcome undetermined at participation? | not started | `AUC`≥0.90 or `D`≥0.20 | — |
@@ -29,14 +29,24 @@ refutation as input.
 The buyer and the payout form are **deliberately not fixed by assertion** — G1 names the buyer by
 measurement, G4 selects the payout form by measurement. Fixing them by assertion is what killed H1.
 
-**Next action: Codex re-review of G0 r2.** r1 returned `CHANGES` with five P0s — all valid, all closed
-in r2 (event unit and allocation, L-B/L-C baseline, the USD/`L_und` hole, coverage as an amount with a
-frozen search universe, dollar-weighted enumeration recall, fully specified G3/G4 fit out-of-sample,
-request accounting with a time-boxed terminal `BLOCKED`). Every r2 change moves the gate **against** the
-project. G0 is written and committed; it is not frozen in
-practice until that review is recorded. W = slots 421,060,000 → 440,500,000 (91.79 days, both already
-in the past). V = 6 mainnet-verified programs. Nothing may be measured before the review, and nothing
-in G0 may change after it. G1 is the first code H2 is permitted to write.
+**Next action: founder decision — G0 is in a specification spiral and that is itself a finding.**
+
+G0 r2 was reviewed and returned `CHANGES` again. The findings are valid and verified: the sub-window
+seed is genuinely ambiguous (`sha256` of the base58 *string* gives 46, of the decoded *bytes* gives 3);
+67,962 s of W fall outside the 91 whole days; G4's "parametric" form is the identity `payout = loss` by
+construction, so it cannot test payout/loss coincidence even out-of-sample; and the G5 tolerance
+accepts `C_10 = 49.8%` against an independent `50.2%` — one a pass, one a KILL — as "reproducing".
+
+The changelog claim "every r2 change moves the gate against the project" was **false**, as Codex found:
+the density correction is neutral, and the G5 tolerance was favourable. That is the flattering-error
+pattern `docs/H2-GATE.md` warns about, and here it ran in the direction of making r2 look more rigorous
+than it was.
+
+Root cause: `docs/H2-GATE.md` requires the loss definition **in bytes**, while G0 r2 deferred byte
+offsets and discriminators as "chain knowledge". Those contradict. Closing it honestly means a
+byte-level schema for each of six venues — and G0 is now three rounds and 331 lines deep **without a
+single measurement**. `docs/GATE.md` names this exact failure: *"a specification reached 3,000 lines and
+three review rounds before anyone asked whether the thing it specified could be built at all."*
 
 **Differentiation is resolved into G1, not added as a seventh item** (founder: "推奨で"). `L_total` is
 the **uncovered residual** `L_gross − L_cov − L_und`, and every G1 threshold applies to it — so a loss an
