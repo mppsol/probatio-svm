@@ -20,9 +20,16 @@ POSITION_DISC_B58 = "VZMoMoKgZQb"   # sha256("account:Position")[..8], base58
 POSITION_LEN = 216
 OFF_OWNER, OFF_SIDE, OFF_SIZE_USD = 8, 152, 161   # crates/harness/src/jupiter.rs
 AGENT_RECORD_LEN = 748
-# Pubkey-shaped fields inside an agent record (Borsh, fixed order, no padding).
-# 8 = registry (constant), 40/72 = owner/authority, 104 = agent asset id, 136 = signer.
-AGENT_PUBKEY_OFFSETS = (40, 72, 104, 136)
+# `AgentAccount` Borsh schema, from the repo's own locked SDK -- 8004-solana@0.8.3,
+# dist/core/borsh-schemas.js (vendored at attest/node_modules/8004-solana):
+#   collection[32] creator[32] owner[32] asset[32] bump:u8 atom_enabled:u8
+#   agent_wallet:Option<Pubkey> feedback_digest[32] feedback_count:u64
+#   response_digest[32] response_count:u64 revoke_digest[32] revoke_count:u64
+#   parent_asset:Option<Pubkey> parent_locked:u8 col_locked:u8
+#   agent_uri:String nft_name:String col:String
+# The two Option fields shift every later field, so this record CANNOT be read at
+# fixed offsets -- it must be walked. `collection` is the constant base-registry
+# collection and is not an agent identity; every other pubkey field is counted.
 DELTA_UNIT_USD = 100   # crates/harness/src/jupiter.rs::DELTA_UNIT_USD
 
 B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -39,6 +46,38 @@ def b58enc(b):
             break
         s = "1" + s
     return s or "1"
+
+
+# --- Ed25519 point decompression (RFC 8032) -------------------------------------------
+# A Solana PDA is *by construction* off the Ed25519 curve; an ordinary wallet address is a
+# compressed curve point. So "is this address on the curve?" separates wallets from PDAs even
+# when the account itself does not exist on chain (rent-collected), which getAccountInfo cannot.
+_P = 2 ** 255 - 19
+_D = (-121665 * pow(121666, _P - 2, _P)) % _P
+
+
+def on_curve(pk32):
+    """True if the 32-byte key is a valid compressed Ed25519 point (i.e. a plain wallet)."""
+    y = int.from_bytes(pk32, "little") & ((1 << 255) - 1)
+    if y >= _P:
+        return False
+    u = (y * y - 1) % _P
+    v = (_D * y * y + 1) % _P
+    x = (u * pow(v, 3, _P) * pow(u * pow(v, 7, _P), (_P - 5) // 8, _P)) % _P
+    if (v * x * x - u) % _P == 0:
+        return True
+    if (v * x * x + u) % _P == 0:
+        return True
+    return False
+
+
+def b58dec(s):
+    n = 0
+    for c in s:
+        n = n * 58 + B58.index(c)
+    b = n.to_bytes(32, "big")
+    pad = len(s) - len(s.lstrip("1"))
+    return bytes(pad) + b[pad:] if pad else b
 
 
 def rpc(url, method, params, timeout=300):
@@ -63,18 +102,59 @@ def delta_units(usd):
         else -((-usd + DELTA_UNIT_USD // 2) // DELTA_UNIT_USD)
 
 
+def decode_agent_account(raw):
+    """Walk one AgentAccount. Returns (identity_pubkeys, n_agent_wallets).
+
+    Fails closed: any option tag that is not 0/1, or a record whose declared string
+    lengths do not consume the account exactly, raises rather than yielding a partial
+    identity set -- a silently-dropped field here would narrow the search and favour
+    the KILL, which is the error direction this check exists to prevent.
+    """
+    o = 8
+    keys, wallets = [], 0
+    o += 32                                              # collection (base registry, not an identity)
+    for _ in range(3):                                   # creator, owner, asset
+        keys.append(b58enc(raw[o:o + 32])); o += 32
+    o += 2                                               # bump, atom_enabled
+    for field in ("agent_wallet", "parent_asset"):
+        tag = raw[o]; o += 1
+        if tag not in (0, 1):
+            raise ValueError(f"{field}: option tag {tag} is neither 0 nor 1")
+        if tag == 1:
+            keys.append(b58enc(raw[o:o + 32])); o += 32
+            if field == "agent_wallet":
+                wallets += 1
+        if field == "agent_wallet":                      # hash chains sit between the two options
+            o += (32 + 8) * 3                            # feedback/response/revoke digest+count
+    o += 2                                               # parent_locked, col_locked
+    for name in ("agent_uri", "nft_name", "col"):        # three Borsh Strings
+        n = int.from_bytes(raw[o:o + 4], "little"); o += 4
+        if o + n > len(raw):
+            raise ValueError(f"{name}: declared length {n} overruns the account")
+        raw[o:o + n].decode()                            # must be UTF-8, or the walk is misaligned
+        o += n
+    # 748 is the ALLOCATED space, not the content length: Borsh content ends earlier, and
+    # Anchor's realloc does not zero the freed tail, so a non-zero tail is expected (4 of
+    # 1,471 records carry stale bytes from a previously longer `col`). Landing in bounds
+    # with three valid UTF-8 strings is what proves the walk hit real field boundaries.
+    return keys, wallets
+
+
 def registry_keys(url):
     res = rpc(url, "getProgramAccounts",
               [REGISTRY, {"encoding": "base64", "withContext": True}])
     slot = res["context"]["slot"]
-    records = [a for a in res["value"]
-               if len(base64.b64decode(a["account"]["data"][0])) == AGENT_RECORD_LEN]
-    keys = set()
-    for a in records:
+    sizes = collections.Counter()
+    records, keys, wallets = 0, set(), 0
+    for a in res["value"]:
         raw = base64.b64decode(a["account"]["data"][0])
-        for off in AGENT_PUBKEY_OFFSETS:
-            keys.add(b58enc(raw[off:off + 32]))
-    return slot, len(records), keys
+        sizes[len(raw)] += 1
+        if len(raw) != AGENT_RECORD_LEN:
+            continue
+        records += 1
+        ks, w = decode_agent_account(raw)
+        keys.update(ks); wallets += w
+    return slot, records, keys, wallets, sizes
 
 
 def jupiter_positions(url, path):
@@ -125,7 +205,9 @@ def jupiter_positions(url, path):
                     continue                      # Jupiter keeps closed slots allocated
                 side = raw[OFF_SIDE]
                 if side not in (1, 2):            # 1 = Long, 2 = Short
-                    continue
+                    # Fail closed, matching the harness's decoder: an open position with an
+                    # unreadable side must not be silently dropped from the population.
+                    raise ValueError(f"open Position {m.group(1).decode()} has side byte {side}")
                 usd = size // 1_000_000           # atomic USD (1e6) -> whole USD
                 opened += 1
                 net[owner] += usd if side == 1 else -usd
@@ -159,9 +241,10 @@ def main():
     SYSTEM = "1" * 32
 
     print("[1/4] Solana Agent Registry ...", flush=True)
-    reg_slot, n_records, keys = registry_keys(url)
-    print(f"      slot {reg_slot}: {n_records} agent records, "
-          f"{len(keys)} distinct referenced pubkeys")
+    reg_slot, n_records, keys, wallets, sizes = registry_keys(url)
+    print(f"      slot {reg_slot}: account sizes {dict(sizes)}")
+    print(f"      {n_records} AgentAccounts, {wallets} with an operational agent_wallet, "
+          f"{len(keys)} distinct agent identities (creator/owner/asset/agent_wallet/parent_asset)")
 
     print("[2/4] Jupiter Perps Position accounts (~450 MB) ...", flush=True)
     path = args.keep or os.path.join(tempfile.gettempdir(), "probatio_p1_jup.json")
@@ -188,8 +271,11 @@ def main():
     print(f"      total open notional                 : ${tot_notional:,}")
     print(f"      plain wallets (System Program)      : {len(eoa)} holding "
           f"${sum(gross[k] for k in eoa):,}")
+    off = [k for k in gone if not on_curve(b58dec(k))]
     print(f"      nonexistent accounts                : {len(gone)} holding "
           f"${sum(gross[k] for k in gone):,}")
+    print(f"        ...of these, OFF-curve (i.e. actually a PDA/vault, not a wallet): {len(off)}"
+          + (f"  {off}" if off else ""))
     print(f"      program-controlled (vault-like PDAs): {len(pda)} holding "
           f"${sum(gross[k] for k in pda):,}")
     for k in sorted(pda, key=lambda x: -gross[x]):
