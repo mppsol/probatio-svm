@@ -21,3 +21,7 @@ gallery/jupiter-live-*.json
 
 web/preview.png
 web/node_modules/
+
+# python bytecode from running the gate reproduction scripts
+__pycache__/
+*.pyc
