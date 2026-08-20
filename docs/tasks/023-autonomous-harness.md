@@ -3,9 +3,10 @@
 **Frame:** thin (CC). Process/architecture, not product code. **Spec author:** CC. **Spec reviewer:** Codex.
 **Implementer:** CC. **Impl reviewer:** Codex. No contract-surface change.
 
-**Revision 3** — answers Codex spec review round 2 (`reviews/023-autonomous-harness.spec.md`, verdict
-CHANGES: one surviving P0 — git ancestry admits a merge-parent bypass and a post-candidate-append
-bypass). See §Response to spec review.
+**Revision 4** — answers Codex spec review round 3 (`reviews/023-autonomous-harness.spec.md`, verdict
+CHANGES: two surviving P0s — `docs/**` was an executable-code bypass after the candidate, and
+`base_commit` was writer-chosen so pre-review code could be laundered before it). See §Response to
+spec review.
 
 ## Goal
 
@@ -60,17 +61,28 @@ an **audit trail with an enforced close predicate**, not an unforgeable attestat
 | T5 | **Runaway autonomy** — push, key spend, mainnet submit | Irreversible, real-money action with no human in the loop | `docs/HARNESS.md` §Forbidden actions, restated in every role definition. **Honest limit:** git cannot prove an external action did *not* happen; the control is that no role definition grants the capability and `--send`/push require a human instruction naming the target | Asserted (documented, not provable) |
 | T6 | **Board drift** — `STATUS.md` disagrees with git | The single progress source lies; dependencies scheduled off stale state | Every commit field must resolve; every path field must exist; the candidate must be an ancestor of the checked ref | Verifiable |
 | T7 | **Stale evidence** — docs keep an old number after the code moves | Already happened twice here (Findings 1 & 3) | `verify.sh` compares the test count asserted in `README.md` against the **live** count and fails on mismatch | Verifiable |
-| T8 | **Provenance / equivocation (TOCTOU)** — reviewer shown revision A, board certifies revision B; or brief/review edited after approval; or code slipped in via a merge parent or appended after the candidate | An APPROVE is recycled onto different code; review becomes decorative | The **close predicate** C1–C7 below, including all-parent code-origin checks and blob binding | Verifiable |
+| T8 | **Provenance / equivocation (TOCTOU)** — reviewer shown revision A, board certifies revision B; or brief/review edited after approval; or code slipped in via a merge parent or appended after the candidate | An APPROVE is recycled onto different code; review becomes decorative | The **close predicate** C1–C9 below: anchored base, all-parent code-origin checks, blob binding, non-artifact tree equality, and object-type constraints | Verifiable |
 
 ## Close predicate (normative)
 
 Let `B = base_commit`, `R = spec_review_commit`, `C = candidate_commit`, `H` = the ref `board-check.sh`
-is run against (default `HEAD`). Let **artifact paths** = `STATUS.md`, `docs/**`, `reviews/**`; every
-other path is **code** for this predicate's purpose.
+is run against (default `HEAD`), and `T` = the **trusted base ref** (default `master`; overridable only
+via `--base-ref`, and the value used is printed in the checker's output).
+
+**Artifact paths** — the *only* paths a commit after `C` may touch — are exactly:
+`STATUS.md`, `reviews/**`, `docs/tasks/**`, `docs/HARNESS.md`, `docs/templates/**`, **and each must end
+in `.md` and be mode `100644`.** Every other path is **code** for this predicate's purpose (`scripts/**`
+is code, deliberately — the gate must not be mutable after review).
 
 For a row in state `DONE` (and, where the field exists, at earlier states):
 
-- **C1 — base before review.** `B` is a strict ancestor of `R`.
+- **C1 — base is anchored, not chosen.** `B` must equal `git merge-base T C` **and** be an ancestor of
+  `T`. *This is what rejects r3's laundering DAG: a writer cannot declare a base after unreviewed code,
+  because the base is derived from the trusted lineage and the candidate, not asserted.*
+  **Stated assumption:** `T` is trusted because only approved work merges into it. That assumption is
+  the harness's trust root; it is documented in `docs/HARNESS.md`, not proven here. This task is the
+  first closed under the rule, so its own `B` is `master`'s tip at branch time (`7ab85b4`).
+- **C1b — review after base.** `B` is a strict ancestor of `R`.
 - **C2 — review before candidate.** `R` is a strict ancestor of `C`.
 - **C3 — no merges in the task range.** `git rev-list --merges B..C` is empty. (One task, one linear
   branch; this is what makes C4 exhaustive rather than diff-suppressed on merge commits.)
@@ -79,8 +91,11 @@ For a row in state `DONE` (and, where the field exists, at earlier states):
   of `X`. *This is what rejects the merge-side-parent DAG that r2 found — `C` on the side branch is in
   `rev-list B..M` and is not a descendant of `R`.*
 - **C5 — candidate is on the closing ref, and nothing but artifacts follows it.** `C` is an ancestor of
-  (or equal to) `H`, and every commit in `git rev-list C..H` touches **artifact paths only**. *This is
-  what rejects appending unreviewed code after the recorded candidate.*
+  (or equal to) `H`; every commit in `git rev-list C..H` touches **artifact paths only** (as narrowed
+  above); **and**, as a belt-and-braces equivalent that does not depend on path classification alone,
+  the tree at `H` restricted to non-artifact paths must be byte-identical to the tree at `C`
+  (compare `git ls-tree -r <commit>` with artifact paths filtered out). *This is what rejects appending
+  unreviewed code after the recorded candidate.*
 - **C6 — artifact↔commit blob binding.** The blob of each recorded artifact at `H` must equal its blob
   at the commit that recorded it:
   `git rev-parse <brief_commit>:<brief> == git rev-parse H:<brief>`,
@@ -94,23 +109,45 @@ For a row in state `DONE` (and, where the field exists, at earlier states):
   (`git show C:scripts/verify.sh | shasum -a 256`); **E4** one `gate <name> exit=<n>` line per gate in
   the §Gate table with `n == 0`. Absent, malformed, or mismatched ⇒ reject.
 
-`git rev-list`, `git merge-base --is-ancestor`, `git diff-tree`, `git rev-parse <commit>:<path>` are
-sufficient to implement all of C1–C7 with no extra state.
+- **C8 — artifacts may not be executed as code.** An artifact path is `.md` prose, so no source file
+  may pull one into a build. At `H`, reject if any tracked non-artifact source file contains an
+  inclusion form naming an artifact directory: `#[path`, `include!`, `include_str!`, `include_bytes!`,
+  `mod_path`, or a `require`/`import`/`readFileSync` string containing `docs/`, `reviews/`, or
+  `STATUS.md`. *This is what rejects r3's `#[path = "../../docs/runtime.rs"]` payload.*
+  **Honest limit:** this is a bounded pattern scan over known inclusion forms, not a proof that no
+  artifact is reachable at build time. It raises the bar; it does not close the class. C5's tree
+  comparison is the load-bearing control — C8 catches the case where the *reviewed* code at `C` was
+  already wired to read an artifact it could later mutate.
+- **C9 — no ambiguous git object types.** At both `C` and `H`, `git ls-tree -r` must contain **no**
+  mode `120000` (symlink) or `160000` (gitlink/submodule) entries anywhere in the tree, and no
+  `.gitmodules` may exist. *This is what rejects r3's symlinked `scripts/verify.sh` — where `git show`
+  hashes the link text while execution follows a mutable target.* (The repo satisfies this today:
+  zero symlinks, zero gitlinks, no `.gitmodules`.) Additionally every `scripts/**` path must be mode
+  `100644` or `100755`, and `scripts/verify.sh` must be a regular blob whose object exists at `C`
+  before C7 hashes it.
 
-**Honest residual (must be stated in `docs/HARNESS.md`):** C1–C7 bind *what was reviewed* to *what is
-closed*. They do not prove *who* reviewed it (Asserted tier), and an actor with write access to both
-the board and history can rewrite the branch wholesale — the harness detects inconsistency, not a
-determined rewrite by the only writer. The rewrite case is bounded by the forbidden-actions rule
-(no history rewrite, no force-push) which is documented, not enforced.
+`git rev-list`, `git merge-base [--is-ancestor]`, `git diff-tree`, `git ls-tree -r`,
+`git rev-parse <commit>:<path>`, `git cat-file -t` and `shasum` are sufficient to implement all of
+C1–C9 with no extra state.
+
+**Honest residual (must be stated verbatim in `docs/HARNESS.md`):** C1–C9 bind *what was reviewed* to
+*what is closed*, on three explicit assumptions:
+1. **Trust root.** The trusted base ref `T` (`master`) contains only approved work. C1 anchors the base
+   to it; nothing here proves `T` itself was ever reviewed.
+2. **Authorship is asserted.** The predicate does not prove *who* reviewed anything (Asserted tier).
+3. **A single writer with history access can rewrite the branch wholesale.** The harness detects
+   *inconsistency*, not a determined rewrite by the only actor holding the pen. That case is bounded by
+   the forbidden-actions rule (no history rewrite, no force-push) — documented, not enforced.
+Additionally C8 is a pattern scan, not a proof of build-time unreachability.
 
 ## Invariants
 
-`board-check.sh` enforces I1, I2 (= C1–C5), I3 (= C7), I4, I5, I6, I8, and C6. I7 is documented-only
+`board-check.sh` enforces I1, I2 (= C1–C5, C8, C9), I3 (= C7), I4, I5, I6, I8, and C6. I7 is documented-only
 and labelled as such.
 
 - **I1 — Declared separation of duties.** `spec_author ≠ spec_reviewer` and
   `implementer ≠ impl_reviewer` **as declared**. Equality ⇒ ineligible for `DONE` + `blocking` risk.
-- **I2 — Ordering.** The close predicate C1–C5 holds.
+- **I2 — Ordering and containment.** The close predicate C1–C5 plus C8, C9 holds.
 - **I3 — Evidence.** C7 holds, and `verify:` reads `PASS @ <candidate_commit>`.
 - **I4 — Traceability.** Every path field exists at `H`; every commit field resolves; a `DONE` row has
   brief, brief_commit, spec_review, spec_review_commit, impl_review, impl_review_commit, base, candidate.
@@ -234,7 +271,7 @@ script cannot judge justification.
   not by the template's existence).
 - `scripts/verify.sh`, `scripts/lib/baseline-cmp.sh`, `scripts/verify-baseline.txt`.
 - `scripts/codex.sh` — resolves the Codex CLI across known locations; fails loudly.
-- `scripts/board-check.sh` — enforces I1–I6, I8, C1–C7, with an adversarial `--selftest` that builds
+- `scripts/board-check.sh` — enforces I1–I6, I8, C1–C9, with an adversarial `--selftest` that builds
   throwaway git repositories under `target/board-selftest/` to construct the required DAGs.
 - `AGENTS.md` — corrected Codex path and SBF gate + pointer to `docs/HARNESS.md`. Division-of-labour
   and contract sections **not** rewritten.
@@ -260,7 +297,13 @@ script cannot judge justification.
    (k) contract-surface edit with `adr:` but **no** `adr-ack:` in the impl review [I5];
    (l) impl review with **absent or malformed** evidence block [C7];
    (m) evidence `reviewed-commit` ≠ candidate, and evidence `tree`/`verify-script-sha256` mismatched [C7];
-   (n) brief missing a required heading [I8], and a board row with an unknown key [grammar].
+   (n) brief missing a required heading [I8], and a board row with an unknown key [grammar];
+   (o) **post-candidate `docs/**` payload** — a non-`.md` file added under an artifact directory after
+   `C`, and a source file at `C` carrying `#[path = "../../docs/…"]` [C5/C8];
+   (p) **base laundering** — an unreviewed code commit before the declared base, with
+   `base_commit` ≠ `git merge-base master candidate` [C1];
+   (q) a **symlink** (`120000`) at `scripts/verify.sh` and a **gitlink** (`160000`) under an artifact
+   directory [C9].
 4. `bash scripts/verify.sh --selftest` exits 0 by demonstrating the baseline comparator **rejects**
    (i) a clippy lint name absent from the allow-list and (ii) an fmt hunk count above
    `fmt_hunks_max`, and **accepts** the recorded baseline — using synthetic inputs, no compile.
@@ -296,6 +339,16 @@ git diff --name-only master...HEAD | grep -E '^(crates/|programs/|Cargo\.(toml|l
 ```
 
 ## Response to spec review
+
+### Round 3
+
+| Finding | Response |
+|---|---|
+| P0 `docs/**` is an executable-code bypass after the candidate (incl. `#[path]` inclusion, symlinked `verify.sh`, gitlinks) | **Accepted — three controls.** The artifact set is narrowed to `STATUS.md`, `reviews/**`, `docs/tasks/**`, `docs/HARNESS.md`, `docs/templates/**`, each `.md` and mode `100644`. C5 additionally requires the **non-artifact tree at `H` to be byte-identical to `C`**, so path classification is no longer load-bearing on its own. C8 rejects known inclusion forms pointing at artifact dirs; C9 rejects symlinks and gitlinks repo-wide and pins `scripts/verify.sh` to a regular blob. C8's limits are stated, not hidden. Fixtures (o)(q) |
+| P0 `base_commit` can launder pre-review code | **Accepted — base anchored.** C1: `base_commit` must **equal** `git merge-base T C` and be an ancestor of `T` (`T` = `master` by default, printed by the checker). The writer no longer chooses the base. The trust-root assumption on `T` is stated explicitly in the residual. Fixture (p) |
+| Fixtures (o)(p) and a gitlink variant missing | **Accepted.** Added as (o)(p)(q) |
+| Residual paragraph overclaims | **Accepted.** Rewritten as three numbered assumptions (trust root, asserted authorship, single-writer rewrite) plus C8's pattern-scan limit, and required verbatim in `docs/HARNESS.md` |
+| C7 not circular; no new contradictions found | Noted — C7 unchanged apart from C9's object-type precondition |
 
 ### Round 2
 
