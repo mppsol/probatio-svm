@@ -1,44 +1,64 @@
 # STATUS — Probatio SVM
 
-Binding gate: **[`docs/H4-GATE.md`](docs/H4-GATE.md)** — H4, *Upgrade Behavior Sentinel*, at **G0**.
-`docs/GATE.md` (H1) is **closed — `KILLED`**; `docs/H2-GATE.md` is **FROZEN UNEXECUTED**;
-`docs/H3-GATE.md` is **closed — `KILLED` at the design gate**. None of the three is reopened.
+Binding gate: **[`docs/H4-GATE.md`](docs/H4-GATE.md)** — H4, *Upgrade Behavior Sentinel*, **closed —
+`KILLED` at G0 (KILL-2 + KILL-3), 2026-08-22**. `docs/GATE.md` (H1) is **closed — `KILLED`**;
+`docs/H2-GATE.md` is **FROZEN UNEXECUTED**; `docs/H3-GATE.md` is **closed — `KILLED` at the design
+gate**. **No hypothesis is currently live.** None of the four is reopened.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H4 — Upgrade Behavior Sentinel — **G0 pre-registration committed; measurement pending**
+## H4 — Upgrade Behavior Sentinel — **KILLED at G0 — KILL-2 + KILL-3**
 
-Gate: [`docs/H4-GATE.md`](docs/H4-GATE.md) · G0 artifact commit: `PENDING` · **no measurement has
-been run at the time this row was written**
+**Verdict:** [`docs/decisions/H4-sentinel-kill.md`](docs/decisions/H4-sentinel-kill.md) · gate:
+[`docs/H4-GATE.md`](docs/H4-GATE.md) (closed) · review:
+[Codex, `MEASUREMENT SOUND`, no P0](reviews/H4-G0-sentinel.md) · artifacts `35f8d0e` · `2d7b5c3` ·
+`75f3cb9` · `7efbb37` · **verdict date 2026-08-22**
 
-> For **one** named Solana integration, the concrete behaviour it depends on is re-executed against
-> the real pre- and post-upgrade BPF binaries, on identical cloned state with identical inputs, and
-> yields a `compatible` / `breaking` / `unknown` verdict **a byte hash comparison cannot produce**.
+> H4's hypothesis: for **one** named Solana integration, the behaviour it depends on is re-executed
+> against the real pre- and post-upgrade BPF binaries, on identical cloned state with identical
+> inputs, and yields a `compatible` / `breaking` / `unknown` verdict **a byte hash comparison cannot
+> produce**.
 
-**Forbidden by name, because H3 died of it:** a general-purpose Capability Passport, any
-protocol-independent schema or adapter semantics, and cross-protocol scoring of any kind. Needing one
-is `KILL-4`, not a scope change.
+**The measurement ran, and it is the verdict.** Unlike H3, H4 pre-registered numbers and produced
+them. Fixture slot **440,477,781**; `D` = **2,248,785,777**; old `code_hash` `8eab9f85…3d1cda`
+(2,414,913 B), new `b1344d19…9c22d9` (2,431,953 B, deploy slot 440,486,775).
 
-**Why this is not H3:** H3 needed to know what a behaviour *means*, and every meaning turned out to
-be venue-specific. H4 holds input, state and case fixed, varies **only the binary**, and compares the
-two outputs for **equality**. Equality is not an interpretation.
+| case | amount | old `result` | new `result` | deltas | `state_equal` | verdict |
+|---|---:|---|---|---|---|---|
+| A | 100,000,000 | `Ok` | `Ok` | equal | false | `unknown` |
+| B | `D` | `Err … Custom(6011)` | same | equal | false | `unknown` |
+| C | `D + 1` | `Err … Custom(6011)` | same | equal | false | `unknown` |
+| E | `u64::MAX` | `Ok` | `Ok` | equal | false | `unknown` |
 
-**Fixed before measurement:** klend `withdraw_obligation_collateral_and_redeem_reserve_collateral_v2`
-top-level on the USDC reserve · old binary = `../solvo`'s committed `klend.so` (2,414,913 B,
-`8eab9f85…`, fixture slot 440,477,781) · new binary = fetched from mainnet *after this gate is
-pushed*, with ProgramData, slot and `code_hash` recorded · four cases (success `100,000,000`,
-boundary `D`, failure `D + 1`, sentinel `u64::MAX`) · decisive outputs = `Ok`/`Err` with exact code,
-token deltas at SPL offset 64, and full post-state byte equality; **logs are auxiliary and never
-asserted on**.
+**4 of 4 `unknown` → KILL-2. Action `RE-VERIFY` → KILL-3.** `RE-VERIFY` is the only answer the
+differing hash could already give; H4 spent a real measurement to return to its own baseline.
 
-| KILL | fires when |
-|---|---|
-| 1 | the two real binaries cannot be run in one reproducible environment, or reruns are not byte-identical |
-| 2 | all four cases are `unknown` |
-| 3 | the action is `RE-VERIFY` — no more actionable than the hash difference already was |
-| 4 | deciding needs a protocol-independent schema or arbitrary adapter semantics |
-| 5 | `../solvo` must be changed — it is read-only, without exception |
+**What actually differed.** In every case both binaries agree on `result` and on all three
+`token_deltas` (case A moves the same 119,647,109 USDC atoms). The sole divergence is that the **new
+binary writes 4 bytes at offset 28** of `obligation`, `reserve_sol` and `reserve_usdc`, where the old
+binary leaves the fixture's `00000000`.
 
-**`PASS` does not start Gate 1 or any implementation.**
+**Why that is not rescuable.** Calling those 4 bytes immaterial is a klend-specific semantic
+judgement (`KILL-4`); generalising it to "ignore reserved ranges" is a protocol-independent schema
+(also `KILL-4`). **The rescue and the kill are the same door.** Gate §4 pre-registered `unknown` for
+exactly this shape, and pre-registered why — so the rule could not be softened after seeing it.
+
+**KILL-1 explicitly did *not* fire:** both ELFs loaded, 8/8 executions ran, and three consecutive
+runs produced a byte-identical `evidence/h4-sentinel.json`
+(`f05c0ea6…8f0cf0`, 106,573 B). An earlier run (`75f3cb9`) loaded neither binary — the brief wrongly
+required trailing-zero stripping, and both section-header tables end **15 bytes past** the last
+non-zero byte; corrected in `7efbb37` and in the loader change committed here, identically for both
+binaries. **KILL-5 did not fire:** the old fixture is byte-identical to Solvo's committed copy
+(`adc2b55b…`), i.e. copied not edited. `git -C ../solvo status --porcelain` is *not* empty — it shows
+one untracked `docs/H3-GATE.md` written 2026-08-22 08:26 by a **separate session working inside
+Solvo** on Solvo's own H3; no write originated from here. Recorded because the brief asked for that
+output to be empty.
+
+**Carried forward as input, not as a live hypothesis:** byte-equality across two binaries is
+**decidable but not actionable** — a useful verdict needs a notion of which differences matter, and
+that notion is venue-specific. H3 needed meaning up front; H4 avoided meaning entirely and found it
+needed meaning at the end. The harness *mechanics* (real BPF, cloned state, disclosed mutations,
+deterministic offline replay) are sound; **reusing mechanics is not reusing the hypothesis**, and
+nothing here may be revived as a foundation because it exists.
 
 ## H3 — Composability Passport — **KILLED at the design gate**
 

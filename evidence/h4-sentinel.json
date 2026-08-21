@@ -1,12 +1,12 @@
 {
   "schema": "H4 Klend sentinel evidence; one fixed operation, no adapter semantics",
-  "fixture_manifest_sha256": "e97164b0f2ba9bcfe8e62992821efbf8c2448668121ee5246102e73d2c471daf",
+  "fixture_manifest_sha256": "b5db5e51244b23aedacfc689d71102a842c0e6badaeb9855f63136c42694fc6a",
   "fixture_slot": 440477781,
   "deposited_amount_d": 2248785777,
   "binaries": {
     "klend_new": {
       "path": "fixtures/h4/programs/klend_new.so.gz",
-      "stored_bytes": 2431953,
+      "stored_bytes": 10485715,
       "elf_len": 2431953,
       "code_hash": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9"
     },
@@ -17,56 +17,753 @@
       "code_hash": "8eab9f858da01fee962452ad3838570b3340cd43b80a236de8fe5297063d1cda"
     }
   },
-  "disclosed_mutations": [],
+  "disclosed_mutations": [
+    {
+      "account": "obligation",
+      "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+      "offset": 64,
+      "len": 32,
+      "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+      "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+      "why": "make the fixed top-level signer the cloned obligation owner"
+    },
+    {
+      "account": "destination_usdc",
+      "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+      "offset": 0,
+      "len": 165,
+      "before": "absent",
+      "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "why": "create deterministic USDC destination token account for the harness signer"
+    }
+  ],
   "cases": [
     {
       "id": "A",
       "collateral_amount": 100000000,
       "old": {
         "binary": "klend_old",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
-          "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
+          "status": "Ok",
+          "error": null,
           "custom_code": null
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 119647109
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985307815345
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318405631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "b22d5eb163c305337bf945245ce6cc7c75da63e444ac77e0e03a6502c82ad585",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 129,
+                "len": 3
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "559fd092a2489188fcd892b6a3746f2d5d2885f65e7e7238b1b689f275026c6c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "15b479535429ddbb43263ccbfc7ae65836d3ae5cae051281a6d57948a7075cc9",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 224,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              },
+              {
+                "offset": 2593,
+                "len": 3
+              },
+              {
+                "offset": 5424,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "6dff4d12ecae5d7bd4d99f1af7b6c7c748ec62f8f295956d41490f6d611cf549",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 37,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "58275845f0b0d96d92a650c0d9e090362525933f1fdddb037ce039144302f461",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 65,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "caf4de4bc14e56bd5c3b0efd0e72d3e4f33b06696057f568746e8553ad5bc817",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "f5e1421f6cec35f01b641ba1a0765ef0fbc04a1765d73481e69dbdff51ac11d8",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 89,
+                "len": 11
+              },
+              {
+                "offset": 409,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "0926bd13c1b326f0fe98b109e1369b972a7245b604d936c70065b80d07650603",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 7249,
+                "len": 3
+              },
+              {
+                "offset": 7409,
+                "len": 3
+              }
+            ]
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 22564 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 20407 of 1377286 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31062 of 1356879 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 74183,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: pnl: Withdraw obligation collateral 100000000 and redeem reserve collateral 119647109",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 123 of 1356899 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 105 of 1353138 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program log: RefreshObligationFarmsForReserve Collateral",
+            "Program log: RefreshObligationFarmsForReserve amount 2148785777 slot 440477781",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr invoke [2]",
+            "Program log: Instruction: SetStakeDelegated",
+            "Program log: SetStakeDelegated: prev:2248785777 -> new:2148785777 ts:1787230883",
+            "Program log: farm_operations::refresh_global_rewards ts=1787230883",
+            "Program log: time_passed=80443187 reward_type=Proportional cumulative_amt=0 decimal_adjusted_amt=0 oracle_adjusted_amt=0 ",
+            "Program log: farm_operations::user_refresh_reward reward_index 0 Global stake 73259568218944 User stake 2248785777 prev_reward_tally 508007768090288163855428572854 rpt 225903139946036826902",
+            "Program log: farm_operations::user_refresh_reward reward 0, new_reward_tally (scaled) 508007768090288163855428572854",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr consumed 13693 of 1345315 compute units",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 69820 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "compute_units": 69970,
           "return_data_hex": ""
         }
       },
       "new": {
         "binary": "klend_new",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
-          "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
+          "status": "Ok",
+          "error": null,
           "custom_code": null
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 119647109
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985307815345
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318405631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "5083137c45c8c9120e8dc4f73efa32a52122450b9f1af4ec6efaec6e732083d1",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 129,
+                "len": 3
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "ecff48e7a727145220832d2c75df2d9a06d9128fb275fa562853338567189275",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "48da984ad62ad5a431ca50c32ac5db89003cb9153f3c363e99d4b36793110b13",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 224,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              },
+              {
+                "offset": 2593,
+                "len": 3
+              },
+              {
+                "offset": 5424,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "6dff4d12ecae5d7bd4d99f1af7b6c7c748ec62f8f295956d41490f6d611cf549",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 37,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "58275845f0b0d96d92a650c0d9e090362525933f1fdddb037ce039144302f461",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 65,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "caf4de4bc14e56bd5c3b0efd0e72d3e4f33b06696057f568746e8553ad5bc817",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "f5e1421f6cec35f01b641ba1a0765ef0fbc04a1765d73481e69dbdff51ac11d8",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 89,
+                "len": 11
+              },
+              {
+                "offset": 409,
+                "len": 3
+              }
+            ]
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "0926bd13c1b326f0fe98b109e1369b972a7245b604d936c70065b80d07650603",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 7249,
+                "len": 3
+              },
+              {
+                "offset": 7409,
+                "len": 3
+              }
+            ]
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 23670 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 21513 of 1376180 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31066 of 1354667 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 76399,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: pnl: Withdraw obligation collateral 100000000 and redeem reserve collateral 119647109",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 123 of 1356894 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 105 of 1353133 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program log: RefreshObligationFarmsForReserve Collateral",
+            "Program log: RefreshObligationFarmsForReserve amount 2148785777 slot 440477781",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr invoke [2]",
+            "Program log: Instruction: SetStakeDelegated",
+            "Program log: SetStakeDelegated: prev:2248785777 -> new:2148785777 ts:1787230883",
+            "Program log: farm_operations::refresh_global_rewards ts=1787230883",
+            "Program log: time_passed=80443187 reward_type=Proportional cumulative_amt=0 decimal_adjusted_amt=0 oracle_adjusted_amt=0 ",
+            "Program log: farm_operations::user_refresh_reward reward_index 0 Global stake 73259568218944 User stake 2248785777 prev_reward_tally 508007768090288163855428572854 rpt 225903139946036826902",
+            "Program log: farm_operations::user_refresh_reward reward 0, new_reward_tally (scaled) 508007768090288163855428572854",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr consumed 13693 of 1345310 compute units",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 69825 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "compute_units": 69975,
           "return_data_hex": ""
         }
       },
@@ -77,49 +774,597 @@
       "collateral_amount": 2248785777,
       "old": {
         "binary": "klend_old",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
           "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
-          "custom_code": null
+          "error": "InstructionError(1, Custom(6011))",
+          "custom_code": 6011
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 0
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985427462454
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318505631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "2d03bc256763a30bd07b2d7084919e0fb4d265b119212becd8f1dd4677ad3928",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "559fd092a2489188fcd892b6a3746f2d5d2885f65e7e7238b1b689f275026c6c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "34c74226031355cd2fd0ddfcbe169fac545cdb6001a52c2375df2f787ddf866c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "0d49f8feeacded9065fffe9d073ac1a8568c70a13abd5d6227d4624f174fedf9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "f6dbd9a3c433b9ae523780325bd241034f387b2912a1701856081d2593218bae",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "ce69c1882b458a9f8da633879465996586f45ed16f8b77e7b614d8ae49605e2f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "578f6a61103bf937a97557052f51478401e1aa70c8cedf8289f7df642dcd4b32",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "e45b4abfe1bac8e378edfdb22cfad0f48674159f7e2455c4be07500a28e3eac9",
+            "differing_ranges_from_fixture": []
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 22564 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 20407 of 1377286 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31062 of 1356879 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 74183,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: Withdraw value cannot exceed maximum withdraw value, collateral_amount=2248785777, collateral.deposited_amount=2248785777 withdraw_pct=1.0000, collateral_value=2690.3444, max_withdraw_value=582.2150 withdraw_value=2690.3444",
+            "Program log: AnchorError thrown in programs/klend/src/lending_market/lending_operations.rs:542. Error Code: WithdrawTooLarge. Error Number: 6011. Error Message: Withdraw amount too large.",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 29636 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD failed: custom program error: 0x177b"
+          ],
+          "compute_units": 29786,
           "return_data_hex": ""
         }
       },
       "new": {
         "binary": "klend_new",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
           "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
-          "custom_code": null
+          "error": "InstructionError(1, Custom(6011))",
+          "custom_code": 6011
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 0
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985427462454
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318505631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "ea53677029d8db8e42a1d62efbe9360eeda9f69d075ccaafc96e0c2e81766ade",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "ecff48e7a727145220832d2c75df2d9a06d9128fb275fa562853338567189275",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "ffcfe465304dec32acb90c6f35082f88627cb212243f2b172171fdb135b21c64",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "0d49f8feeacded9065fffe9d073ac1a8568c70a13abd5d6227d4624f174fedf9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "f6dbd9a3c433b9ae523780325bd241034f387b2912a1701856081d2593218bae",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "ce69c1882b458a9f8da633879465996586f45ed16f8b77e7b614d8ae49605e2f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "578f6a61103bf937a97557052f51478401e1aa70c8cedf8289f7df642dcd4b32",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "e45b4abfe1bac8e378edfdb22cfad0f48674159f7e2455c4be07500a28e3eac9",
+            "differing_ranges_from_fixture": []
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 23670 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 21513 of 1376180 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31066 of 1354667 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 76399,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: Withdraw value cannot exceed maximum withdraw value, collateral_amount=2248785777, collateral.deposited_amount=2248785777 withdraw_pct=1.0000, collateral_value=2690.3444, max_withdraw_value=582.2150 withdraw_value=2690.3444",
+            "Program log: AnchorError thrown in programs/klend/src/lending_market/lending_operations.rs:550. Error Code: WithdrawTooLarge. Error Number: 6011. Error Message: Withdraw amount too large.",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 29636 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD failed: custom program error: 0x177b"
+          ],
+          "compute_units": 29786,
           "return_data_hex": ""
         }
       },
@@ -130,49 +1375,597 @@
       "collateral_amount": 2248785778,
       "old": {
         "binary": "klend_old",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
           "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
-          "custom_code": null
+          "error": "InstructionError(1, Custom(6011))",
+          "custom_code": 6011
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 0
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985427462454
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318505631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "2d03bc256763a30bd07b2d7084919e0fb4d265b119212becd8f1dd4677ad3928",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "559fd092a2489188fcd892b6a3746f2d5d2885f65e7e7238b1b689f275026c6c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "34c74226031355cd2fd0ddfcbe169fac545cdb6001a52c2375df2f787ddf866c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "0d49f8feeacded9065fffe9d073ac1a8568c70a13abd5d6227d4624f174fedf9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "f6dbd9a3c433b9ae523780325bd241034f387b2912a1701856081d2593218bae",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "ce69c1882b458a9f8da633879465996586f45ed16f8b77e7b614d8ae49605e2f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "578f6a61103bf937a97557052f51478401e1aa70c8cedf8289f7df642dcd4b32",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "e45b4abfe1bac8e378edfdb22cfad0f48674159f7e2455c4be07500a28e3eac9",
+            "differing_ranges_from_fixture": []
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 22564 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 20407 of 1377286 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31062 of 1356879 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 74183,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: Withdraw value cannot exceed maximum withdraw value, collateral_amount=2248785778, collateral.deposited_amount=2248785777 withdraw_pct=1.0000, collateral_value=2690.3444, max_withdraw_value=582.2150 withdraw_value=2690.3444",
+            "Program log: AnchorError thrown in programs/klend/src/lending_market/lending_operations.rs:542. Error Code: WithdrawTooLarge. Error Number: 6011. Error Message: Withdraw amount too large.",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 29636 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD failed: custom program error: 0x177b"
+          ],
+          "compute_units": 29786,
           "return_data_hex": ""
         }
       },
       "new": {
         "binary": "klend_new",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
           "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
-          "custom_code": null
+          "error": "InstructionError(1, Custom(6011))",
+          "custom_code": 6011
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 0
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10985427462454
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318505631022
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "ea53677029d8db8e42a1d62efbe9360eeda9f69d075ccaafc96e0c2e81766ade",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "ecff48e7a727145220832d2c75df2d9a06d9128fb275fa562853338567189275",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "ffcfe465304dec32acb90c6f35082f88627cb212243f2b172171fdb135b21c64",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "0d49f8feeacded9065fffe9d073ac1a8568c70a13abd5d6227d4624f174fedf9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "f6dbd9a3c433b9ae523780325bd241034f387b2912a1701856081d2593218bae",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "ce69c1882b458a9f8da633879465996586f45ed16f8b77e7b614d8ae49605e2f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "578f6a61103bf937a97557052f51478401e1aa70c8cedf8289f7df642dcd4b32",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "e45b4abfe1bac8e378edfdb22cfad0f48674159f7e2455c4be07500a28e3eac9",
+            "differing_ranges_from_fixture": []
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 23670 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 21513 of 1376180 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31066 of 1354667 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 76399,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: Withdraw value cannot exceed maximum withdraw value, collateral_amount=2248785778, collateral.deposited_amount=2248785777 withdraw_pct=1.0000, collateral_value=2690.3444, max_withdraw_value=582.2150 withdraw_value=2690.3444",
+            "Program log: AnchorError thrown in programs/klend/src/lending_market/lending_operations.rs:550. Error Code: WithdrawTooLarge. Error Number: 6011. Error Message: Withdraw amount too large.",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 29636 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD failed: custom program error: 0x177b"
+          ],
+          "compute_units": 29786,
           "return_data_hex": ""
         }
       },
@@ -183,49 +1976,727 @@
       "collateral_amount": 18446744073709551615,
       "old": {
         "binary": "klend_old",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
-          "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
+          "status": "Ok",
+          "error": null,
           "custom_code": null
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 582271854
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10984845190600
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318018973336
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "aecd7f2e24980a144886d78d4f1d1fb4f879d2b8e2a13e495a7a35c32c98d7c0",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 128,
+                "len": 4
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "559fd092a2489188fcd892b6a3746f2d5d2885f65e7e7238b1b689f275026c6c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "6705d0dea1a8060d3f7e56ce1a8f8ecb3f4e613cb6954b4c8d82084119c4f9e7",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 224,
+                "len": 5
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              },
+              {
+                "offset": 2592,
+                "len": 5
+              },
+              {
+                "offset": 5424,
+                "len": 5
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "974d118fca1f296a1813748ce9463f71646e61ecd180b6274641e8be47751a71",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 36,
+                "len": 5
+              }
+            ]
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "b2dc8f44ff0e93a2e02d4d55e31601cdc669775d396e080feb9e5b8778eed91b",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "2beae3ea6b2adc096edfafdad195da0b31f9fb91e8f3e3f38a0f99fe1d9d815c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "6c3de67394780f6b2754912d2a751ab1e02bade00b476e5dfa74b03380496a3b",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 88,
+                "len": 13
+              },
+              {
+                "offset": 408,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "81712e0dfc6afae0550637813034aeff619a069079704ce4dd7b95056da08e61",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 7248,
+                "len": 5
+              },
+              {
+                "offset": 7408,
+                "len": 5
+              }
+            ]
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 22564 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 20407 of 1377286 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31062 of 1356879 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 74183,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: pnl: Withdraw obligation collateral 486657686 and redeem reserve collateral 582271854",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 123 of 1357182 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 105 of 1353421 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program log: RefreshObligationFarmsForReserve Collateral",
+            "Program log: RefreshObligationFarmsForReserve amount 1762128091 slot 440477781",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr invoke [2]",
+            "Program log: Instruction: SetStakeDelegated",
+            "Program log: SetStakeDelegated: prev:2248785777 -> new:1762128091 ts:1787230883",
+            "Program log: farm_operations::refresh_global_rewards ts=1787230883",
+            "Program log: time_passed=80443187 reward_type=Proportional cumulative_amt=0 decimal_adjusted_amt=0 oracle_adjusted_amt=0 ",
+            "Program log: farm_operations::user_refresh_reward reward_index 0 Global stake 73259568218944 User stake 2248785777 prev_reward_tally 508007768090288163855428572854 rpt 225903139946036826902",
+            "Program log: farm_operations::user_refresh_reward reward 0, new_reward_tally (scaled) 508007768090288163855428572854",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr consumed 13693 of 1345598 compute units",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 69537 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "compute_units": 69687,
           "return_data_hex": ""
         }
       },
       "new": {
         "binary": "klend_new",
-        "executed": false,
-        "disclosed_mutations": [],
+        "executed": true,
+        "disclosed_mutations": [
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "offset": 64,
+            "len": 32,
+            "before": "bdb99378dcbcdf9bf83c3344c038599468027bff030e6371a43e183953171357",
+            "after": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+            "why": "make the fixed top-level signer the cloned obligation owner"
+          },
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "offset": 0,
+            "len": 165,
+            "before": "absent",
+            "after": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6179b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad0496640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "why": "create deterministic USDC destination token account for the harness signer"
+          }
+        ],
         "result": {
-          "status": "Err",
-          "error": "ProgramLoad(\"Offset or value is out of bounds\")",
+          "status": "Ok",
+          "error": null,
           "custom_code": null
         },
-        "token_deltas": [],
-        "post_state": [],
+        "token_deltas": [
+          {
+            "account": "destination_usdc",
+            "pubkey": "5sAHJgXjaUPK3X1YQWV9x2ZvaS9VVaS3ENzFCNE8nzDu",
+            "before": 0,
+            "after": 582271854
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "before": 10985427462454,
+            "after": 10984845190600
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "before": 73318505631022,
+            "after": 73318018973336
+          }
+        ],
+        "post_state": [
+          {
+            "account": "lending_market",
+            "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+            "sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "obligation",
+            "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD",
+            "sha256": "df1f7ff757e4d825fa404fcdae65262ccfc3f04b772b3655bf271d56beb61d9d",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 64,
+                "len": 32
+              },
+              {
+                "offset": 128,
+                "len": 4
+              },
+              {
+                "offset": 136,
+                "len": 6
+              },
+              {
+                "offset": 1192,
+                "len": 6
+              },
+              {
+                "offset": 1240,
+                "len": 5
+              },
+              {
+                "offset": 1296,
+                "len": 9
+              },
+              {
+                "offset": 1312,
+                "len": 9
+              },
+              {
+                "offset": 1328,
+                "len": 9
+              },
+              {
+                "offset": 1344,
+                "len": 2
+              },
+              {
+                "offset": 2208,
+                "len": 9
+              },
+              {
+                "offset": 2224,
+                "len": 9
+              },
+              {
+                "offset": 2240,
+                "len": 6
+              },
+              {
+                "offset": 2256,
+                "len": 6
+              }
+            ]
+          },
+          {
+            "account": "reserve_sol",
+            "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q",
+            "sha256": "ecff48e7a727145220832d2c75df2d9a06d9128fb275fa562853338567189275",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 232,
+                "len": 11
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 11
+              },
+              {
+                "offset": 6704,
+                "len": 2
+              }
+            ]
+          },
+          {
+            "account": "reserve_usdc",
+            "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59",
+            "sha256": "94c68915e522b917402ea87fa1c2981b41140bd979ecd948d3f5188c085efb29",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 16,
+                "len": 1
+              },
+              {
+                "offset": 24,
+                "len": 1
+              },
+              {
+                "offset": 28,
+                "len": 4
+              },
+              {
+                "offset": 224,
+                "len": 5
+              },
+              {
+                "offset": 232,
+                "len": 10
+              },
+              {
+                "offset": 296,
+                "len": 5
+              },
+              {
+                "offset": 344,
+                "len": 10
+              },
+              {
+                "offset": 2592,
+                "len": 5
+              },
+              {
+                "offset": 5424,
+                "len": 5
+              }
+            ]
+          },
+          {
+            "account": "scope_prices",
+            "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH",
+            "sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_mint",
+            "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1",
+            "sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_collateral_supply_vault",
+            "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS",
+            "sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_mint",
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_liquidity_supply_vault",
+            "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U",
+            "sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_obligation_farm_user_state",
+            "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+            "sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "sol_reserve_farm_state",
+            "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+            "sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_collateral_mint",
+            "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D",
+            "sha256": "974d118fca1f296a1813748ce9463f71646e61ecd180b6274641e8be47751a71",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 36,
+                "len": 5
+              }
+            ]
+          },
+          {
+            "account": "usdc_collateral_supply_vault",
+            "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL",
+            "sha256": "b2dc8f44ff0e93a2e02d4d55e31601cdc669775d396e080feb9e5b8778eed91b",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_liquidity_mint",
+            "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+            "differing_ranges_from_fixture": []
+          },
+          {
+            "account": "usdc_liquidity_supply_vault",
+            "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6",
+            "sha256": "2beae3ea6b2adc096edfafdad195da0b31f9fb91e8f3e3f38a0f99fe1d9d815c",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 64,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_obligation_farm_user_state",
+            "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+            "sha256": "6c3de67394780f6b2754912d2a751ab1e02bade00b476e5dfa74b03380496a3b",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 88,
+                "len": 13
+              },
+              {
+                "offset": 408,
+                "len": 4
+              }
+            ]
+          },
+          {
+            "account": "usdc_reserve_farm_state",
+            "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+            "sha256": "81712e0dfc6afae0550637813034aeff619a069079704ce4dd7b95056da08e61",
+            "differing_ranges_from_fixture": [
+              {
+                "offset": 7248,
+                "len": 5
+              },
+              {
+                "offset": 7408,
+                "len": 5
+              }
+            ]
+          }
+        ],
         "auxiliary": {
           "preamble_result": {
-            "status": "Err",
-            "error": "not run: binary did not load",
+            "status": "Ok",
+            "error": null,
             "custom_code": null
           },
-          "preamble_logs": [],
-          "preamble_compute_units": 0,
-          "logs": [],
-          "compute_units": 0,
+          "preamble_logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: USDC Price: 0.9999",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 23670 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshReserve",
+            "Program log: Token: SOL Price: 86.9629",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 21513 of 1376180 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: RefreshObligation",
+            "Program log: Borrow: SOL amount: 15514699567.6948 value: 1349.2028 value_bf: 1686.5035",
+            "Program log: Deposit: USDC amount: 2690607182.2736 value: 2690.3444",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 31066 of 1354667 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "preamble_compute_units": 76399,
+          "logs": [
+            "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+            "Program ComputeBudget111111111111111111111111111111 success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD invoke [1]",
+            "Program log: Instruction: WithdrawObligationCollateralAndRedeemReserveCollateralV2",
+            "Program log: pnl: Withdraw obligation collateral 486657686 and redeem reserve collateral 582271854",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 123 of 1357177 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 105 of 1353416 compute units",
+            "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+            "Program log: RefreshObligationFarmsForReserve Collateral",
+            "Program log: RefreshObligationFarmsForReserve amount 1762128091 slot 440477781",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr invoke [2]",
+            "Program log: Instruction: SetStakeDelegated",
+            "Program log: SetStakeDelegated: prev:2248785777 -> new:1762128091 ts:1787230883",
+            "Program log: farm_operations::refresh_global_rewards ts=1787230883",
+            "Program log: time_passed=80443187 reward_type=Proportional cumulative_amt=0 decimal_adjusted_amt=0 oracle_adjusted_amt=0 ",
+            "Program log: farm_operations::user_refresh_reward reward_index 0 Global stake 73259568218944 User stake 2248785777 prev_reward_tally 508007768090288163855428572854 rpt 225903139946036826902",
+            "Program log: farm_operations::user_refresh_reward reward 0, new_reward_tally (scaled) 508007768090288163855428572854",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr consumed 13693 of 1345593 compute units",
+            "Program FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr success",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD consumed 69542 of 1399850 compute units",
+            "Program KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD success"
+          ],
+          "compute_units": 69692,
           "return_data_hex": ""
         }
       },

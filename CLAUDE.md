@@ -1,26 +1,25 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY — H4 (Upgrade Behavior Sentinel), at G0
+# ⛔ PHASE: BETWEEN HYPOTHESES — H4 is `KILLED`; nothing is live
 
-**Read [`docs/H4-GATE.md`](docs/H4-GATE.md) before doing anything here.** It is binding. H4 forbids
-by name — because H3 died of it — a general-purpose Capability Passport, any protocol-independent
-schema or adapter semantics, and cross-protocol scoring. Needing one is `KILL-4`.
+**H4 (Upgrade Behavior Sentinel) is closed — `KILLED` at G0 on 2026-08-22, `KILL-2` + `KILL-3`**:
+[`docs/decisions/H4-sentinel-kill.md`](docs/decisions/H4-sentinel-kill.md), gate
+[`docs/H4-GATE.md`](docs/H4-GATE.md), review [`reviews/H4-G0-sentinel.md`](reviews/H4-G0-sentinel.md).
+The measurement ran; all four cases returned `unknown`, so the action was `RE-VERIFY` — no more
+actionable than the code-hash difference already was.
 
-The three earlier gates are closed and their verdicts are **not to be rewritten, revived, or worked
-around**:
+**All four gates are closed and their verdicts are not to be rewritten, revived, or worked around:**
 
 - `docs/GATE.md` — H1, **`KILLED`** ([`docs/decisions/P1-real-target.md`](docs/decisions/P1-real-target.md)).
-- `docs/H2-GATE.md` — H2, **`FROZEN UNEXECUTED`** (founder, 2026-08-21). No H2 measurement was ever
-  run; resuming it needs a founder ruling and its own re-frozen G0.
-- `docs/H3-GATE.md` — H3, **`KILLED` at the design gate** (2026-08-21),
-  [`docs/decisions/H3-design-gate-kill.md`](docs/decisions/H3-design-gate-kill.md). What died is the
-  fixed, protocol-independent capability schema. No H3 gate item was ever executed.
+- `docs/H2-GATE.md` — H2, **`FROZEN UNEXECUTED`** (founder, 2026-08-21). No H2 measurement was ever run.
+- `docs/H3-GATE.md` — H3, **`KILLED` at the design gate** (2026-08-21). What died is the fixed,
+  protocol-independent capability schema. No H3 gate item was ever executed.
+- `docs/H4-GATE.md` — H4, **`KILLED` at G0** (2026-08-22), on its own pre-registered numbers.
 
-**H4 is at G0**: its pre-registration is committed, and the only work permitted is the single
-measurement that gate names. No implementation, no UI, no token, no deploy, no second operation, no
-second protocol. A `PASS` at G0 does **not** start Gate 1 — a verdict ends a phase, it does not start
-the next one. No H1 artifact — verifier,
-attestation, `MandateSpec`, guard, gallery, `attest/`, the agent framing — may be reused as a new
-hypothesis's foundation; reusing one because it exists is 延命, not scope. The sibling repo
+**No hypothesis is currently live.** Until the founder rules a new one open with its own committed
+G0, the only permitted work is recording verdicts. No implementation, no UI, no token, no deploy, no
+second operation, no second protocol. No artifact from H1–H4 — verifier, attestation, `MandateSpec`,
+guard, gallery, `attest/`, the agent framing, the H4 sentinel harness — may be reused as a new
+hypothesis's **foundation**; reusing one because it exists is 延命, not scope. The sibling repo
 `../solvo` is a **read-only** reference and is never edited from here.
 
 - A verdict is a **number or a reproducible experiment** — never an assessment or a plan.

@@ -1,4 +1,22 @@
-# H4 — Upgrade Behavior Sentinel — kill gate and G0 pre-registration (binding)
+# H4 — Upgrade Behavior Sentinel — **KILLED at G0 (2026-08-22) — KILL-2 + KILL-3**
+
+> ⛔ **This gate is closed. H4 is `KILLED`** — verdict, numbers and reasoning:
+> [`docs/decisions/H4-sentinel-kill.md`](./decisions/H4-sentinel-kill.md). Independent review:
+> [`reviews/H4-G0-sentinel.md`](../reviews/H4-G0-sentinel.md) — Codex, `MEASUREMENT SOUND`, no P0.
+>
+> **The measurement in §3–§4 was executed.** All four cases returned `unknown` (**KILL-2**), so the
+> integration action is `RE-VERIFY` (**KILL-3**) — the only answer the differing code hash could
+> already give. `KILL-1` and `KILL-5` explicitly did **not** fire: both real binaries loaded, all
+> eight executions ran, and three consecutive runs were byte-identical. In every case the two
+> binaries agreed on `result` and on all three `token_deltas`; the sole divergence is 4 bytes the
+> new binary writes at offset 28 of `obligation`, `reserve_sol` and `reserve_usdc`. Calling those
+> bytes immaterial would be `KILL-4`, which is why the rescue and the kill are the same door.
+>
+> **Nothing below is rewritten.** It is kept as the pre-registration the verdict is read against, and
+> as a reproducible refutation asset. A verdict ends the phase; it does not start the next one.
+
+## The pre-registration, as committed before measuring
+
 
 **Status: G0 pre-registration. Written and committed BEFORE any measurement.**
 Founder ruling, 2026-08-21. This is the binding gate; `STATUS.md` records the phase.

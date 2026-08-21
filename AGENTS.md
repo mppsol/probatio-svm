@@ -1,13 +1,26 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY — H4 (Upgrade Behavior Sentinel), at G0
+# ⛔ PHASE: BETWEEN HYPOTHESES — H4 is `KILLED`; nothing is live
 
-**Read [`docs/H4-GATE.md`](docs/H4-GATE.md) before doing anything in this repo.** It is binding.
-H1 is `KILLED` (`docs/GATE.md`), H2 is `FROZEN UNEXECUTED` (`docs/H2-GATE.md`), H3 is **`KILLED` at
-the design gate** (`docs/H3-GATE.md`, `docs/decisions/H3-design-gate-kill.md`) — none is reopened.
+**H4 (Upgrade Behavior Sentinel) is closed — `KILLED` at G0 on 2026-08-22, `KILL-2` + `KILL-3`**:
+[`docs/decisions/H4-sentinel-kill.md`](docs/decisions/H4-sentinel-kill.md), gate
+[`docs/H4-GATE.md`](docs/H4-GATE.md), review [`reviews/H4-G0-sentinel.md`](reviews/H4-G0-sentinel.md).
+The measurement ran; all four cases returned `unknown`, so the action was `RE-VERIFY` — no more
+actionable than the code-hash difference already was.
 
-**H4 forbids by name** a general-purpose Capability Passport, any protocol-independent schema or
-adapter semantics, and cross-protocol scoring; needing one is `KILL-4`. `../solvo` is **read-only,
-without exception** — writing to it is `KILL-5`. A `PASS` at G0 does not start Gate 1.
+**All four gates are closed and their verdicts are not to be rewritten, revived, or worked around:**
+
+- `docs/GATE.md` — H1, **`KILLED`** ([`docs/decisions/P1-real-target.md`](docs/decisions/P1-real-target.md)).
+- `docs/H2-GATE.md` — H2, **`FROZEN UNEXECUTED`** (founder, 2026-08-21). No H2 measurement was ever run.
+- `docs/H3-GATE.md` — H3, **`KILLED` at the design gate** (2026-08-21). What died is the fixed,
+  protocol-independent capability schema. No H3 gate item was ever executed.
+- `docs/H4-GATE.md` — H4, **`KILLED` at G0** (2026-08-22), on its own pre-registered numbers.
+
+**No hypothesis is currently live.** Until the founder rules a new one open with its own committed
+G0, the only permitted work is recording verdicts. No implementation, no UI, no token, no deploy, no
+second operation, no second protocol. No artifact from H1–H4 — verifier, attestation, `MandateSpec`,
+guard, gallery, `attest/`, the agent framing, the H4 sentinel harness — may be reused as a new
+hypothesis's **foundation**; reusing one because it exists is 延命, not scope. The sibling repo
+`../solvo` is a **read-only** reference and is never edited from here.
 
 - A verdict is a **number or a reproducible experiment** — never an assessment or a plan.
 - **Not-proven is a KILL**, not a pending. Adding a hypothesis to stay alive is forbidden.
@@ -90,7 +103,8 @@ program, AND the off-chain verifier, so a drift breaks all three.
 ## Running Codex (repo at /Users/hiroyusai/src/probatio-svm; codex not on PATH)
 
 ```bash
-CODEX=/Applications/Codex.app/Contents/Resources/codex
+# Path corrected 2026-08-22: the binary ships inside ChatGPT.app, not a standalone Codex.app.
+CODEX=/Applications/ChatGPT.app/Contents/Resources/codex
 # Review (read-only):
 "$CODEX" exec -C /Users/hiroyusai/src/probatio-svm -s read-only "<review prompt: branch + reviews/NNN file>"
 # Implement on a branch (writes):

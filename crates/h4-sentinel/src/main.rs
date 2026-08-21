@@ -31,13 +31,6 @@ const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const INSTRUCTIONS_SYSVAR: &str = "Sysvar1nstructions1111111111111111111111111";
 const COMPUTE_BUDGET: &str = "ComputeBudget111111111111111111111111111111";
 const COMPUTE_UNIT_LIMIT: u32 = 1_400_000;
-// The H4 manifest copied the account/program payloads but omitted the source
-// capture's Clock timestamp.  This is the exact value in Solvo's immutable G1
-// source manifest for slot 440,477,781; it is compiled in so a completed H4
-// run remains offline and does not read ../solvo.
-const FIXTURE_UNIX_TIMESTAMP: i64 = 1_787_230_883;
-const OLD_HASH: &str = "8eab9f858da01fee962452ad3838570b3340cd43b80a236de8fe5297063d1cda";
-const NEW_HASH: &str = "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9";
 const ACCOUNT_NAMES: [&str; 17] = [
     "obligation",
     "reserve_sol",
@@ -82,6 +75,7 @@ struct ProgramFixture {
     label: &'static str,
     path: String,
     stored_bytes: usize,
+    elf_len: usize,
     elf: Vec<u8>,
     code_hash: String,
 }
@@ -225,7 +219,7 @@ fn main() {
             ProgramIdentity {
                 path: program.path.clone(),
                 stored_bytes: program.stored_bytes,
-                elf_len: program.elf.len(),
+                elf_len: program.elf_len,
                 code_hash: program.code_hash.clone(),
             },
         );
@@ -723,7 +717,9 @@ fn load_fixtures() -> Fixtures {
         slot: manifest["provenance"]["accounts_and_old_binary"]["source_manifest_slot"]
             .as_u64()
             .expect("fixture slot"),
-        unix_timestamp: FIXTURE_UNIX_TIMESTAMP,
+        unix_timestamp: manifest["clock"]["unix_timestamp"]
+            .as_i64()
+            .expect("fixture clock unix timestamp"),
         manifest_hash: sha256_hex(&manifest_bytes),
         accounts,
         derived,
@@ -745,32 +741,47 @@ fn load_program(dir: &Path, manifest: &Value, name: &'static str) -> ProgramFixt
         stored.len() as u64,
         record["stored_len"].as_u64().expect("stored len")
     );
-    while stored.last() == Some(&0) {
-        stored.pop();
+    assert_eq!(
+        sha256_hex(&stored),
+        record["stored_sha256"].as_str().expect("stored hash"),
+        "stored payload hash"
+    );
+    if let Some(loadable) = record["loadable"].as_bool() {
+        assert!(loadable, "fixture is pre-registered as loadable");
     }
-    let code_hash = sha256_hex(&stored);
+    if let Some(minimum_len) = record["elf_min_required_len"].as_u64() {
+        assert!(
+            stored.len() as u64 >= minimum_len,
+            "stored payload is long enough for the ELF section-header table"
+        );
+    }
+    let trimmed = stored
+        .iter()
+        .rposition(|byte| *byte != 0)
+        .map_or(&[][..], |last_nonzero| &stored[..=last_nonzero]);
+    let code_hash = sha256_hex(trimmed);
     assert_eq!(code_hash, record["code_hash"].as_str().expect("code hash"));
     assert_eq!(
-        stored.len() as u64,
+        trimmed.len() as u64,
         record["elf_len"].as_u64().expect("elf len")
     );
     ProgramFixture {
         label: name,
         path: format!("fixtures/h4/{path}"),
         stored_bytes: record["stored_len"].as_u64().expect("stored len") as usize,
+        elf_len: record["elf_len"].as_u64().expect("elf len") as usize,
         elf: stored,
         code_hash,
     }
 }
 
 fn assert_program(program: &ProgramFixture) {
-    let expected = match program.label {
-        "klend_old" => OLD_HASH,
-        "klend_new" => NEW_HASH,
-        "farms" => "9ca00de8e9e13eb1e5283754b940ca9c3a007b61f4e195483241db454455a240",
-        _ => panic!("unexpected program"),
-    };
-    assert_eq!(sha256_hex(&program.elf), expected, "loaded ELF hash");
+    let trimmed = program
+        .elf
+        .iter()
+        .rposition(|byte| *byte != 0)
+        .map_or(&[][..], |last_nonzero| &program.elf[..=last_nonzero]);
+    assert_eq!(sha256_hex(trimmed), program.code_hash, "loaded ELF hash");
 }
 
 fn deterministic_payer() -> Keypair {
