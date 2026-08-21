@@ -1,74 +1,58 @@
 # STATUS — Probatio SVM
 
-Binding gate: **[`docs/H3-GATE.md`](docs/H3-GATE.md)**. `docs/GATE.md` (H1) is **closed**;
-`docs/H2-GATE.md` is **FROZEN UNEXECUTED**. A verdict is a number or a reproducible experiment.
-Not-proven is a KILL.
+**No hypothesis is live.** `docs/GATE.md` (H1) is **closed**; `docs/H2-GATE.md` is **FROZEN
+UNEXECUTED**; `docs/H3-GATE.md` is **closed — H3 `KILLED` at the design gate**. A verdict is a number
+or a reproducible experiment. Not-proven is a KILL. Nothing may be built until a founder ruling opens
+a new gate.
 
-## H3 — Composability Passport — **G0 NOT FROZEN; design-gate finding recorded**
+## H3 — Composability Passport — **KILLED at the design gate**
 
-Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent reviews:
-[r1 `CHANGES`](reviews/H3-G0-passport.md) (8×P0) → [r2 `CHANGES`](reviews/H3-G0-passport-r2.md) (6×P0)
-· G0 artifacts: r1 `4ef5efd`, r2 `8d92bf1` · **no verdict, no code, nothing executed**
+**Verdict:** [`docs/decisions/H3-design-gate-kill.md`](docs/decisions/H3-design-gate-kill.md) ·
+gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) (closed) · reviews:
+[r1 `CHANGES`](reviews/H3-G0-passport.md) 8×P0 → [r2 `CHANGES`](reviews/H3-G0-passport-r2.md) 6×P0,
+same class · artifacts `4ef5efd` · `f5cb3ec` · `8d92bf1` · `91bb712` · **verdict date 2026-08-21**
 
-> A protocol's "CPI-able" claim decomposes into seven capability fields, each decided by an executable
-> probe against the protocol's **real mainnet binary and cloned mainnet state**; the Passport is
-> byte-canonical, expires mechanically when the code or the state it depends on changes, generalises
-> to a protocol it was not designed against, and has a consumer that can be **named** and counted.
+**What died:** the fixed, protocol-independent capability schema. Two review rounds established that
+r2 did not remove the implementer's freedom to choose which effect satisfies a field — it
+**relocated** it into the adapter manifest (`scarcity_range`, the `value_out_ix` account list, the
+settlement-path and writer selections that are not manifest members at all). If capability semantics
+are irreducibly venue-specific, the deliverable is a **report per protocol, not a schema**, which is
+precisely what the brief's item 5 asked H3 to prove it was not. Two further P0s point the same way:
+C7 is a *pair* property stored in a *per-venue* Passport, so nothing expires it when the reference
+venue upgrades; and G1b can be satisfied by two form letters — H1's asserted adopter in written form.
 
-### The design-gate finding
+**Not rescued by more specification** (pinning per-venue semantics for every field is H2's failure
+mode one layer down), **not rescued by running G1a** (a consumer count does not repair a schema that
+cannot be specified — it was ready to run and was deliberately not run), and **no r3** (§13
+pre-registered that there would not be one).
 
-**G0 is not frozen.** Two independent review rounds returned `CHANGES`, and r2's residual P0s are of
-**the same class as r1's** — the deciding semantics of C3/C4/C6 and the adopter question. The gate
-pre-registered in §13 that it would not go to r3 for exactly this outcome, so the phase stops here
-and the founder decides. Of r1's eleven findings, r2's own triage records **5 genuinely closed, 1
-apparently closed, 5 partially closed**.
+**No gate item was ever executed.** G1a, G1b, G2, G3, G4, G5 — none started. No capability field was
+measured on any protocol, no code was written, no fixture fetched, no third party contacted, and
+`../solvo` was not edited. **This kill is about the specification, not about klend or Phoenix.**
 
-**What that pattern is evidence of, stated as the design-gate result:** §2's premise — that capability
-fields can be defined venue-agnostically, with venue knowledge confined to a fixed-shape adapter
-manifest — **did not survive two rounds**. r2 relocated the freedom (into `scarcity_range`,
-`value_out_ix`'s account list, the settlement-path selection) rather than removing it, and the
-reviewer showed for each that a venue can be made to look better or worse than it is. If capability
-semantics are irreducibly venue-specific, the Passport is a **report per protocol, not a schema** —
-which is the thing item 5 of the brief asked H3 to prove it is not.
+**Kept as reproducible refutation assets:** the E1–E4 identity/expiry machinery bound to real bytes
+(ProgramData linkage, loader tags, `Option<Pubkey>` semantics, the hash triple, the 12-byte
+`last_deploy_slot` pre-check); G4's deployment-instruction counting; the harness discipline
+(hash-asserted mainnet binary, cloned mainnet state only, disclosed mutations, no assertion on logs,
+byte-identical reruns); and the read-only measurements below.
 
-| # | Item | Status | Kill number fixed in advance |
-|---|---|---|---|
-| **G0** | Pre-registration r2 | **NOT FROZEN — r1 `CHANGES`, r2 `CHANGES`; founder ruling pending** | precondition, no verdict |
-| G1a | The counted surface — CPI callers, complete census in a budgeted window | not started | `N_multi` < 10 or `A_multi` < 5 |
-| G1b | The demand test — ≥2 written consumer statements *(needs founder authorisation)* | not started | fewer than 2 obtained |
-| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; equal verdict 7-tuples; an inadmissible C3 sweep; state not clonable; non-determinism; an undisclosed mutation |
-| G3 | Generalisation to a blind third (marginfi v2) | not started | `F_new` > 0, or any field `UNPROVEN` |
-| G4 | Expiry binds, on code **and** on state | not started | no demonstrated hash change; pre-check does not fire; no reachability-established state flip; median `upgrades_per_90d` = 0 |
-| G5 | Independent reconstruction, canonical equality, consumer cost | not started | any `stable_hash` differs; `Q_prose` ≥ 1; any field needs > 4 account reads |
+Verified read-only at slot **440,578,912**, by one party only — the reviewer had no network in either
+round and correctly declined to assume it: **7 of 7 venues carry a live upgrade authority, none is
+immutable**; klend and Kamino Vaults share the authority `GzFgdRJXmaw…`; `../solvo`'s klend fixture
+sits at slot 440,477,781 and klend was **redeployed 8,994 slots (≈ 1 h) later** (`8eab9f85…` →
+`b1344d19…`); Phoenix Eternal runs at **≈ 199.8 sig/s**. The reviewer independently re-derived the
+fixture slot, the gap, the captured hash, and that Solvo's Phoenix leg used a **localnet fixture, not
+cloned mainnet state**.
 
-### What survived both rounds
+**Founder note (2026-08-21), recorded as a deferral and NOT a new phase:** what died is the
+general-purpose, comparable Passport; the strong remaining asset is re-runnable verification tied to a
+real binary, real state and a real upgrade. If anything moves next it should be a **narrow evidentiary
+product that reconstructs a specific failure or incident after the fact**, not a general-purpose
+scorecard. **This is not started** — no gate, no hypothesis, no kill number, no authorisation. A
+successor requires its own G0.
 
-Confirmed closed by the reviewer, and re-derived by it where it could: the **E1–E4 identity and expiry
-machinery** (ProgramData linkage, loader tags, `Option` semantics, hash triple, the 12-byte
-pre-check); **G2's verdict-tuple comparison and G3's structural `F_new`**; **G4's deployment-instruction
-counting**; **C2's one-atom bound**; and the corrected §4 facts. Independently re-derived by the
-reviewer: klend's captured ELF is 2,414,913 bytes / `8eab9f85…3d1cda`, the fixture slot is 440,477,781
-so the gap to klend's redeploy is **8,994 slots**, and Solvo's Phoenix leg ran on a **localnet fixture,
-not cloned mainnet state**.
-
-### What remains open
-
-r2's six P0s: C3's boundary sweep proves a threshold, not inability to pay; C4's entitlement test can
-miss a claimant-authorised or time-limited promise, and its PASS rule contradicts its novelty rule;
-C6's universe is only enumerable after the implementer picks a value-out route; **C7 is a pair
-property stored in a per-venue Passport, so nothing expires it when the reference venue upgrades**;
-§8.1's schema still cannot produce a deterministic `stable_hash`; and **G1b can be satisfied by two
-form letters** — H1's asserted adopter in written form.
-
-Identity of all seven venues was verified read-only at slot **440,578,912** (§3), **by one party
-only** — the reviewer's sandbox had no network in either round and correctly declined to assume it.
-**7 of 7 carry a live upgrade authority — none is immutable.**
-
-**Next action: founder ruling.** The options, without a recommendation attached to any of them: kill
-H3 at the design gate on the pattern above; run **G1a alone** as the cheap H1-style existence test
-(~51,000 RPC reads, ~1 h, and it does not depend on any unresolved P0); or override §13 and authorise
-a scoped r3. `G0` carries no verdict, committing it does not start G1, and **no third party has been
-contacted**.
+**No hypothesis is currently live.** H1 `KILLED`, H2 `FROZEN UNEXECUTED`, H3 `KILLED at the design
+gate`. Nothing may be built until a founder ruling opens a new gate.
 
 ## H1 — certify autonomous agents before capital is trusted to them — **KILLED**
 

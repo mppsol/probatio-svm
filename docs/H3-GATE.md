@@ -1,7 +1,19 @@
-# H3 — Composability Passport — kill gate and G0 pre-registration (binding)
+# H3 — Composability Passport — **KILLED at the design gate (2026-08-21)**
 
-**Status: G0 pre-registration, r2. No verdict. No code.**
-This document supersedes [`docs/H2-GATE.md`](./H2-GATE.md) as the binding gate.
+> ⛔ **This gate is closed. H3 is `KILLED`** — verdict and reasoning:
+> [`docs/decisions/H3-design-gate-kill.md`](./decisions/H3-design-gate-kill.md).
+>
+> Two independent review rounds returned `CHANGES` with P0s of the same class, §13 pre-registered
+> that there would be no r3, and the founder ruled. **What died is the fixed, protocol-independent
+> capability schema**: the freedom to choose which effect satisfies a field was relocated into the
+> adapter manifest, not removed, so the deliverable would be a report per protocol rather than a
+> comparable primitive. **No gate item was ever executed** — G1a–G5 were never started, no code was
+> written, and nothing here says anything about how klend or Phoenix actually behave.
+>
+> **Nothing below is rewritten.** It is kept as a reproducible refutation asset.
+
+**Status when killed: G0 pre-registration, r2, not frozen. No verdict was ever measured. No code.**
+This document superseded [`docs/H2-GATE.md`](./H2-GATE.md) as the binding gate until 2026-08-21.
 
 Review history: r1 → Codex [`reviews/H3-G0-passport.md`](../reviews/H3-G0-passport.md) `CHANGES`
 (eight P0) → r2 (this document). §13 lists every change and **the direction it moves the gate**.

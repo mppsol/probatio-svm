@@ -1,13 +1,13 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY — H3 (Composability Passport)
+# ⛔ NO HYPOTHESIS IS LIVE — every gate in this repo is closed
 
-**Read [`docs/H3-GATE.md`](docs/H3-GATE.md) before doing anything in this repo.** It is binding.
-`docs/GATE.md` is H1's gate and is **closed** (H1 `KILLED`); `docs/H2-GATE.md` is **FROZEN UNEXECUTED**
-(founder, 2026-08-21). H3 is at G0 — specification only, no code.
+**Read [`STATUS.md`](STATUS.md) before doing anything in this repo.** H1 is `KILLED`
+(`docs/GATE.md`), H2 is `FROZEN UNEXECUTED` (`docs/H2-GATE.md`), and H3 is **`KILLED` at the design
+gate** (`docs/H3-GATE.md`, verdict in `docs/decisions/H3-design-gate-kill.md`). No H3 gate item was
+ever executed.
 
-The only work permitted right now is producing evidence for this project's kill gate. No
-generalisation, no large UI, no peripheral features, no production deployment, until the gate
-returns `GO`.
+**Nothing may be built until a founder ruling opens a new gate**, which starts at its own G0 with its
+own pre-registration. A verdict ends a phase; it does not start the next one.
 
 - A verdict is a **number or a reproducible experiment** — never an assessment or a plan.
 - **Not-proven is a KILL**, not a pending. Adding a hypothesis to stay alive is forbidden.
