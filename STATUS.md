@@ -4,48 +4,71 @@ Binding gate: **[`docs/H3-GATE.md`](docs/H3-GATE.md)**. `docs/GATE.md` (H1) is *
 `docs/H2-GATE.md` is **FROZEN UNEXECUTED**. A verdict is a number or a reproducible experiment.
 Not-proven is a KILL.
 
-## H3 — Composability Passport — **G0 (pre-registration) r2, no verdict**
+## H3 — Composability Passport — **G0 NOT FROZEN; design-gate finding recorded**
 
-Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent review r1:
-[`reviews/H3-G0-passport.md`](reviews/H3-G0-passport.md) `CHANGES` (8×P0) · r2:
-[`reviews/H3-G0-passport-r2.md`](reviews/H3-G0-passport-r2.md) ·
-G0 artifact commits: r1 `4ef5efd`, r2 `PENDING_FREEZE` — **freeze awaits a founder ruling**
+Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent reviews:
+[r1 `CHANGES`](reviews/H3-G0-passport.md) (8×P0) → [r2 `CHANGES`](reviews/H3-G0-passport-r2.md) (6×P0)
+· G0 artifacts: r1 `4ef5efd`, r2 `8d92bf1` · **no verdict, no code, nothing executed**
 
 > A protocol's "CPI-able" claim decomposes into seven capability fields, each decided by an executable
 > probe against the protocol's **real mainnet binary and cloned mainnet state**; the Passport is
 > byte-canonical, expires mechanically when the code or the state it depends on changes, generalises
 > to a protocol it was not designed against, and has a consumer that can be **named** and counted.
 
+### The design-gate finding
+
+**G0 is not frozen.** Two independent review rounds returned `CHANGES`, and r2's residual P0s are of
+**the same class as r1's** — the deciding semantics of C3/C4/C6 and the adopter question. The gate
+pre-registered in §13 that it would not go to r3 for exactly this outcome, so the phase stops here
+and the founder decides. Of r1's eleven findings, r2's own triage records **5 genuinely closed, 1
+apparently closed, 5 partially closed**.
+
+**What that pattern is evidence of, stated as the design-gate result:** §2's premise — that capability
+fields can be defined venue-agnostically, with venue knowledge confined to a fixed-shape adapter
+manifest — **did not survive two rounds**. r2 relocated the freedom (into `scarcity_range`,
+`value_out_ix`'s account list, the settlement-path selection) rather than removing it, and the
+reviewer showed for each that a venue can be made to look better or worse than it is. If capability
+semantics are irreducibly venue-specific, the Passport is a **report per protocol, not a schema** —
+which is the thing item 5 of the brief asked H3 to prove it is not.
+
 | # | Item | Status | Kill number fixed in advance |
 |---|---|---|---|
-| **G0** | Pre-registration: fields, expiry, harness, examples, primitive criteria, venue set | **r2 written; r1 review returned `CHANGES` and every finding is closed in r2** | precondition, no verdict |
+| **G0** | Pre-registration r2 | **NOT FROZEN — r1 `CHANGES`, r2 `CHANGES`; founder ruling pending** | precondition, no verdict |
 | G1a | The counted surface — CPI callers, complete census in a budgeted window | not started | `N_multi` < 10 or `A_multi` < 5 |
 | G1b | The demand test — ≥2 written consumer statements *(needs founder authorisation)* | not started | fewer than 2 obtained |
-| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; equal verdict 7-tuples; an inadmissible C3 boundary sweep; state not clonable; non-determinism; an undisclosed mutation |
+| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; equal verdict 7-tuples; an inadmissible C3 sweep; state not clonable; non-determinism; an undisclosed mutation |
 | G3 | Generalisation to a blind third (marginfi v2) | not started | `F_new` > 0, or any field `UNPROVEN` |
 | G4 | Expiry binds, on code **and** on state | not started | no demonstrated hash change; pre-check does not fire; no reachability-established state flip; median `upgrades_per_90d` = 0 |
 | G5 | Independent reconstruction, canonical equality, consumer cost | not started | any `stable_hash` differs; `Q_prose` ≥ 1; any field needs > 4 account reads |
 
-**G1 is deliberately first** — it is the item H1 died on, and it is the cheapest (~51,000 RPC reads,
-~1 h, one script). **G1b exists because the r1 review was right that counting CPI callers measures
-technical exposure, not demand**: no on-chain query distinguishes a program that would use a Passport
-from one that merely calls two venues. H1 never asked a single adopter.
+### What survived both rounds
 
-Identity of all seven venues was verified read-only at slot **440,578,912** (§3 of the gate), **by one
-party only** — the r1 reviewer's sandbox had no network and correctly declined to assume it; G5
-re-derives it. **7 of 7 carry a live upgrade authority — none is immutable.** Kamino Vaults and klend
-share the authority `GzFgdRJXmaw…`, which is why the count excludes same-authority programs.
+Confirmed closed by the reviewer, and re-derived by it where it could: the **E1–E4 identity and expiry
+machinery** (ProgramData linkage, loader tags, `Option` semantics, hash triple, the 12-byte
+pre-check); **G2's verdict-tuple comparison and G3's structural `F_new`**; **G4's deployment-instruction
+counting**; **C2's one-atom bound**; and the corrected §4 facts. Independently re-derived by the
+reviewer: klend's captured ELF is 2,414,913 bytes / `8eab9f85…3d1cda`, the fixture slot is 440,477,781
+so the gap to klend's redeploy is **8,994 slots**, and Solvo's Phoenix leg ran on a **localnet fixture,
+not cloned mainnet state**.
 
-The motivating measurement, disclosed in the gate as pre-G0 and deciding no item: `../solvo`'s klend
-fixture is at slot 440,477,781 and klend was **redeployed 8,994 slots (≈ 1 h) later**, so a carefully
-executed, independently recomputed capability verdict was already bound to a replaced binary before it
-was written down. `code_hash` `8eab9f85…` (captured, re-derived by the reviewer) vs `b1344d19…`
-(mainnet today). Solvo's **Phoenix** leg, by contrast, ran on a **freshly initialised localnet
-fixture, not cloned mainnet state** — H3 forbids that substitution, so H3 may be unable to reproduce
-its own FAIL example, which is a KILL at G2 and is named in the gate rather than discovered later.
+### What remains open
 
-**Next action: founder ruling on G0.** `G0` is a precondition and carries no verdict; committing it
-does not start G1, and **no third party is contacted** until the founder rules.
+r2's six P0s: C3's boundary sweep proves a threshold, not inability to pay; C4's entitlement test can
+miss a claimant-authorised or time-limited promise, and its PASS rule contradicts its novelty rule;
+C6's universe is only enumerable after the implementer picks a value-out route; **C7 is a pair
+property stored in a per-venue Passport, so nothing expires it when the reference venue upgrades**;
+§8.1's schema still cannot produce a deterministic `stable_hash`; and **G1b can be satisfied by two
+form letters** — H1's asserted adopter in written form.
+
+Identity of all seven venues was verified read-only at slot **440,578,912** (§3), **by one party
+only** — the reviewer's sandbox had no network in either round and correctly declined to assume it.
+**7 of 7 carry a live upgrade authority — none is immutable.**
+
+**Next action: founder ruling.** The options, without a recommendation attached to any of them: kill
+H3 at the design gate on the pattern above; run **G1a alone** as the cheap H1-style existence test
+(~51,000 RPC reads, ~1 h, and it does not depend on any unresolved P0); or override §13 and authorise
+a scoped r3. `G0` carries no verdict, committing it does not start G1, and **no third party has been
+contacted**.
 
 ## H1 — certify autonomous agents before capital is trusted to them — **KILLED**
 
