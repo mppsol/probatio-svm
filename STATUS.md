@@ -1,9 +1,44 @@
 # STATUS — Probatio SVM
 
-**No hypothesis is live.** `docs/GATE.md` (H1) is **closed**; `docs/H2-GATE.md` is **FROZEN
-UNEXECUTED**; `docs/H3-GATE.md` is **closed — H3 `KILLED` at the design gate**. A verdict is a number
-or a reproducible experiment. Not-proven is a KILL. Nothing may be built until a founder ruling opens
-a new gate.
+Binding gate: **[`docs/H4-GATE.md`](docs/H4-GATE.md)** — H4, *Upgrade Behavior Sentinel*, at **G0**.
+`docs/GATE.md` (H1) is **closed — `KILLED`**; `docs/H2-GATE.md` is **FROZEN UNEXECUTED**;
+`docs/H3-GATE.md` is **closed — `KILLED` at the design gate**. None of the three is reopened.
+A verdict is a number or a reproducible experiment. Not-proven is a KILL.
+
+## H4 — Upgrade Behavior Sentinel — **G0 pre-registration committed; measurement pending**
+
+Gate: [`docs/H4-GATE.md`](docs/H4-GATE.md) · G0 artifact commit: `PENDING` · **no measurement has
+been run at the time this row was written**
+
+> For **one** named Solana integration, the concrete behaviour it depends on is re-executed against
+> the real pre- and post-upgrade BPF binaries, on identical cloned state with identical inputs, and
+> yields a `compatible` / `breaking` / `unknown` verdict **a byte hash comparison cannot produce**.
+
+**Forbidden by name, because H3 died of it:** a general-purpose Capability Passport, any
+protocol-independent schema or adapter semantics, and cross-protocol scoring of any kind. Needing one
+is `KILL-4`, not a scope change.
+
+**Why this is not H3:** H3 needed to know what a behaviour *means*, and every meaning turned out to
+be venue-specific. H4 holds input, state and case fixed, varies **only the binary**, and compares the
+two outputs for **equality**. Equality is not an interpretation.
+
+**Fixed before measurement:** klend `withdraw_obligation_collateral_and_redeem_reserve_collateral_v2`
+top-level on the USDC reserve · old binary = `../solvo`'s committed `klend.so` (2,414,913 B,
+`8eab9f85…`, fixture slot 440,477,781) · new binary = fetched from mainnet *after this gate is
+pushed*, with ProgramData, slot and `code_hash` recorded · four cases (success `100,000,000`,
+boundary `D`, failure `D + 1`, sentinel `u64::MAX`) · decisive outputs = `Ok`/`Err` with exact code,
+token deltas at SPL offset 64, and full post-state byte equality; **logs are auxiliary and never
+asserted on**.
+
+| KILL | fires when |
+|---|---|
+| 1 | the two real binaries cannot be run in one reproducible environment, or reruns are not byte-identical |
+| 2 | all four cases are `unknown` |
+| 3 | the action is `RE-VERIFY` — no more actionable than the hash difference already was |
+| 4 | deciding needs a protocol-independent schema or arbitrary adapter semantics |
+| 5 | `../solvo` must be changed — it is read-only, without exception |
+
+**`PASS` does not start Gate 1 or any implementation.**
 
 ## H3 — Composability Passport — **KILLED at the design gate**
 

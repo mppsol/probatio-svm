@@ -1,13 +1,13 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ NO HYPOTHESIS IS LIVE — every gate in this repo is closed
+# ⛔ PHASE: KILL GATE ONLY — H4 (Upgrade Behavior Sentinel), at G0
 
-**Read [`STATUS.md`](STATUS.md) before doing anything in this repo.** H1 is `KILLED`
-(`docs/GATE.md`), H2 is `FROZEN UNEXECUTED` (`docs/H2-GATE.md`), and H3 is **`KILLED` at the design
-gate** (`docs/H3-GATE.md`, verdict in `docs/decisions/H3-design-gate-kill.md`). No H3 gate item was
-ever executed.
+**Read [`docs/H4-GATE.md`](docs/H4-GATE.md) before doing anything in this repo.** It is binding.
+H1 is `KILLED` (`docs/GATE.md`), H2 is `FROZEN UNEXECUTED` (`docs/H2-GATE.md`), H3 is **`KILLED` at
+the design gate** (`docs/H3-GATE.md`, `docs/decisions/H3-design-gate-kill.md`) — none is reopened.
 
-**Nothing may be built until a founder ruling opens a new gate**, which starts at its own G0 with its
-own pre-registration. A verdict ends a phase; it does not start the next one.
+**H4 forbids by name** a general-purpose Capability Passport, any protocol-independent schema or
+adapter semantics, and cross-protocol scoring; needing one is `KILL-4`. `../solvo` is **read-only,
+without exception** — writing to it is `KILL-5`. A `PASS` at G0 does not start Gate 1.
 
 - A verdict is a **number or a reproducible experiment** — never an assessment or a plan.
 - **Not-proven is a KILL**, not a pending. Adding a hypothesis to stay alive is forbidden.

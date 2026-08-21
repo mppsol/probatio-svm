@@ -1,8 +1,12 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ NO HYPOTHESIS IS LIVE — every gate in this repo is closed
+# ⛔ PHASE: KILL GATE ONLY — H4 (Upgrade Behavior Sentinel), at G0
 
-**Read [`STATUS.md`](STATUS.md) before doing anything here.** All three gates are closed, and their
-verdicts are **not to be rewritten, revived, or worked around**:
+**Read [`docs/H4-GATE.md`](docs/H4-GATE.md) before doing anything here.** It is binding. H4 forbids
+by name — because H3 died of it — a general-purpose Capability Passport, any protocol-independent
+schema or adapter semantics, and cross-protocol scoring. Needing one is `KILL-4`.
+
+The three earlier gates are closed and their verdicts are **not to be rewritten, revived, or worked
+around**:
 
 - `docs/GATE.md` — H1, **`KILLED`** ([`docs/decisions/P1-real-target.md`](docs/decisions/P1-real-target.md)).
 - `docs/H2-GATE.md` — H2, **`FROZEN UNEXECUTED`** (founder, 2026-08-21). No H2 measurement was ever
@@ -11,9 +15,10 @@ verdicts are **not to be rewritten, revived, or worked around**:
   [`docs/decisions/H3-design-gate-kill.md`](docs/decisions/H3-design-gate-kill.md). What died is the
   fixed, protocol-independent capability schema. No H3 gate item was ever executed.
 
-**Nothing may be built until a founder ruling opens a new gate**, and a new gate starts at its own G0
-with its own pre-registration. Do not start a successor hypothesis because one is sketched in a
-deferral note — a verdict ends a phase, it does not start the next one. No H1 artifact — verifier,
+**H4 is at G0**: its pre-registration is committed, and the only work permitted is the single
+measurement that gate names. No implementation, no UI, no token, no deploy, no second operation, no
+second protocol. A `PASS` at G0 does **not** start Gate 1 — a verdict ends a phase, it does not start
+the next one. No H1 artifact — verifier,
 attestation, `MandateSpec`, guard, gallery, `attest/`, the agent framing — may be reused as a new
 hypothesis's foundation; reusing one because it exists is 延命, not scope. The sibling repo
 `../solvo` is a **read-only** reference and is never edited from here.
