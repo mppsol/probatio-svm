@@ -1,7 +1,17 @@
-# H2 — Kill Gate (binding)
+# H2 — Kill Gate — **FROZEN UNEXECUTED (2026-08-21)**
 
-**Status: frame fixed, no evidence yet.** This document supersedes [`docs/GATE.md`](./GATE.md) as the
-binding gate. `GATE.md` is H1's gate; H1 is **KILLED** and stays killed
+> ⛔ **This gate is frozen and is no longer binding.** The binding gate is
+> [`docs/H3-GATE.md`](./H3-GATE.md).
+>
+> **Founder ruling, 2026-08-21:** H2's risk-transfer hypothesis is **frozen without being executed**.
+> Not `KILLED` — no G1 measurement was ever run, and no number here is a verdict. Not `BLOCKED` —
+> nothing external is being waited on. It stopped because G0 entered a specification spiral (three
+> rounds, 331 lines, zero measurements) and the founder chose a different hypothesis over a fourth
+> round. **Nothing below is rewritten.** H2 may be resumed only by a founder ruling, from its own G0,
+> with its pre-registration re-frozen; resuming it inside H3 would be 延命.
+
+**Status when frozen: frame fixed, no evidence.** This document superseded [`docs/GATE.md`](./GATE.md)
+as the binding gate until 2026-08-21. `GATE.md` is H1's gate; H1 is **KILLED** and stays killed
 ([`docs/decisions/P1-real-target.md`](./decisions/P1-real-target.md)).
 
 > **H1 の結論は書き換えない。** H1 は KILLED であり、その証拠・数値・レビューはそのまま残す。

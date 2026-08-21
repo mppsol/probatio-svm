@@ -1,13 +1,17 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY — H2
+# ⛔ PHASE: KILL GATE ONLY — H3 (Composability Passport)
 
-**Read [`docs/H2-GATE.md`](docs/H2-GATE.md) before doing anything in this repo.** It is binding and it
-overrides any older plan, roadmap or task list you find here — including `docs/GATE.md`, which is H1's
-gate and is **closed**: H1 is `KILLED` and its verdict is not to be rewritten.
+**Read [`docs/H3-GATE.md`](docs/H3-GATE.md) before doing anything in this repo.** It is binding and it
+overrides every older plan, roadmap or task list you find here:
 
-**H2 is at G0 (pre-registration). No code is written in this phase**, and no H1 artifact — verifier,
-attestation, `MandateSpec`, guard, gallery, the agent framing — may be reused as H2's foundation.
-Reusing one because it exists is 延命, not scope.
+- `docs/GATE.md` is H1's gate and is **closed** — H1 is `KILLED` and its verdict is not rewritten.
+- `docs/H2-GATE.md` is **FROZEN UNEXECUTED** (founder, 2026-08-21) — no H2 measurement was ever run,
+  and resuming H2 needs a founder ruling and its own re-frozen G0.
+
+**H3 is at G0 (pre-registration). No code is written in this phase**, and no H1 artifact — verifier,
+attestation, `MandateSpec`, guard, gallery, `attest/`, the agent framing — may be reused as H3's
+foundation. Reusing one because it exists is 延命, not scope. The sibling repo `../solvo` is a
+**read-only** reference and is never edited from here.
 
 The only work permitted right now is producing evidence for this project's kill gate. No
 generalisation, no large UI, no peripheral features, no production deployment, until the gate

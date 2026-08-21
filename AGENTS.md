@@ -1,8 +1,9 @@
 <!-- KILL-GATE-BANNER -->
-# ⛔ PHASE: KILL GATE ONLY
+# ⛔ PHASE: KILL GATE ONLY — H3 (Composability Passport)
 
-**Read [`docs/H2-GATE.md`](docs/H2-GATE.md) before doing anything in this repo.** It is binding.
-`docs/GATE.md` is H1's gate and is **closed** (H1 `KILLED`). H2 is at G0 — specification only, no code.
+**Read [`docs/H3-GATE.md`](docs/H3-GATE.md) before doing anything in this repo.** It is binding.
+`docs/GATE.md` is H1's gate and is **closed** (H1 `KILLED`); `docs/H2-GATE.md` is **FROZEN UNEXECUTED**
+(founder, 2026-08-21). H3 is at G0 — specification only, no code.
 
 The only work permitted right now is producing evidence for this project's kill gate. No
 generalisation, no large UI, no peripheral features, no production deployment, until the gate

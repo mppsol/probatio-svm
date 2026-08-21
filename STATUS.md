@@ -1,7 +1,42 @@
 # STATUS — Probatio SVM
 
-Binding gate: **[`docs/H2-GATE.md`](docs/H2-GATE.md)**. `docs/GATE.md` is H1's gate and is **closed**.
-A verdict is a number or a reproducible experiment. Not-proven is a KILL.
+Binding gate: **[`docs/H3-GATE.md`](docs/H3-GATE.md)**. `docs/GATE.md` (H1) is **closed**;
+`docs/H2-GATE.md` is **FROZEN UNEXECUTED**. A verdict is a number or a reproducible experiment.
+Not-proven is a KILL.
+
+## H3 — Composability Passport — **G0 (pre-registration), no verdict**
+
+Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent review:
+[`reviews/H3-G0-passport.md`](reviews/H3-G0-passport.md) · **G0 commit: `PENDING`**
+
+> A protocol's "CPI-able" claim decomposes into six capability fields, each decided by an executable
+> probe against the protocol's **real mainnet binary and cloned mainnet state**; the Passport is
+> byte-canonical, expires mechanically when the code or the state it depends on changes, generalises
+> to a protocol it was not designed against, and has a consumer population that can be counted.
+
+| # | Item | Status | Kill number fixed in advance |
+|---|---|---|---|
+| **G0** | Pre-registration: fields, expiry rules, harness, examples, primitive criteria, venue set | **written, awaiting independent review + founder ruling** | precondition, no verdict |
+| G1 | Is there anyone to hand a Passport to? (CPI callers counted, not asserted) | not started | `N_multi` < 10 or `A_multi` < 5 |
+| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; all six fields agree; a failed C3 control; non-determinism; an undisclosed mutation |
+| G3 | Generalisation to a blind third (marginfi v2) | not started | `F_new` > 0, or any field `UNPROVEN` |
+| G4 | Expiry binds, on code **and** on state | not started | no demonstrated hash change; pre-check does not fire; no measured state flip; median `upgrades_per_90d` = 0 |
+| G5 | Independent reconstruction, canonical equality, consumer cost | not started | any `stable_hash` differs; `Q_prose` ≥ 1; any field needs > 4 account reads |
+
+**G1 is deliberately first**: it is the item H1 died on, it is the cheapest (~21,000 RPC reads,
+~30 min, one script), and it can kill H3 before any harness is built.
+
+Identity of all seven venues was verified read-only at slot **440,578,912** (§3 of the gate).
+**7 of 7 carry a live upgrade authority — none is immutable.** Kamino Vaults and klend share the
+authority `GzFgdRJXmaw…`, which is why the G1 count excludes same-authority programs.
+
+The motivating measurement, disclosed in the gate as pre-G0 and deciding no item: `../solvo` captured
+klend at slot 440,477,778 and klend was **redeployed 8,997 slots (≈ 1 h) later**, so a carefully
+executed, independently recomputed capability verdict was already bound to a replaced binary before it
+was written down. `code_hash` `8eab9f85…` (captured) vs `b1344d19…` (mainnet today).
+
+**Next action: founder ruling on G0.** `G0` is a precondition and carries no verdict; committing it
+does not start G1.
 
 ## H1 — certify autonomous agents before capital is trusted to them — **KILLED**
 
@@ -15,7 +50,7 @@ A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 **Founder decision (2026-08-20): the H1 KILL stands and is not rewritten.** H2 starts from its
 refutation as input.
 
-## H2 — a countable population bearing a reconstructible loss it does not control — **FRAME FIXED**
+## H2 — a countable population bearing a reconstructible loss it does not control — **FROZEN UNEXECUTED**
 
 | # | Item | Status | Kill number fixed in advance | Evidence |
 |---|---|---|---|---|
@@ -29,7 +64,13 @@ refutation as input.
 The buyer and the payout form are **deliberately not fixed by assertion** — G1 names the buyer by
 measurement, G4 selects the payout form by measurement. Fixing them by assertion is what killed H1.
 
-**Next action: founder decision — G0 is in a specification spiral and that is itself a finding.**
+**Founder ruling, 2026-08-21: H2 is FROZEN UNEXECUTED.** Not `KILLED` — no G1 measurement was ever
+run and no number below is a verdict. Not `BLOCKED` — nothing external is being waited on. G0 was in a
+specification spiral (three rounds, 331 lines, zero measurements) and the founder chose a different
+hypothesis (H3) over a fourth round. Nothing below is rewritten. **Resuming H2 requires a founder
+ruling and its own re-frozen G0**; continuing it inside H3 would be 延命.
+
+The record of why it stopped, kept as written:
 
 G0 r2 was reviewed and returned `CHANGES` again. The findings are valid and verified: the sub-window
 seed is genuinely ambiguous (`sha256` of the base58 *string* gives 46, of the decoded *bytes* gives 3);
