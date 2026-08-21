@@ -25,3 +25,6 @@ web/node_modules/
 # python bytecode from running the gate reproduction scripts
 __pycache__/
 *.pyc
+
+# H4 sentinel build artifacts (evidence tooling; never committed)
+crates/h4-sentinel/target/

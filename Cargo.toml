@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["crates/reexec-spec", "crates/contract", "crates/harness", "programs/perp", "programs/guard"]
+exclude = ["crates/h4-sentinel"]
 
 [workspace.package]
 version = "0.1.0"
