@@ -1,10 +1,68 @@
 # STATUS — Probatio SVM
 
-Binding gate: **[`docs/H4-GATE.md`](docs/H4-GATE.md)** — H4, *Upgrade Behavior Sentinel*, **closed —
-`KILLED` at G0 (KILL-2 + KILL-3), 2026-08-22**. `docs/GATE.md` (H1) is **closed — `KILLED`**;
-`docs/H2-GATE.md` is **FROZEN UNEXECUTED**; `docs/H3-GATE.md` is **closed — `KILLED` at the design
-gate**. **No hypothesis is currently live.** None of the four is reopened.
+Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
+**G0 — pre-registration only, nothing measured**. The four earlier gates are closed and none is
+reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
+`docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
+(KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
+
+## H5 — Agent Release Tests for Solana — **G0 pre-registered; nothing measured**
+
+Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · **no measurement has
+been run, and no implementation exists, at the time this row was written**
+
+> A Solana AI agent that moves capital in production should be regression-tested before release
+> against adversarial scenarios spanning **real program BPF, real cloned state, and multiple
+> transactions** — and such a test **finds failures a single `simulateTransaction` or a runtime
+> wallet policy cannot find**.
+
+**Only the second half is measurable, and only it is on trial.** "Should be tested" is an opinion.
+
+**In scope:** agent developers / agent-wallet developers, **before release**; CI and regression
+testing for agents that take capital actions on Solana.
+**Out of scope, bindingly:** runtime wallet policy engine · general-purpose transaction simulator ·
+production monitoring, insurance, certification market · generic protocol capability schema ·
+"agent certification" and any claim presupposing an agent population · **reusing H1's evidence or
+conclusions as demand evidence**.
+
+**H5 is not H1 revived.** H1 was a market certifying agents *already operating*, and it is `KILLED`.
+H5 is a *pre-release developer/CI test*. Different buyer (the agent's own developer), different point
+of use (once per release, in their pipeline), different unit of failure (one reproducible
+multi-transaction episode), different deliverable (a failing trace and a regression test, not an
+attestation). Reusing H1/H4 **mechanics as fixtures** is allowed; reusing an H1 **conclusion** as
+evidence is not.
+
+**Pre-registered `GO` — all four, for one fixed capital-action workflow:**
+
+| | condition |
+|---|---|
+| A | a reproducible ≥3-transaction episode on **real BPF + cloned state**, deterministic and offline |
+| B | **one** failure caught **by state diff** that **neither** a static policy **nor** a single `simulateTransaction` catches — **both baselines implemented and actually run**, both shown to say "no problem" |
+| C | that failure **changes the next action** of a **fixed scripted agent** (deterministic, no LLM, rule written before the run) |
+| D | existing Probatio/Solvo assets used **as fixtures**, every input/mutation/hash recorded, **Solvo's conclusions not overstated** |
+
+**B is the hypothesis.** A + C + D passing with B failing is a `KILL`, not a partial success.
+
+| KILL | fires when |
+|---|---|
+| 1 | H5 is **equivalent to a single simulation or a destination/cap policy** — either baseline, once run, also catches it |
+| 2 | a **stateful failure cannot be reproduced on real BPF** |
+| 3 | deciding needs a **protocol-independent schema or arbitrary adapter semantics** (H3's grave) |
+| 4 | **no concrete CI entrypoint** can be defined that attaches to a developer's release process |
+
+**Still open, and frozen as open** ([`H5-GATE.md` §8](docs/H5-GATE.md)) — the founder's ruling did not
+name them, and each is a place a measurement could be tuned after the fact, so **all must be fixed by
+a founder ruling before anything runs**: the one workflow · the candidate failure and its state
+predicate · the scripted agent's decision rule · the CI entrypoint command · and the exact definition
+of both baselines in B. Offline candidate for the workflow, costing no new fetch: the **klend
+fixture set already committed at `fixtures/h4/`** (17 cloned accounts, slot **440,477,781**), whose
+withdraw path H4's completed run already proved executes under LiteSVM.
+
+**Prediction on the record: overall open, leaning `KILL-1`.**
+
+**G0 authorises this document and this row — nothing else.** No implementation, UI, token, deploy,
+wallet, policy engine, second protocol, LLM in the loop, or measurement.
 
 ## H4 — Upgrade Behavior Sentinel — **KILLED at G0 — KILL-2 + KILL-3**
 
