@@ -148,25 +148,36 @@
   },
   "klend_new": {
    "code_hash": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9",
-   "context_slot": 440626092,
+   "context_slot": 440628217,
    "elf_len": 2431953,
+   "elf_min_required_len": 2431968,
    "last_deploy_slot": 440486775,
+   "loadable": true,
    "path": "programs/klend_new.so.gz",
    "programdata": "9uSbGW1y9H5Av6H5TKxQ1wnFApSq2t3oEpfF2YfjDQGA",
    "role": "post-upgrade",
-   "stored_len": 2431953,
-   "stored_sha256": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9"
+   "stored_form": "programdata[45..] UNTRIMMED \u2014 this is what the loader is given",
+   "stored_len": 10485715,
+   "stored_sha256": "9db16dd4b7bbfe4f13df850bf880bfc4522fcece06717c0626d625746a3cc85b"
   },
   "klend_old": {
    "code_hash": "8eab9f858da01fee962452ad3838570b3340cd43b80a236de8fe5297063d1cda",
    "elf_len": 2414913,
+   "elf_min_required_len": 2414928,
    "fixture_slot": 440477781,
+   "loadable": true,
    "path": "programs/klend_old.so.gz",
    "role": "pre-upgrade",
    "solvo_manifest_sha256": "a328a1a787b86afaacff5a42f9dc21e552f7936975a021cb694f8ab89d9de778",
+   "stored_form": "programdata[45..] UNTRIMMED \u2014 this is what the loader is given",
    "stored_len": 10485715,
    "stored_sha256": "a328a1a787b86afaacff5a42f9dc21e552f7936975a021cb694f8ab89d9de778"
   }
+ },
+ "clock": {
+  "source": "../solvo/fixtures/g1/MANIFEST.json unix_timestamp, the capture time of these accounts",
+  "unix_timestamp": 1787230883,
+  "why": "the harness embeds it so the run stays offline and deterministic; identical for both binaries"
  },
  "derived_from_source_manifest": {
   "lending_market_authority": "9DrvZvyWh1HuAoZxvYWMvkf2XCzryCpGgHqrMjyDWpmo",
@@ -186,6 +197,7 @@
   "usdc_obligation_farm_user_state_bump": 255
  },
  "gate": "docs/H4-GATE.md",
+ "loading_rule": "Load the stored UNTRIMMED payload. code_hash is sha256 of the trailing-zero-stripped bytes and is an IDENTITY ONLY: rstrip removes 15 bytes the ELF section-header table requires, so stripped bytes are not loadable.",
  "provenance": {
   "accounts_and_old_binary": {
    "copied_verbatim": true,
@@ -198,18 +210,20 @@
   "new_binary": {
    "code_hash": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9",
    "elf_len": 2431953,
-   "fetched_by": "probatio-svm H4 G0, after docs/H4-GATE.md was committed and pushed (35f8d0e)",
+   "fetched_by": "probatio-svm H4 G0; first fetch stored the trailing-zero-STRIPPED bytes and was 15 bytes short of loadable (see commit 75f3cb9); re-fetched untrimmed",
    "fetched_utc": "2026-08-21",
    "last_deploy_slot": 440486775,
    "loader": "BPFLoaderUpgradeab1e11111111111111111111111",
    "mutable": true,
-   "program_account_context_slot": 440626092,
+   "note": "stored UNTRIMMED (programdata[45..]); code_hash is the trailing-zero-stripped identity only",
    "program_id": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
    "programdata": "9uSbGW1y9H5Av6H5TKxQ1wnFApSq2t3oEpfF2YfjDQGA",
-   "programdata_context_slot": 440626092,
+   "programdata_context_slot": 440628217,
    "programdata_hash": "52406e1075219cf9d65c301a10cf9352684c58050227862d5ea6bfc74c190ebe",
    "programdata_len": 10485760,
    "rpc": "https://solana-rpc.publicnode.com",
+   "stored_payload_len": 10485715,
+   "stored_payload_sha256": "9db16dd4b7bbfe4f13df850bf880bfc4522fcece06717c0626d625746a3cc85b",
    "upgrade_authority": "GzFgdRJXmawPhGeBsyRCDLx4jAKPsvbUqoqitzppkzkW"
   }
  },

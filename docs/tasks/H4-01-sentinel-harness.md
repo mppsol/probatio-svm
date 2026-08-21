@@ -33,8 +33,31 @@ does not certify its own numbers.
   Solvo's `derived` block (`obligation_owner_offset: 64`, `lending_market_authority`, the farm
   states and bumps).
 
-**Both binaries must be trailing-zero-stripped before loading**, and the harness must assert the
-`sha256` of what it loaded against the two hashes above, aborting if either differs.
+**CORRECTED 2026-08-21 — the original sentence here was wrong and cost a whole run.** It said the
+binaries must be trailing-zero-stripped *before loading*. They must not be. Both ELFs' section-header
+tables end **15 bytes past the last non-zero byte** (old: `e_shoff` 2,414,288 + 10×64 = 2,414,928
+required against 2,414,913 stripped; new: 2,431,328 + 10×64 = 2,431,968 against 2,431,953), so
+`rstrip` truncates a structurally required region and the loader rejects the file with
+`ProgramLoad("Offset or value is out of bounds")`.
+
+**The rule is therefore:**
+
+- **Load the stored payload UNTRIMMED.** Both fixtures now store `programdata[45..]` verbatim,
+  10,485,715 bytes each, and `MANIFEST.json` carries `stored_sha256`, `elf_min_required_len` and
+  `loadable: true` for each.
+- **`code_hash` is an identity, not an archive.** Assert
+  `sha256(loaded_bytes.rstrip(0x00)) == code_hash` and abort on mismatch — the hash still names the
+  binary, it just does not reconstruct it.
+
+This corrects the **brief**, not the gate. `docs/H4-GATE.md` §3 uses stripping only to define
+`code_hash`; it never said the stripped bytes are what gets loaded. No venue, operation, case,
+verdict rule, threshold or kill condition changes, and both binaries are treated identically, so the
+correction cannot bias the outcome toward `compatible` or `breaking`.
+
+The new-binary fixture was **re-fetched untrimmed** (ProgramData context slot 440,628,217;
+`last_deploy_slot` 440,486,775 and `code_hash` `b1344d19…` both unchanged, so it is the same binary
+the gate froze). `MANIFEST.json` also now records the `clock.unix_timestamp` (**1,787,230,883**, the
+capture time of these accounts) that the harness embeds to stay offline.
 
 ## Reference implementation to adapt (read-only)
 

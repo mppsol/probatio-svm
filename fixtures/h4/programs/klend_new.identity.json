@@ -5,12 +5,14 @@
  "last_deploy_slot": 440486775,
  "loader": "BPFLoaderUpgradeab1e11111111111111111111111",
  "mutable": true,
- "program_account_context_slot": 440626092,
+ "note": "stored UNTRIMMED (programdata[45..]); code_hash is the trailing-zero-stripped identity only",
  "program_id": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
  "programdata": "9uSbGW1y9H5Av6H5TKxQ1wnFApSq2t3oEpfF2YfjDQGA",
- "programdata_context_slot": 440626092,
+ "programdata_context_slot": 440628217,
  "programdata_hash": "52406e1075219cf9d65c301a10cf9352684c58050227862d5ea6bfc74c190ebe",
  "programdata_len": 10485760,
  "rpc": "https://solana-rpc.publicnode.com",
+ "stored_payload_len": 10485715,
+ "stored_payload_sha256": "9db16dd4b7bbfe4f13df850bf880bfc4522fcece06717c0626d625746a3cc85b",
  "upgrade_authority": "GzFgdRJXmawPhGeBsyRCDLx4jAKPsvbUqoqitzppkzkW"
 }
