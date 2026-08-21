@@ -1,0 +1,217 @@
+{
+ "accounts": {
+  "lending_market.json": {
+   "account_len": 4664,
+   "account_sha256": "25a9badbabff47f9c946c6d1347001a24e65a9d489a3be2d987fec98723a4f6f",
+   "bytes": 6443,
+   "file_sha256": "482723e0b9d094014329b74c6f1d55ca5a14876d7c3094e5c951973a61029313",
+   "owner": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+   "pubkey": "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"
+  },
+  "obligation.json": {
+   "account_len": 3344,
+   "account_sha256": "47349da860d67562744c0a0fc1358829417da3ccea47904445c9f108cf5a6d4a",
+   "bytes": 4678,
+   "file_sha256": "f72fadb178b209d2970bbaeec6a3436cb52778ae1fba67b934f4dece85fc6ef9",
+   "owner": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+   "pubkey": "FqUqPtqnDneeAhtcMQKVbwDx5iZvQFiX95vMobDWUMFD"
+  },
+  "reserve_sol.json": {
+   "account_len": 8624,
+   "account_sha256": "70bbe7d2c0fd7ae15b62d81db15466ddb5c9c52a7c6fcc09601ff7275c5bcc56",
+   "bytes": 11718,
+   "file_sha256": "af48b1d7a0efd0675245b45989a9e9bcb3be1f5295b5c451f0085ea3c1725fe9",
+   "owner": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+   "pubkey": "d4A2prbA2whesmvHaL88BH6Ewn5N4bTSU2Ze8P6Bc4Q"
+  },
+  "reserve_usdc.json": {
+   "account_len": 8624,
+   "account_sha256": "db66badf10e2f7f6bce566fa93edcab4e0922eab0d6e0f97711a9dc9d1b03600",
+   "bytes": 11720,
+   "file_sha256": "a728ca267e9692dab0207fcd00f5aea3c774a30051cb558e1aec8c75ac92ba69",
+   "owner": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+   "pubkey": "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59"
+  },
+  "scope_prices.json": {
+   "account_len": 28712,
+   "account_sha256": "6c4c28e5b3a24684d4719b5c6c15e79880fa97a7ea93ae8df7534ded4362a490",
+   "bytes": 38507,
+   "file_sha256": "e5c521f307a635d7aef80ff5a158262281e1b93be00f700030100df3bbd07b5b",
+   "owner": "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+   "pubkey": "3t4JZcueEzTbVP6kLxXrL3VpWx45jDer4eqysweBchNH"
+  },
+  "sol_collateral_mint.json": {
+   "account_len": 82,
+   "account_sha256": "e16c2d9a9979614b1435cafa1dba6dad019c0bafc0b73fdedacfc2ccd9ff4b22",
+   "bytes": 336,
+   "file_sha256": "c042aa062775c16db0c586480e20cb143306f102fdc1d4bed177fe7b778af9e7",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1"
+  },
+  "sol_collateral_supply_vault.json": {
+   "account_len": 165,
+   "account_sha256": "e59725e3ae9bf147053e01550142f28bad0b6fac1bcbe73bd6821fb6fb0051c5",
+   "bytes": 453,
+   "file_sha256": "c7bbff20cae8c94ecf72b9d2bb9ab456cb9dce1873d8c150d637c6e57b2b1c1e",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "8NXMyRD91p3nof61BTkJvrfpGTASHygz1cUvc3HvwyGS"
+  },
+  "sol_liquidity_mint.json": {
+   "account_len": 82,
+   "account_sha256": "b0f919425a529f4971ef8dabd535aec34947d5c8c4885df80dae91635b98c5f3",
+   "bytes": 340,
+   "file_sha256": "548e070ebc74efc977179f992eab890502f28f92b67f14e07a573eb3a0c74714",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "So11111111111111111111111111111111111111112"
+  },
+  "sol_liquidity_supply_vault.json": {
+   "account_len": 165,
+   "account_sha256": "c7512b93954b35e89cad076253d431b602c8a73169c869c5b6157663275c01b6",
+   "bytes": 460,
+   "file_sha256": "b63dc10b66a060dfaf0f34bf30ca38236771451e6307f809f0ad1e2bb1d94278",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "GafNuUXj9rxGLn4y79dPu6MHSuPWeJR6UtTWuexpGh3U"
+  },
+  "sol_obligation_farm_user_state.json": {
+   "account_len": 920,
+   "account_sha256": "7566922c7c1d2836d8725050cc724dd90d8a82d0d6896473e58bc1621b19e482",
+   "bytes": 1465,
+   "file_sha256": "aae51b36542f3dacaee8753ea923371b116406a9d2a24d80c8246ee383eebde8",
+   "owner": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr",
+   "pubkey": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy"
+  },
+  "sol_reserve_farm_state.json": {
+   "account_len": 8336,
+   "account_sha256": "25d25870962d07affafc06502fec4c8288a2172bc5f87b11aa52bd10aab7e7a9",
+   "bytes": 11347,
+   "file_sha256": "3d7e20fb1888481691545fedf9e6df84f1f6f8ac2d7da0e2869c38ad0d1316aa",
+   "owner": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr",
+   "pubkey": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX"
+  },
+  "usdc_collateral_mint.json": {
+   "account_len": 82,
+   "account_sha256": "0d49f8feeacded9065fffe9d073ac1a8568c70a13abd5d6227d4624f174fedf9",
+   "bytes": 337,
+   "file_sha256": "5c3f429507cfe96f2bd10975eb6d18a632d438ed6c44f91fab1d5b2bedd92425",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D"
+  },
+  "usdc_collateral_supply_vault.json": {
+   "account_len": 165,
+   "account_sha256": "f6dbd9a3c433b9ae523780325bd241034f387b2912a1701856081d2593218bae",
+   "bytes": 454,
+   "file_sha256": "c84db3c013b46f935ce3dcd4d3c555c3baadeb3d928007842d864c879b4f8a2f",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "3DzjXRfxRm6iejfyyMynR4tScddaanrePJ1NJU2XnPPL"
+  },
+  "usdc_liquidity_mint.json": {
+   "account_len": 82,
+   "account_sha256": "837b81ef0f0085ead2318a7439b2ac0c7a393365b830de19a68db5831a462a92",
+   "bytes": 341,
+   "file_sha256": "0d898d70df922b89fcca99c606a5c51e2dfc30e449921a41cbbf399da1775627",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  },
+  "usdc_liquidity_supply_vault.json": {
+   "account_len": 165,
+   "account_sha256": "ce69c1882b458a9f8da633879465996586f45ed16f8b77e7b614d8ae49605e2f",
+   "bytes": 453,
+   "file_sha256": "eb3c2ac97cdf910dc00307904343d8da6839a7bcbb3c920047e765b0a55a4907",
+   "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "pubkey": "Bgq7trRgVMeq33yt235zM2onQ4bRDBsY5EWiTetF4qw6"
+  },
+  "usdc_obligation_farm_user_state.json": {
+   "account_len": 920,
+   "account_sha256": "578f6a61103bf937a97557052f51478401e1aa70c8cedf8289f7df642dcd4b32",
+   "bytes": 1466,
+   "file_sha256": "3770acafb65dd140d2d340df6bc57432cb370e2db3111f2b32598083680b40ba",
+   "owner": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr",
+   "pubkey": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd"
+  },
+  "usdc_reserve_farm_state.json": {
+   "account_len": 8336,
+   "account_sha256": "e45b4abfe1bac8e378edfdb22cfad0f48674159f7e2455c4be07500a28e3eac9",
+   "bytes": 11348,
+   "file_sha256": "9b0b3f89ec1d6a1c81ad794bdd5100701d3cbd33b29cded0b457835f73e20607",
+   "owner": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr",
+   "pubkey": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh"
+  }
+ },
+ "binaries": {
+  "farms": {
+   "code_hash": "9ca00de8e9e13eb1e5283754b940ca9c3a007b61f4e195483241db454455a240",
+   "elf_len": 835745,
+   "path": "programs/farms.so.gz",
+   "role": "dependency, identical in both runs",
+   "stored_len": 10485715,
+   "stored_sha256": "5e42feeccadeb5dcd80e11a62b15141c4e127b21db2ae8ca2afa6c281505f564"
+  },
+  "klend_new": {
+   "code_hash": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9",
+   "context_slot": 440626092,
+   "elf_len": 2431953,
+   "last_deploy_slot": 440486775,
+   "path": "programs/klend_new.so.gz",
+   "programdata": "9uSbGW1y9H5Av6H5TKxQ1wnFApSq2t3oEpfF2YfjDQGA",
+   "role": "post-upgrade",
+   "stored_len": 2431953,
+   "stored_sha256": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9"
+  },
+  "klend_old": {
+   "code_hash": "8eab9f858da01fee962452ad3838570b3340cd43b80a236de8fe5297063d1cda",
+   "elf_len": 2414913,
+   "fixture_slot": 440477781,
+   "path": "programs/klend_old.so.gz",
+   "role": "pre-upgrade",
+   "solvo_manifest_sha256": "a328a1a787b86afaacff5a42f9dc21e552f7936975a021cb694f8ab89d9de778",
+   "stored_len": 10485715,
+   "stored_sha256": "a328a1a787b86afaacff5a42f9dc21e552f7936975a021cb694f8ab89d9de778"
+  }
+ },
+ "derived_from_source_manifest": {
+  "lending_market_authority": "9DrvZvyWh1HuAoZxvYWMvkf2XCzryCpGgHqrMjyDWpmo",
+  "lending_market_authority_bump": 248,
+  "max_response_context_slot": 440477778,
+  "newest_klend_last_update_slot": 440477775,
+  "obligation_last_update_slot_as_fetched": 440477775,
+  "obligation_owner_as_fetched": "DmcBQ8Bi2EKjHhZEcshzNz8jdAXq6SV8U1ZfVUBabup2",
+  "obligation_owner_offset": 64,
+  "reserve_sol_last_update_slot_as_fetched": 440477775,
+  "reserve_usdc_last_update_slot_as_fetched": 440477775,
+  "sol_farm_collateral": "955xWFhSDcDiUgUr4sBRtCpTLiMd4H5uZLAmgtP3R3sX",
+  "sol_obligation_farm_user_state": "7YHkoWaaAeb7GLPgEs2B85nt9M4BFSXKVrS158b3yDmy",
+  "sol_obligation_farm_user_state_bump": 255,
+  "usdc_farm_collateral": "JAvnB9AKtgPsTEoKmn24Bq64UMoYcrtWtq42HHBdsPkh",
+  "usdc_obligation_farm_user_state": "GSyj9bGvYrAYQGqfnzGb67wxYBh4XdBUZ5pR97htkApd",
+  "usdc_obligation_farm_user_state_bump": 255
+ },
+ "gate": "docs/H4-GATE.md",
+ "provenance": {
+  "accounts_and_old_binary": {
+   "copied_verbatim": true,
+   "source_manifest_max_response_context_slot": 440477778,
+   "source_manifest_slot": 440477781,
+   "source_path": "fixtures/g1",
+   "source_repo": "../solvo (READ-ONLY; not modified \u2014 KILL-5)",
+   "source_rpc": "https://solana-rpc.publicnode.com"
+  },
+  "new_binary": {
+   "code_hash": "b1344d1979daec34bea862a3ed5c44ca5dc8b8e72ec32f1a90ac5150229c22d9",
+   "elf_len": 2431953,
+   "fetched_by": "probatio-svm H4 G0, after docs/H4-GATE.md was committed and pushed (35f8d0e)",
+   "fetched_utc": "2026-08-21",
+   "last_deploy_slot": 440486775,
+   "loader": "BPFLoaderUpgradeab1e11111111111111111111111",
+   "mutable": true,
+   "program_account_context_slot": 440626092,
+   "program_id": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+   "programdata": "9uSbGW1y9H5Av6H5TKxQ1wnFApSq2t3oEpfF2YfjDQGA",
+   "programdata_context_slot": 440626092,
+   "programdata_hash": "52406e1075219cf9d65c301a10cf9352684c58050227862d5ea6bfc74c190ebe",
+   "programdata_len": 10485760,
+   "rpc": "https://solana-rpc.publicnode.com",
+   "upgrade_authority": "GzFgdRJXmawPhGeBsyRCDLx4jAKPsvbUqoqitzppkzkW"
+  }
+ },
+ "purpose": "H4 Upgrade Behavior Sentinel \u2014 one klend operation, two real binaries, identical state."
+}

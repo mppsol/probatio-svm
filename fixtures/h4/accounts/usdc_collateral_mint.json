@@ -1,0 +1,9 @@
+{
+ "data_b64": "AQAAAHoo6fT2sbRZ+3pnz11iUH7iaDbqdPSoWOWoQDUII1OKHrAwBuFSAAAGAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+ "executable": false,
+ "lamports": 1461800,
+ "len": 82,
+ "name": "usdc_collateral_mint",
+ "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+ "pubkey": "B8V6WVjPxW1UGwVDfxH2d2r8SyT4cqn7dQRK6XneVa7D"
+}

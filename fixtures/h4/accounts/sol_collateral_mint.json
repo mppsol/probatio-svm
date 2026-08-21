@@ -1,0 +1,9 @@
+{
+ "data_b64": "AQAAAHoo6fT2sbRZ+3pnz11iUH7iaDbqdPSoWOWoQDUII1OKc5l4sae8BwAGAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+ "executable": false,
+ "lamports": 1461601,
+ "len": 82,
+ "name": "sol_collateral_mint",
+ "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+ "pubkey": "2UywZrUdyqs5vDchy7fKQJKau2RVyuzBev2XKGPDSiX1"
+}
