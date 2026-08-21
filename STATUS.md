@@ -4,39 +4,48 @@ Binding gate: **[`docs/H3-GATE.md`](docs/H3-GATE.md)**. `docs/GATE.md` (H1) is *
 `docs/H2-GATE.md` is **FROZEN UNEXECUTED**. A verdict is a number or a reproducible experiment.
 Not-proven is a KILL.
 
-## H3 — Composability Passport — **G0 (pre-registration), no verdict**
+## H3 — Composability Passport — **G0 (pre-registration) r2, no verdict**
 
-Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent review:
-[`reviews/H3-G0-passport.md`](reviews/H3-G0-passport.md) · **G0 commit: `PENDING`**
+Gate: [`docs/H3-GATE.md`](docs/H3-GATE.md) · independent review r1:
+[`reviews/H3-G0-passport.md`](reviews/H3-G0-passport.md) `CHANGES` (8×P0) · r2:
+[`reviews/H3-G0-passport-r2.md`](reviews/H3-G0-passport-r2.md) ·
+G0 artifact commits: r1 `4ef5efd`, r2 `PENDING_FREEZE` — **freeze awaits a founder ruling**
 
-> A protocol's "CPI-able" claim decomposes into six capability fields, each decided by an executable
+> A protocol's "CPI-able" claim decomposes into seven capability fields, each decided by an executable
 > probe against the protocol's **real mainnet binary and cloned mainnet state**; the Passport is
 > byte-canonical, expires mechanically when the code or the state it depends on changes, generalises
-> to a protocol it was not designed against, and has a consumer population that can be counted.
+> to a protocol it was not designed against, and has a consumer that can be **named** and counted.
 
 | # | Item | Status | Kill number fixed in advance |
 |---|---|---|---|
-| **G0** | Pre-registration: fields, expiry rules, harness, examples, primitive criteria, venue set | **written, awaiting independent review + founder ruling** | precondition, no verdict |
-| G1 | Is there anyone to hand a Passport to? (CPI callers counted, not asserted) | not started | `N_multi` < 10 or `A_multi` < 5 |
-| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; all six fields agree; a failed C3 control; non-determinism; an undisclosed mutation |
+| **G0** | Pre-registration: fields, expiry, harness, examples, primitive criteria, venue set | **r2 written; r1 review returned `CHANGES` and every finding is closed in r2** | precondition, no verdict |
+| G1a | The counted surface — CPI callers, complete census in a budgeted window | not started | `N_multi` < 10 or `A_multi` < 5 |
+| G1b | The demand test — ≥2 written consumer statements *(needs founder authorisation)* | not started | fewer than 2 obtained |
+| G2 | Discrimination on two real protocols (klend, Phoenix Eternal) | not started | any field `UNPROVEN`; equal verdict 7-tuples; an inadmissible C3 boundary sweep; state not clonable; non-determinism; an undisclosed mutation |
 | G3 | Generalisation to a blind third (marginfi v2) | not started | `F_new` > 0, or any field `UNPROVEN` |
-| G4 | Expiry binds, on code **and** on state | not started | no demonstrated hash change; pre-check does not fire; no measured state flip; median `upgrades_per_90d` = 0 |
+| G4 | Expiry binds, on code **and** on state | not started | no demonstrated hash change; pre-check does not fire; no reachability-established state flip; median `upgrades_per_90d` = 0 |
 | G5 | Independent reconstruction, canonical equality, consumer cost | not started | any `stable_hash` differs; `Q_prose` ≥ 1; any field needs > 4 account reads |
 
-**G1 is deliberately first**: it is the item H1 died on, it is the cheapest (~21,000 RPC reads,
-~30 min, one script), and it can kill H3 before any harness is built.
+**G1 is deliberately first** — it is the item H1 died on, and it is the cheapest (~51,000 RPC reads,
+~1 h, one script). **G1b exists because the r1 review was right that counting CPI callers measures
+technical exposure, not demand**: no on-chain query distinguishes a program that would use a Passport
+from one that merely calls two venues. H1 never asked a single adopter.
 
-Identity of all seven venues was verified read-only at slot **440,578,912** (§3 of the gate).
-**7 of 7 carry a live upgrade authority — none is immutable.** Kamino Vaults and klend share the
-authority `GzFgdRJXmaw…`, which is why the G1 count excludes same-authority programs.
+Identity of all seven venues was verified read-only at slot **440,578,912** (§3 of the gate), **by one
+party only** — the r1 reviewer's sandbox had no network and correctly declined to assume it; G5
+re-derives it. **7 of 7 carry a live upgrade authority — none is immutable.** Kamino Vaults and klend
+share the authority `GzFgdRJXmaw…`, which is why the count excludes same-authority programs.
 
-The motivating measurement, disclosed in the gate as pre-G0 and deciding no item: `../solvo` captured
-klend at slot 440,477,778 and klend was **redeployed 8,997 slots (≈ 1 h) later**, so a carefully
+The motivating measurement, disclosed in the gate as pre-G0 and deciding no item: `../solvo`'s klend
+fixture is at slot 440,477,781 and klend was **redeployed 8,994 slots (≈ 1 h) later**, so a carefully
 executed, independently recomputed capability verdict was already bound to a replaced binary before it
-was written down. `code_hash` `8eab9f85…` (captured) vs `b1344d19…` (mainnet today).
+was written down. `code_hash` `8eab9f85…` (captured, re-derived by the reviewer) vs `b1344d19…`
+(mainnet today). Solvo's **Phoenix** leg, by contrast, ran on a **freshly initialised localnet
+fixture, not cloned mainnet state** — H3 forbids that substitution, so H3 may be unable to reproduce
+its own FAIL example, which is a KILL at G2 and is named in the gate rather than discovered later.
 
 **Next action: founder ruling on G0.** `G0` is a precondition and carries no verdict; committing it
-does not start G1.
+does not start G1, and **no third party is contacted** until the founder rules.
 
 ## H1 — certify autonomous agents before capital is trusted to them — **KILLED**
 
