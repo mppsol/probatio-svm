@@ -166,12 +166,27 @@ That selected **branch A: H5 proposed `KILLED`** — **which the independent rev
 survives: C3`** with two P0s, CC concurs, and **branch A is withdrawn. H5 is not killed and no kill
 commit was made.** `H5-CANDIDATES.md` **§8 governs**; its §6–§7 are superseded.
 
-**What now blocks everything is a single founder ruling**, stated by the review: `simulateTransaction`
-cannot advance chain state, so a baseline that carries post-state across transactions **is** the
-local-fork executor H5 proposes. Define the baseline as **one non-persistent RPC simulation** and
-`C1`/`C3` are live; allow it to **carry cloned state** and no candidate can ever clear condition 2, so
-**H5 is dead in general**. It must be settled **before** any freeze, measurement or kill — settling it
-afterwards would be the post-hoc criterion change this gate forbids.
+**§8.3 — the baseline, RULED AND CLOSED (founder, 2026-08-22, before any C3 measurement).**
+The definition that stalled H5 is now fixed, and it supersedes every earlier reading in this document,
+including the one §8.1's review relied on:
+
+| baseline | definition |
+|---|---|
+| **`Pol`** | a **static policy** — destination allowlist plus a per-transaction cap |
+| **`Sim`** | a **non-persistent single `simulateTransaction`** |
+
+- **Neither may retain, apply or chain post-state between transactions.**
+- **An episode executor that carries cloned state across transactions is NOT a baseline — it is the
+  mechanism H5 is tested on.**
+
+**Ruled before measurement, and not revisable after seeing a result.** Doing so afterwards would be
+the post-hoc criterion change this gate forbids.
+
+**§8.4 — C3 is pre-registered as a new G0 row:** [`docs/H5-C3-G0.md`](./H5-C3-G0.md) — *duplicate
+execution after a lost confirmation*. All seven founder-required items are frozen there before any
+measurement. **The §8.1 first candidate, `C1` and `C2` are NOT revived** and nothing in that row
+depends on them. **No implementation and no measurement are authorised**; the independent-review
+payload is committed at [`reviews/H5-C3-G0.codex-prompt.md`](../reviews/H5-C3-G0.codex-prompt.md).
 
 ## 8.1 PROPOSED freeze of the five open items — **REJECTED at the design gate**
 

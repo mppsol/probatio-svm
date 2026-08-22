@@ -1,13 +1,68 @@
 # STATUS — Probatio SVM
 
 Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
-**G0 — pre-registration only, nothing measured. The proposal to kill H5 was `DISSENT`ed by
-independent review: candidate `C3` survives, and the whole question now reduces to one unresolved
-baseline definition that only the founder can settle. No kill commit was made.** The four earlier gates are closed and none is
+**G0 — pre-registration only, nothing measured. The baseline is now RULED and CLOSED (founder,
+2026-08-22, before measurement), and the surviving candidate `C3` is pre-registered as its own G0 row
+at [`docs/H5-C3-G0.md`](docs/H5-C3-G0.md), awaiting independent review. H5 was never killed.** The four earlier gates are closed and none is
 reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
 `docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
 (KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
+
+## H5 · C3 — duplicate execution after a lost confirmation — **G0 pre-registered; nothing measured**
+
+Row: [`docs/H5-C3-G0.md`](docs/H5-C3-G0.md) · gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) §8.3–§8.4 ·
+founder ruling **2026-08-22** · review payload committed, **not run**:
+[`reviews/H5-C3-G0.codex-prompt.md`](reviews/H5-C3-G0.codex-prompt.md) · **no implementation exists
+and no measurement has been run.**
+
+**The baseline is RULED and CLOSED, before measurement** — this is what unblocked H5: `Pol` = a static
+policy (destination allowlist + per-transaction cap); `Sim` = a **non-persistent** single
+`simulateTransaction`; **neither may retain, apply or chain post-state between transactions**; and an
+**executor that carries cloned state across transactions is not a baseline — it is the mechanism H5 is
+tested on.** Not revisable after seeing a result.
+
+> **The claim:** an agent that **loses a confirmation** and retries **without resolving transaction
+> status** executes a capital action **twice**. Every individual transaction is admissible — to `Pol`,
+> to `Sim`, and to klend — and only the **cumulative** state diff is wrong. A per-transaction check
+> cannot express a property of a **sum**; that is the one structural gap C3 sits in.
+
+**Three meaningful capital actions, counted honestly** — `W1` `withdraw(100,000,000)` → `Ok`; `W2`
+same → **commits on chain**, agent is told **`Timeout`**; `W3` the erroneous retry → commits.
+**klend's refresh preambles are explicitly NOT counted**, bundled or not; **there is no no-op, filler
+or decorative transaction.** The amount is not arbitrary: H4 **measured** `withdraw(100,000,000)`
+moving exactly 100,000,000 (case A) and a 486,657,686 single-call ceiling (case E), so
+**3 × 100,000,000 = 300,000,000** has measured headroom.
+
+**Fault injection is pinned to one place:** the **agent-facing** result of `W2` only, value `Timeout`,
+at the harness's submit/confirm boundary — **not** in the VM, the transaction, or any account. `W2`
+executes on real BPF and **commits**. **The chain is not lied to; the agent is.** The retry uses a
+**new blockhash**, and the harness **asserts `sig(W3) ≠ sig(W2)`** so the episode can never silently
+test the runtime's dedup instead of the agent.
+
+**Predicate — cumulative, state-bytes-only, no log ever read:** `P1` the collateral supply vault fell
+by **3A**; `P2` `deposited_amount` fell by 3A (2,248,785,777 → 1,948,785,777) while the agent's ledger
+says 2A; `P3` **every individual action returned `Ok` and moved exactly A — none is anomalous alone.**
+Fires iff `P1 ∧ P2 ∧ P3`. **`P3` is the point**: it is the pre-registered proof no per-transaction
+check could have flagged anything.
+
+**Both baselines are implemented and run, and `GO` requires both to miss.** `Pol`'s cap is fixed at
+**150,000,000** — above one tranche, below two — chosen so it is *not* trivially beaten: **the
+duplicate is not a large transaction, it is an extra ordinary one.** If either flags the episode,
+**`KILL-1` fires and C3 is dead.**
+
+**Pinned:** `klend_new` `b1344d19…9c22d9` (2,431,953 B) is the binary under test and `klend_old` is
+**not used**; farms `9ca00de8…5a240`; cloned state `fixtures/h4/` at slot **440,477,781**, manifest
+`b5db5e51…4fc6a`; exactly **two** mutations (obligation owner @64 len 32; destination token account),
+both disclosed by the run; CI entrypoint frozen as an exit-code contract (0 / 1 / 2), offline and
+deterministic, taking **the developer's own agent rule as an input**.
+
+**Pre-registered prediction: `GO` is genuinely possible here for the first time in H5, and the
+likeliest death is `KILL-2`** — `W3` refused or clamped — **not `KILL-1`.** Named risk: C3's strength
+rests entirely on the §0 baseline ruling; if that definition is wrong, C3 falls with it, and no later
+result can repair that.
+
+**Not revived:** the §8.1 first candidate, `C1`, `C2`. **Nothing here depends on them.**
 
 ## H5 — Agent Release Tests for Solana — **NOT killed; the review dissented and candidate `C3` survives**
 
