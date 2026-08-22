@@ -1,5 +1,19 @@
 # Probatio SVM — Stage 0 Design
 
+> ⛔ **HISTORICAL — this is H1's design document, and H1 is `KILLED`**
+> ([`docs/GATE.md`](./docs/GATE.md), [`docs/decisions/P1-real-target.md`](./docs/decisions/P1-real-target.md),
+> 2026-08-20). H1 died at its **first** gate item: **no real target existed** — the agent population it
+> assumed could not be produced. Everything positional or forward-looking below — the moat argument,
+> the roadmap, the hackathon timeline, the "next stages" — **is refuted or withdrawn** and must not be
+> cited as a plan or as evidence of demand.
+>
+> **The engineering it specifies is real and its tests pass.** What was refuted is the claim that it
+> was worth building for the reason given here. See [`STATUS.md`](./STATUS.md) and
+> [`README.md`](./README.md) for the current state.
+>
+> **Nothing below is rewritten**, per this repo's rule that closed material is kept as a refutation
+> asset.
+
 *Working name:* **Probatio SVM** (final Colosseum-facing brand TBD). Solana-native sibling of
 [[project_probatio]] (the Reth/revm proving ground). Tagline candidate:
 *"a proving ground for autonomous agents in Solana DeFi — and a runtime circuit-breaker that stops

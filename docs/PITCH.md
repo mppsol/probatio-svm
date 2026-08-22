@@ -1,5 +1,16 @@
 # Probatio SVM — 90-second pitch storyboard
 
+> ⛔ **HISTORICAL — a pitch for H1, which is `KILLED`**
+> ([`docs/decisions/P1-real-target.md`](./decisions/P1-real-target.md), 2026-08-20). The hackathon
+> submission it plans was never made, and **every claim it narrates rests on a premise that was
+> refuted**: that a population of on-chain agents existed to certify.
+>
+> **This document must not be used, adapted, or quoted as a current description of anything.** It is
+> kept only as a record of what was claimed before the claim was tested. See
+> [`STATUS.md`](../STATUS.md).
+>
+> **Nothing below is rewritten.**
+
 A shot-by-shot plan for the Colosseum submission video. Every beat maps to a **real command in this
 repo** — nothing staged. Total target ~90s. Keep narration tight and honest (see the claims guardrail at
 the end). Record the terminal cuts against a warm build so there's no cold-build lag.

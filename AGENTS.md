@@ -64,7 +64,8 @@ the right answer.
 
 **Product-specific:** the moat is a verifier/guard that catches what *a different intelligence* does.
 So Codex is also the natural **independent red-teamer** against CC's invariants — a genuinely different
-model trying to beat the verifier is worth more than CC red-teaming itself (`STAGE0_DESIGN.md` §8).
+model trying to beat the verifier is worth more than CC red-teaming itself (`STAGE0_DESIGN.md` §8 —
+historical, but the cross-review rule it motivates still stands and earned its keep across H3–H5).
 
 **Cross-pass rule:** whoever implemented a change is NOT its reviewer. The other agent reviews (same
 type shares blind spots). A change merges only after a review by the other agent.
@@ -125,8 +126,17 @@ CODEX=/Applications/ChatGPT.app/Contents/Resources/codex
 
 ## Project context
 
-Probatio SVM stress-tests autonomous Solana-DeFi agents on a real SVM episode and ships a Pinocchio
-guard that reverts cheating transactions in-block. Layout (target): `crates/contract` (shared account
-layout), `crates/harness` (episode driver + `verifier.rs` moat + `policy.rs` + `world.rs` reference
-model), `programs/perp` + `programs/guard` (Pinocchio), optional `crates/agent` (Claude). See
-`README.md` and `STAGE0_DESIGN.md` for the staged roadmap.
+Probatio SVM is now a **falsification record**: five hypotheses about verifying autonomous agents on
+Solana, run through kill gates, **all five closed, none survived**. The description this section used
+to carry — *"stress-tests autonomous Solana-DeFi agents and ships a guard that reverts cheating
+transactions in-block"* — was **H1's product claim**, and H1 is `KILLED`.
+
+The code is real and its tests pass; what was refuted is the claim it was worth building for the
+reason given. Layout: `crates/contract` (shared account layout), `crates/harness` (episode driver +
+`verifier.rs` + `policy.rs` + `world.rs` reference model), `programs/perp` + `programs/guard`
+(Pinocchio), `crates/h4-sentinel` (H4's evidence tooling, separate workspace). **These are refutation
+assets and fixtures, not a foundation** — reusing mechanics is fine, reusing a conclusion as evidence
+is not. See
+`STATUS.md` for the state of record and `README.md` for what this repo now is. **There is no staged
+roadmap**: `STAGE0_DESIGN.md` is H1's design document and H1 is `KILLED`, so its roadmap and
+positioning are refuted and must not be cited as a plan.

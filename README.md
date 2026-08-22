@@ -1,156 +1,104 @@
 # Probatio SVM
 
-**A proving ground that certifies autonomous agents in Solana DeFi before you trust them with capital —
-and enforces the rules they must not break, unbypassably, on-chain.**
+**A falsification record.** This repository ran five hypotheses about verifying autonomous agents on
+Solana through a kill-gate discipline. **All five are closed. None survived. Nothing is live.**
 
-The ecosystem is racing to hand autonomous agents real money. Probatio SVM is the layer that answers
-*"will this agent rug the vault before it does?"* — as a **pre-deployment audit** (off-chain, replayable,
-nothing to bypass) — and backs it with **on-chain enforcement** that reverts a violating transaction
-inside the block.
+What is here is the evidence: pre-registrations written before measurement, the measurements that
+were run, independent cross-reviews, and the verdicts — including the ones that killed the work. The
+code is real and the numbers are reproducible; **the product claims are not, and have been withdrawn.**
 
-Sibling of [Probatio](https://github.com/psyto/probatio) (the Reth/revm proving ground). Built by
-**Claude Code + Codex** in cross-review — see [`AGENTS.md`](./AGENTS.md). Targeting the next Colosseum
-hackathon (2026-09-28 → 11-02).
+Sibling of [Probatio](https://github.com/psyto/probatio) (the Reth/revm proving ground) and of the
+read-only `../solvo`. Built by **Claude Code + Codex** in cross-review — see [`AGENTS.md`](./AGENTS.md).
 
-## What it is (and isn't)
+> **Read [`STATUS.md`](./STATUS.md) first.** It is the current state of record.
+> Standing rules: **a verdict is a number or a reproducible experiment**, never an assessment or a
+> plan; **not-proven is a KILL**, not a pending; **adding a hypothesis to stay alive is forbidden**.
 
-Probatio SVM is a **proving ground / certification harness**: it replays a seedable episode against a
-real Solana program and judges the agent's behavior. It is **not** a realtime mainnet monitor — the
-verifier runs offline over a replay, like a fuzzer or CI, so it never has to "keep up" with block times
-or MEV. Certify first, deploy second.
+## The five verdicts
 
-The same verifier can also read **live on-chain state** for a one-shot audit: `certify-jupiter --live`
-fetches a real wallet's current Jupiter Perps positions via `getProgramAccounts` and certifies that
-snapshot against a delta-neutral mandate as **unsolicited due-diligence**. This is a **point-in-time
-attestation**, still not a streaming monitor — it reads the chain once and judges what it finds.
+| | hypothesis | verdict | record |
+|---|---|---|---|
+| **H1** | certify autonomous agents before capital is trusted to them | **`KILLED`** (2026-08-20) | [gate](./docs/GATE.md) · [decision](./docs/decisions/P1-real-target.md) |
+| **H2** | a countable population bearing a reconstructible loss it does not control | **`FROZEN UNEXECUTED`** (2026-08-21) | [gate](./docs/H2-GATE.md) |
+| **H3** | a protocol-independent composability capability schema | **`KILLED` at the design gate** (2026-08-21) | [gate](./docs/H3-GATE.md) · [decision](./docs/decisions/H3-design-gate-kill.md) |
+| **H4** | an upgrade behaviour sentinel — same input, same state, only the binary varies | **`KILLED` at G0** (2026-08-22) | [gate](./docs/H4-GATE.md) · [decision](./docs/decisions/H4-sentinel-kill.md) |
+| **H5** | pre-release regression tests that find what a simulation or wallet policy cannot | **`CLOSED`** (2026-08-22) | [gate](./docs/H5-GATE.md) · [decision](./docs/decisions/H5-closed.md) |
 
-## Where it sits
+**No verdict above is rewritten, revived, or worked around.** Each gate document is kept intact as the
+pre-registration its verdict is read against.
 
-Pre-deployment **certification of autonomous agents** is a recognized, unsolved problem — but the work
-so far is either off-chain or adjacent:
+## What each one actually refuted
 
-- **Off-chain agent-eval** (e.g. Patronus AI, ~$70M raised) builds replay "world models" that stress-test
-  agents and detect shortcuts — the same moat, but for enterprise SWE/finance, **not on-chain**. Probatio
-  is *"that, for Solana DeFi"* — and it's more defensible on-chain: Patronus must *replicate* websites to
-  build a world model; here **account state IS the world, so the ground truth is free**.
-- **Runtime guardrails** (Autonex, Blockaid) constrain or screen an agent's transactions *live*, against
-  hand-written policies. Probatio is **pre-capital**: it certifies whether an agent honored its *mandate*,
-  and its invariant set **self-repairs** via the red-team loop rather than being a fixed policy list.
-- **Solana's Agent Registry** is an identity/reputation trust layer, not a certifier. Its *Validation
-  Registry* (the natural home for "stakers re-running a job") is **archived / not yet deployed**, and
-  ERC-8004's is under active revision — so the re-execution-validation socket isn't callable yet. That is
-  the opening: the **Reputation Registry is live and permissionless**, so Probatio can write an on-chain,
-  agent-identity-tied re-execution verdict **today**, and be the drop-in validator when the Validation
-  module ships (see [`docs/GTM-agent-registry.md`](./docs/GTM-agent-registry.md)).
-- Among 2026 Colosseum agentic-finance projects, the verification/safety layer is essentially empty —
-  everyone is building agents; almost no one is building the thing that checks them.
+- **H1** died at its first gate item: **no real target existed.** The premise assumed an on-chain agent
+  population to certify; that population could not be produced. Everything downstream — attestations,
+  the certification market, the registry go-to-market — rests on that premise and falls with it.
+- **H2** was **never executed.** Its pre-registration entered a specification spiral — three rounds,
+  331 lines, zero measurements — and was frozen rather than given a fourth round. It is **not** a
+  refutation of H2's content; nothing was measured.
+- **H3** died because **capability semantics could not be made protocol-independent.** Two review
+  rounds showed the freedom to decide what satisfies a field was **relocated** into an adapter
+  manifest, not removed. The deliverable would have been a report per protocol, not a comparable
+  primitive — the exact thing it had to prove it was not.
+- **H4** was **measured** and killed by its own pre-registered numbers. Four cases, real pre- and
+  post-upgrade klend binaries, identical cloned state: **all four returned `unknown`**, so the action
+  was `RE-VERIFY` — the only answer the differing code hash could already give. Deciding otherwise
+  would have required exactly the venue semantics H3 died of.
+- **H5** never reached a measurement. **Four authorised candidates, four design-gate failures**, and
+  the last one — duplicate execution after a lost confirmation — **could not be differentiated from a
+  runtime wallet policy at all**, because a cumulative spend cap set at the agent's own intent total
+  catches a duplicate spend by definition. **H5 is `unproven`, not `refuted`**: nothing here says
+  sequence-only failures do not exist on Solana. That was never tested, and is not claimed.
 
-Honest framing: this is an **emerging, anticipatory** category — demand is validated by analogy (regulated
-enterprise AI needs pre-deployment assurance) more than by proven on-chain pain today. Probatio is a
-first-mover category bet, not a land-grab in a crowded market.
+## What the code is
 
-## The two layers
+The engineering is real, offline, and reproducible. It is **evidence tooling and refutation assets** —
+**not a product, and not a foundation for a new hypothesis.** Reusing the mechanics as fixtures is
+fine; **reusing a conclusion as evidence is not.**
 
-### 1. Verifier (off-chain) — the primary value
+- **A real-BPF episode driver.** Compiles Pinocchio programs with `cargo build-sbf`, loads the `.so`
+  into [`LiteSVM`](https://github.com/LiteSVM/litesvm), and executes transactions with real
+  compute-unit accounting. Account state is read as ground truth; **no assertion reads a log line.**
+- **A shared account-layout contract** (`crates/contract`) read by the perp program, the guard program,
+  and the off-chain verifier — one definition, three consumers.
+- **Inline, unbypassable enforcement.** Because `Position` accounts are owned by the perp program and
+  only the owning program can mutate an account, a transaction that omits any external guard **still
+  reverts**.
+- **The H4 sentinel** (`crates/h4-sentinel`) — two real mainnet klend binaries, 17 cloned mainnet
+  accounts at slot 440,477,781, disclosed mutations, deterministic offline replay, no network.
 
-Replays a 60-slot episode on a real Solana program via [`LiteSVM`](https://github.com/LiteSVM/litesvm),
-reads **account state as ground truth** (on Solana every piece of state is an addressable account — there
-is no oracle to reconstruct), and emits a `ShortcutReport` flagging shortcut classes with **slot-level
-evidence**. It is an offline audit — **there is nothing for a cheater to switch off.** Invariant-set
-driven; a red-team discovery loop (roadmap) promotes newly-found shortcuts into invariants.
+### Measured results that remain valid
 
-### 2. Enforcement (on-chain) — unbypassable, in-block
+These are properties of the code, and they still hold. **They were never the thing in doubt** — the
+hypotheses were.
 
-The perp program **inline-enforces** its invariants at the end of every mutating instruction
-(`Open`/`Hedge`/`Close`), via the shared `check_position()` predicate. Because `Position` accounts are
-**owned by the perp program**, and only the owning program can mutate an account, **there is no path to
-change a position that skips the check** — a transaction that omits any external "guard" still reverts.
-A separate composable `programs/guard` reuses the same `check_position()` for the different job of
-**wrapping accounts owned by a third-party program** (same-tx today; CPI on the roadmap).
+**Verifier**, identical across the `ref` and `svm` backends:
 
-The two layers are complementary: **enforcement blocks bad *actions* in-block; the verifier catches bad
-*states/behaviors*** over the episode (measurement gaming, phantom exposure, and passive oracle-driven
-insolvency that no single tx causes and no guard can revert).
-
-## One authored mandate, checked at two stations
-
-The mandate an agent must honor is an **authored, hashable `MandateSpec`** (in the dependency-free
-[`crates/reexec-spec`](./crates/reexec-spec) crate — the seed of a shared re-execution core), not a
-hardcoded constant. The *same* spec is checked at two stations:
-
-- **certify** (this repo): an episode stays within `max_size` / `instrument` over the whole run.
-- **screen** (sibling [Custos](https://github.com/psyto/custos)): its `MandateConformance` invariant
-  re-simulates the *next* transaction against real mainnet state and fires **RED** when realized token
-  outflow exceeds the same authored **`max_value_out`** — so a tricked agent still cannot move more than
-  its mandate allows (the Grok/Bankr prompt-injection drain class).
-
-`stage0_default()` leaves `max_value_out` uncapped, so certify behavior is unchanged; the field is a
-screen-station cap. One spec, authored once, checked at certify time and pre-broadcast.
-
-## Certifying real on-chain positions (live path)
-
-Because on Solana **account state IS the world**, the verifier needs no replay to judge a real position —
-it can read the chain directly. `certify-jupiter --live <owner>` fetches every open Jupiter Perps
-`Position` account owned by a wallet in one `getProgramAccounts` snapshot, decodes it against the
-committed account layout, and certifies net signed notional against a delta-neutral mandate. The delta
-verdict is **oracle-free** (signed notional is USD-denominated, so it is mark-independent; `--mark` only
-feeds the *advisory* liquidation model).
-
-The ingestion boundary is deliberately strict — this is a **ground-truth recovery** path, so it refuses
-to certify over anything it cannot fully trust:
-
-- Accounts are matched by the Jupiter program owner, a `dataSize` filter, **and the Anchor `Position`
-  discriminator** (a `memcmp` filter at offset 0, re-checked at decode) — a same-sized account of another
-  type is rejected, not certified through the fixed offsets.
-- A truncated / malformed account is an **error**, never a silently-dropped slot; the decoder separates
-  *untrusted* data (`Err`) from a *validated-closed* slot (`Ok(None)`), so a partial fetch can never look
-  like a complete, clean book.
-- The fetch uses `withContext`, and the path is **fail-closed on a missing snapshot slot**: a
-  point-in-time card is only meaningful if it can name the chain snapshot it judged, so if the RPC returns
-  no `context.slot` the CLI exits without writing a card rather than stamp a synthetic slot `0`.
-
-**Honesty:** this is **unsolicited due-diligence** — the wallet operator made no claim to us. A FLAG means
-"these live positions do not satisfy a delta-neutral mandate declared by Probatio", **never** "the operator
-lied". The card is self-describing about *what*, *which snapshot*, and *when*, all serialized *into* the
-gallery card so they survive the console banner:
-
-- `assessment_kind` / `mandate_source` / a plain-language note — the unsolicited-DD framing.
-- `snapshot_slot` + `captured_at` — the exact Solana slot and capture time the positions were read at.
-- `rpc_source` — the endpoint **host only**, credential-redacted (a DD card that outlives the console must
-  never embed an API key in the URL).
-
-The decode/parse boundary is proven against **real committed mainnet fixtures** — an open SOL long and an
-open short on a *different custody* (a BTC-class market) — so the fixed offsets are shown to recover a real
-short and a second market from live bytes, not just round-trip synthetic bytes.
-
-## Status — Stage 0 complete + unbypassable enforcement ✅
-
-Built on a **real compiled BPF program**, not a mock: the harness runs `cargo build-sbf`, loads the
-`.so` into LiteSVM, and executes transactions with real compute-unit accounting.
-
-**Verifier results** (identical across the `ref` and `svm` backends):
-
-| Policy | Verdict | Findings |
+| policy | verdict | findings |
 |---|---|---|
 | `honest` | PASS | — |
 | `measurement_gamer` | FLAG | `ContinuousNeutrality`[55–59] + `IntraEpisodeInsolvency`[30–59] |
 | `phantom_hider` | FLAG | `PhantomExposure`[1–60] + `IntraEpisodeInsolvency`[30–60] |
 
-**Enforcement results** — a perp `Open` sent **alone, with no guard instruction** (the bypass a naive
-same-tx guard would allow) still reverts, atomically (proven by reading the account back — `before ==
-after`):
+**Enforcement** — a perp `Open` sent alone, with no guard instruction, still reverts atomically
+(proven by reading the account back: `before == after`):
 
-| Scenario (solo perp tx, no guard ix) | Outcome |
+| solo perp tx, no guard ix | outcome |
 |---|---|
 | honest `Open` | Ok, position mutated |
-| out-of-mandate `Open` (qty=101) | reverted `Custom(10)` MandateDeviation |
-| self-inflicted insolvency `Open` (collateral=10) | reverted `Custom(11)` SelfInflictedInsolvency |
+| out-of-mandate `Open` (qty=101) | reverted `Custom(10)` `MandateDeviation` |
+| self-inflicted insolvency `Open` (collateral=10) | reverted `Custom(11)` `SelfInflictedInsolvency` |
 
-Perp instruction CU (with inline enforcement): `Open`=583, `Hedge`=758, `SettleFunding`=356 — far under
-the 200k/instruction budget. **87 tests green offline** across the workspace (harness 73 lib + 2 binary;
-contract 7; `reexec-spec` 3; perp + guard 1 each) — covering the live-ingestion decode/parse boundary
-against real mainnet long *and* short fixtures, withContext slot recovery, credential redaction, and the
-authored-mandate `MandateSpec` roundtrip / `spec_hash` / tightened-mandate certify path.
+Perp instruction CU: `Open`=583, `Hedge`=758, `SettleFunding`=356 — far under the 200k budget.
+**91 tests green offline, 0 failed**, re-run 2026-08-22 (`cargo test --offline`): harness 77 lib + 2
+binary, contract 7, `reexec-spec` 3, perp and guard 1 each. *(An earlier version of this file said 87;
+that count was stale, and the number above is the one this run produced.)*
+
+**H4's measurement**, byte-identical across three consecutive runs
+(`evidence/h4-sentinel.json`, `f05c0ea6…8f0cf0`): both binaries agreed on every `result` and every
+token delta; the sole divergence was **4 bytes the new binary writes at offset 28** of `obligation`,
+`reserve_sol` and `reserve_usdc`. Requesting `u64::MAX` collateral returned **`Ok`** and moved
+**486,657,686** of **2,248,785,777**; requesting exactly the full deposit **failed** with
+`Custom(6011)`.
 
 ## Quickstart
 
@@ -158,91 +106,89 @@ authored-mandate `MandateSpec` roundtrip / `spec_hash` / tightened-mandate certi
 # Off-chain verifier over the pure-Rust reference model:
 cargo run --offline -p probatio-svm-harness -- --backend ref
 
-# Same episode driven through the real Pinocchio program on LiteSVM
+# The same episode through the real Pinocchio program on LiteSVM
 # (builds the BPF .so on first run via `cargo build-sbf`):
 cargo run --offline -p probatio-svm-harness -- --backend svm
 
 # All tests (ref+svm parity, unbypassable-enforcement reverts, atomicity, CU):
 cargo test --offline
 
-# Certify a Jupiter Perps agent — deterministic sample cards (neutral vs drift), no key/RPC:
-cargo run --offline -p probatio-svm-harness -- certify-jupiter --sample
-
-# Unsolicited due-diligence on a REAL wallet's live positions (one on-chain snapshot).
-# --rpc defaults to mainnet-beta (or set PROBATIO_RPC_URL); --mark is an advisory liquidation input.
-cargo run -p probatio-svm-harness -- certify-jupiter --live <owner_pubkey> [--rpc <url>] [--mark <usd>]
+# H4's sentinel — two real klend binaries, one cloned state set, offline, deterministic.
+# Rewrites evidence/h4-sentinel.json; two runs are byte-identical.
+cd crates/h4-sentinel && cargo run --release
 ```
 
 Requires the Rust toolchain (pinned in `rust-toolchain.toml`) and the Solana SBF toolchain
-(`cargo build-sbf`) for the `svm` backend.
+(`cargo build-sbf`) for the `svm` backend. The `h4-sentinel` crate is a **separate workspace** by
+necessity — mixing LiteSVM's unbundled Solana crates with the root graph produces duplicate
+incompatible crates.
 
 ## Layout
 
 ```
-crates/reexec-spec  the authored, hashable MandateSpec (max_size/instrument/max_value_out) shared across
-                  stations — dependency-free #![no_std], the seed of a shared re-execution core
-crates/contract   shared account layout (Market, Position) + instruction codecs + check_position()
-                  enforcement predicate — the load-bearing contract, read by the perp, the guard, AND
-                  the verifier (#![no_std]); re-exports MandateSpec from reexec-spec
-crates/harness    episode driver (ref + LiteSVM backends), scripted policies, invariant-set verifier,
-                  Jupiter live on-chain ingestion (getProgramAccounts → decode → certify)
-programs/perp     Pinocchio perp; inline-enforces check_position() on every mutating instruction
-programs/guard    Pinocchio composable guard for wrapping third-party-owned accounts
-gallery           serialized certification cards (sample cards tracked; jupiter-live-*.json gitignored)
-docs/tasks        task briefs (the CC↔Codex handoff surface)
-reviews           cross-review verdicts
-STAGE0_DESIGN.md  the design + honest scope notes + roadmap
+STATUS.md           the state of record — read this first
+docs/*-GATE.md      the five pre-registrations, kept intact; each carries its closing verdict
+docs/decisions/     the verdicts and their reasoning
+reviews/            independent cross-review verdicts, verbatim
+evidence/           measured output (H4's sentinel run)
+fixtures/h4/        17 cloned mainnet accounts at slot 440,477,781 + two real klend binaries
+crates/reexec-spec  the authored, hashable MandateSpec — #![no_std]        (H1 artifact, refuted)
+crates/contract     shared account layout + codecs + check_position()      (H1 artifact, refuted)
+crates/harness      episode driver (ref + LiteSVM), policies, verifier     (H1 artifact, refuted)
+crates/h4-sentinel  the H4 upgrade sentinel — evidence tooling             (H4 artifact, refuted)
+programs/perp       Pinocchio perp; inline-enforces on every mutating ix   (H1 artifact, refuted)
+programs/guard      Pinocchio composable guard                             (H1 artifact, refuted)
+docs/tasks          task briefs (the CC↔Codex handoff surface)
 ```
+
+**"Refuted" marks the hypothesis, not the code.** Each crate does what it says and its tests pass. What
+was refuted is the claim that it was worth building for the reason it was built.
 
 ## Honest limitations
 
-- **Coverage.** The scripted policies prove the machinery works; a **red-team discovery loop** (shipped)
-  mechanically searches for shortcuts the invariant set misses and promotes fixes — it already found and
-  closed a near-neutral claim bypass. Exhaustive coverage of *unknown* economic exploits remains open.
-- **Hostile-episode audit (shipped).** Episodes can now carry slippage, a lagged multi-shock oracle path,
-  and deterministic noise. Finding: the misrepresentation invariants are **price-noise invariant for a
-  fixed action sequence** (delta is position size, not price) — but a **price-reactive** policy (and a
-  future LLM agent) changes its actions with price, so that invariance does not extend to it; that is the
-  explicit boundary, and why price-reactive agents need per-episode certification. Solvency is
-  **stress-relative**: the episode must declare the stress it certifies against.
-- **Not a realtime monitor.** Probatio is a pre-deployment proving ground (offline replay), so verifier
-  latency under mainnet block times / MEV is out of frame by design.
-- **Third-party enforcement needs CPI.** The perp enforces *its own* accounts unbypassably (inline). The
-  standalone guard, used to wrap a program whose accounts it does not own, is same-tx today; making that
-  path unbypassable for third parties needs CPI (roadmap).
-- `cargo build-sbf` emits one benign `sol_memcpy_` post-processing warning; the programs build, load, and
-  run correctly. `vendor/hermit-abi` is a no-op offline-build shim, not a real dependency
-  ([details](./vendor/hermit-abi/README.md)).
+- **No product claim is made or supported by anything here.** The market positioning, the demand
+  argument, the registry go-to-market and the roadmap that earlier versions of this file carried were
+  **H1's**, and H1 is `KILLED`. They are removed rather than softened, and the documents that still
+  contain them are marked as historical.
+- **H4's measurement has one recorded gap**, disclosed in its decision record: `post_state` records
+  per-account ranges differing **from the fixture** per side, so it proves the two post-states differ
+  but not that offset 28 is the *only* place they differ. The harness was deliberately **not** changed
+  after measurement.
+- **Nothing in `../solvo` is ever written from here.** It is a read-only reference.
+- `cargo build-sbf` emits one benign `sol_memcpy_` post-processing warning. `vendor/hermit-abi` is a
+  no-op offline-build shim, not a real dependency ([details](./vendor/hermit-abi/README.md)).
 
 ## Roadmap
 
-- ✅ **Red-team discovery loop** — searches the shortcut space, promotes newly-found classes into
-  invariants (the coverage moat; [[solinv]] DNA).
-- ✅ **Hostile episodes** — slippage, lagged multi-shock oracle, deterministic noise; verifier robustness
-  audit.
-- ✅ **LLM agent** behind the `Policy` trait — a real (price-reactive) agent certified per-episode; the
-  natural next step from the hostile-episode boundary.
-- ✅ **Jupiter Perps adapter + live on-chain ingestion** — map a real venue's positions into the verifier,
-  and certify a real wallet's live positions as unsolicited due-diligence (`certify-jupiter --live`).
-- ✅ **Real short/multi-custody fixture + snapshot-slot provenance** — a real *short* Position fixture on a
-  different custody, plus `withContext` slot / capture time / credential-redacted host stamped into the
-  card, fail-closed when the snapshot slot is missing.
-- ✅ **Authored mandate + screen station** — `MandateSpec` extracted to the shared `reexec-spec` crate
-  (+ `max_value_out`); the sibling Custos screen station enforces the *same* mandate on the next tx
-  pre-broadcast. One spec, two stations.
-- **On-chain attestation** — write the re-execution verdict to Solana's (permissionless) Reputation
-  Registry today, and to the ERC-8004 `validationResponse` shape for the Validation socket when it ships.
-- **CPI guard promotion** — unbypassable enforcement for third-party-owned accounts.
-- **Live cert web card + multi-slot polling + on-chain Custody mark** — dashboard surface for a live cert,
-  a time-series live trace, and an oracle mark read from the Custody account (today `--mark`).
-- Pitch video (certify PASS / catch FLAG / enforce revert).
+**None.** No hypothesis is live and **nothing is authorised** — not a new fixture, not a candidate
+search, not implementation, measurement, UI, token, or deploy.
+
+**Opening anything requires a founder ruling.** Reopening the H5 line additionally requires a **new,
+independent hypothesis** — not a repair or rewording of a closed one — and a **new pre-registration**
+that names the comparator **the hypothesis itself names, at full strength**. Choosing a weaker
+comparator is the specific mistake that ended H5.
+
+## What this repository is actually good for
+
+Five hypotheses died cheaply, and the record of *how* is the durable output:
+
+- **The design gate is the cheapest place to fail.** H3, H5's four candidates, and most of H4's cost
+  were paid before implementation. H5 produced **zero lines of product code**.
+- **The cross-review loop caught errors in both directions.** One round returned `DISSENT` and
+  overturned a proposal to kill a candidate early; another killed a candidate the author believed in.
+  **No model reviews its own output**, and that rule earned its keep.
+- **A comparator chosen for winnability is worse than a losing comparison** — it produces a result that
+  cannot be defended.
+- **Pre-registering the rule that kills you is what makes a kill honest.** H4 wrote down, before
+  measuring, that a state-only difference would be `unknown` and that `unknown` would end it. It was,
+  and it did.
 
 ## Built with cross-review
 
-Two agents that cross-review each other: **Claude Code** (frame-thin — architecture, the shared
-contract, the reference model, verifier soundness) and **Codex** (frame-thick — the Pinocchio programs,
-the LiteSVM driver, adversarial audits). Whoever implements a change does not review it. See
-[`AGENTS.md`](./AGENTS.md).
+Two agents that cross-review each other: **Claude Code** (frame-thin — architecture, gates, decision
+records, the shared contract, the reference model) and **Codex** (frame-thick — the Pinocchio programs,
+the LiteSVM driver, adversarial audits and independent reviews). **Whoever implements a change does not
+review it**, and at most two agents work at once. See [`AGENTS.md`](./AGENTS.md).
 
 ## License
 

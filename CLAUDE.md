@@ -58,7 +58,10 @@ other agent does.
 - **Operating contract (read first):** [`AGENTS.md`](./AGENTS.md) — the brief → branch → review → merge
   loop, the contract surface neither agent changes alone, and how to invoke Codex.
 - **Task briefs:** [`docs/tasks/`](./docs/tasks/). **Reviews:** [`reviews/`](./reviews/).
-- **What/why + roadmap:** [`README.md`](./README.md), [`STAGE0_DESIGN.md`](./STAGE0_DESIGN.md).
+- **State of record:** [`STATUS.md`](./STATUS.md) — all five hypotheses and their verdicts.
+- **What this repo is now:** [`README.md`](./README.md) — a falsification record. **There is no
+  roadmap.** [`STAGE0_DESIGN.md`](./STAGE0_DESIGN.md) is **H1's design doc and is HISTORICAL**; its
+  positioning and "next stages" are refuted and must not be cited as a plan.
 
 Keep `cargo test` green and episode traces deterministic. Work on a branch, commit, and have the other
 agent review before merge. Commit as `psyto <saito.hiroyuki@gmail.com>`. Sibling repo `../probatio` is

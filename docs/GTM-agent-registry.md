@@ -1,5 +1,19 @@
 # Probatio GTM — the re-execution validator for the agent Validation socket
 
+> ⛔ **HISTORICAL — H1's go-to-market, and H1 is `KILLED`**
+> ([`docs/decisions/P1-real-target.md`](./decisions/P1-real-target.md), 2026-08-20).
+>
+> **This is the document whose failure mode the kill gates were built to prevent.** Its thesis is
+> demand established **by analogy and by registry roadmaps**, not by measurement — and H1's first gate
+> item asked for a **real target** and could not find one. Attestation, the Reputation Registry path,
+> and the ERC-8004 `validationResponse` shape are **H1 artifacts** and are explicitly forbidden from
+> being reused as a new hypothesis's foundation; **reusing one because it exists is 延命, not scope.**
+>
+> **Its demand argument may never be cited as evidence** — for H5 or for anything else. That
+> prohibition is written into [`docs/H5-GATE.md`](./H5-GATE.md) §2 and survives H5's closure.
+>
+> **Nothing below is rewritten.**
+
 **Thesis (grounded 2026-08):** both dominant agent registries (Solana Agent Registry, ERC-8004) *name*
 independent **re-execution validation** as the intended trust model — but the **Solana Validation module
 is archived / not yet deployed**, and ERC-8004's is **under active revision**. So the socket isn't
