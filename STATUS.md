@@ -55,9 +55,26 @@ evidence is not.
 name them, and each is a place a measurement could be tuned after the fact, so **all must be fixed by
 a founder ruling before anything runs**: the one workflow · the candidate failure and its state
 predicate · the scripted agent's decision rule · the CI entrypoint command · and the exact definition
-of both baselines in B. Offline candidate for the workflow, costing no new fetch: the **klend
-fixture set already committed at `fixtures/h4/`** (17 cloned accounts, slot **440,477,781**), whose
-withdraw path H4's completed run already proved executes under LiteSVM.
+of both baselines in B.
+
+**A concrete proposal for all five is on the table — [`H5-GATE.md` §8.1](docs/H5-GATE.md), marked
+`PROPOSED`, NOT IN FORCE. Awaiting a founder ruling; nothing runs until then.** In outline: workflow
+`W` = klend USDC withdraw on the already-committed `fixtures/h4/` set (17 cloned accounts, slot
+**440,477,781**, real BPF, no new fetch), as **three** transactions carrying state forward.
+Candidate failure `F` is **read off H4's own frozen evidence, not hunted inside H5**: case E requested
+`u64::MAX` collateral, received **`Ok`**, and moved **486,657,686** of **2,248,785,777** — leaving
+**1,762,128,091 atoms (78%) still deposited after a call the caller reads as "I exited"**, with no
+error and no log line saying "partial". Detector `P` is state-bytes-only. The scripted agent's rule is
+written out in full, and **both baselines are pinned, including the generous one** (`S-generous`: one
+`simulateTransaction` **plus** inspection of the state it returns).
+
+**`S-generous` is pre-registered as governing, deliberately, and it is where CC expects H5 to die.**
+An `err`-only baseline is a strawman. The narrow surviving claim, if any: a single simulation returns
+*a state*, but does not know **what the agent intended across transactions**, so it cannot tell that
+`deposited_amount = 1,762,128,091` contradicts an intent to exit — **the oracle is the agent's
+declared intent, not the chain.** That is also the structural answer to `KILL-3`: H4 had two binaries
+and no intent, hence no ground truth; H5 tests an agent, so intent exists. If `S-generous` plus any
+fixed rule catches `F` without that intent, **`KILL-1` fires and H5 is dead.**
 
 **Prediction on the record: overall open, leaning `KILL-1`.**
 

@@ -146,6 +146,145 @@ open, and must be frozen — by a founder ruling, in this document, before anyth
 policy is exactly (destination allowlist plus per-transaction cap, with its values). Writing them
 after seeing the failure would make `B` unfalsifiable.
 
+**A concrete proposal for all five, plus both baselines, is in §8.1 — `PROPOSED`, not in force.**
+It is written so the founder rules on something falsifiable. Until it is ratified, §8 is open and
+nothing runs.
+
+## 8.1 PROPOSED freeze of the five open items — **NOT IN FORCE**
+
+> ⚠️ **This section is a proposal by CC, not a ruling.** Nothing here is frozen until the founder
+> ratifies it. **No measurement may run against it in its current state.** It exists so the founder
+> is ruling on something concrete and falsifiable rather than on a blank.
+
+### Provenance of the candidate, disclosed first
+
+The candidate failure below was **not** found by hunting inside H5. It is read off **H4's completed,
+committed and independently reviewed measurement** (`evidence/h4-sentinel.json`, verdict
+[`H4-sentinel-kill.md`](./decisions/H4-sentinel-kill.md)), where it appears as case E's token deltas.
+It is therefore already public in this repo, already reviewed, and **cannot have been tuned to make
+H5 pass** — it predates H5's existence. This is stated because a candidate named after seeing data is
+normally illegitimate; here the data is a prior phase's frozen artifact, and the direction of the
+concern is recorded rather than argued away.
+
+### The number that motivates it
+
+From H4 case E, identical on both binaries, fixture slot **440,477,781**:
+
+| requested `collateral_amount` | `result` | collateral actually moved | USDC actually received |
+|---:|---|---:|---:|
+| `u64::MAX` (18,446,744,073,709,551,615) | **`Ok`** | **486,657,686** | 582,271,854 |
+| `D` = 2,248,785,777 (exactly the deposit) | `Err … Custom(6011)` | 0 | 0 |
+
+Requesting the sentinel "everything" **succeeds and moves 2.2% of the position**; requesting the
+literal full deposit **fails**. `2,248,785,777 − 486,657,686 = 1,762,128,091` collateral atoms —
+**78% of the position — remain deposited after a call the caller reads as "I exited"**. H4's own run
+log corroborates it: `SetStakeDelegated: prev:2248785777 -> new:1762128091`.
+
+**No error is returned. No log line says "partial".** The only witness is the state.
+
+### 1 — The one capital-action workflow `W` (condition A)
+
+**Kamino klend, USDC reserve, on the fixture set already committed at `fixtures/h4/`** (17 cloned
+mainnet accounts, slot 440,477,781, real `klend` + `farms` BPF). No new fetch, no network. Three
+transactions, in three separate VM slots, state carried forward between them — **this is the only
+structural difference from H4, and it is the point**:
+
+| tx | content |
+|---|---|
+| **T1** | the mandatory refresh preamble: `refresh_reserve(USDC)`, `refresh_reserve(SOL)`, `refresh_obligation` |
+| **T2** | `withdraw_obligation_collateral_and_redeem_reserve_collateral_v2`, `collateral_amount = u64::MAX` — the agent's "exit my whole position" call |
+| **T3** | whatever the agent's decision rule (below) emits next, given what it believes T2 accomplished |
+
+### 2 — The candidate failure `F` and its state predicate `P` (condition B)
+
+**`F`: the agent believes it exited its position; 1,762,128,091 collateral atoms are still deposited,
+and the agent stops.** Every transaction in the episode returns `Ok`.
+
+`P` is evaluated on **state bytes only** — never a log line, per §3.4:
+
+```
+P1  obligation.deposits[USDC].deposited_amount  != 0  at end of episode
+P2  agent terminated in state EXITED (its own rule believed the position closed)
+P3  realized collateral delta (486,657,686) != the delta the agent assumed (2,248,785,777)
+F fires iff P1 AND P2.   P3 is recorded with its direction, both ways.
+```
+
+**If `F` does not reproduce, that is `KILL-2` and it is an honest result.** No substitute failure may
+be swapped in after the fact; a replacement candidate requires a new founder ruling and a new G0 row.
+
+### 3 — The scripted agent (condition C)
+
+Deterministic, **no LLM in the loop**, rule written here in full **before** any run:
+
+```
+s0  read obligation.deposits[USDC].deposited_amount -> believed_start
+T1  emit refresh preamble
+T2  emit withdraw(collateral_amount = u64::MAX)          # "exit everything"
+    on result Ok  -> believed_remaining := 0              # <-- the defect under test
+    on result Err -> believed_remaining := believed_start
+T3  if believed_remaining == 0 -> emit EXIT-COMPLETE action, terminate in state EXITED
+    else                       -> emit withdraw(believed_remaining), loop
+```
+
+**The action that changes is a specific instruction, not a mood:** with true state the agent emits a
+second `withdraw` at T3; with the false belief it emits the exit action and stops. The two
+instruction sequences are compared byte-for-byte and both are recorded.
+
+### 4 — Both baselines in `B`, defined before the run
+
+`B` is unfalsifiable unless the baselines are pinned now, so **both variants are pre-registered, and
+the generous one governs**:
+
+| baseline | definition | verdict if it also catches `F` |
+|---|---|---|
+| **S-strict** | a single `simulateTransaction` of **T2 alone**, from the post-T1 state, reading only the transaction-level `err` field | — |
+| **S-generous** | the same simulation, but **also** allowed to read the post-state accounts it returns and diff them | **`KILL-1` fires** |
+| **Pol** | destination allowlist `{agent's USDC ATA}` + per-transaction cap **1,000,000,000 USDC atoms** (realized 582,271,854 is under it; the cap is fixed here and not adjusted later) | **`KILL-1` fires** |
+
+**Pre-registering `S-generous` is deliberate and cuts against H5.** The strict variant is a strawman:
+of course an `err`-only check misses a transaction that succeeds. The honest question is whether a
+developer who simulates one transaction *and inspects the returned state* still misses `F`. **CC's
+assessment is that this is where H5 most likely dies**, and the gate says so in §9 rather than
+discovering it later.
+
+The surviving claim, if any, is narrow and must be stated narrowly: a single simulation returns *a
+state*; it does not know **what the agent intended across transactions**, so it cannot tell that
+`deposited_amount = 1,762,128,091` contradicts an intent to exit. **The oracle comes from the agent's
+declared intent, not from the chain.** If, once run, `S-generous` plus any fixed rule catches `F`
+without that intent, `KILL-1` fires and H5 is dead.
+
+### 5 — The CI entrypoint (`KILL-4`)
+
+Contract only — **no code is authorised at G0**:
+
+```
+<one command> --episode <episode.json>
+  exit 0        every pre-registered invariant held
+  exit non-zero one named invariant failed; a reproducible trace is written
+  stdout        the failing invariant, the accounts and offsets that witness it,
+                every input, mutation and hash (condition D)
+  offline       once fixtures are committed; no network
+```
+
+It must be runnable in an agent developer's own pipeline against their own agent's decision rule. **If
+it cannot be written as a command with an exit-code contract, `KILL-4` fires at the design gate**,
+before anything is built.
+
+### Why this is not H3's or H4's grave (`KILL-3`)
+
+`P` reads **one named protocol's own field at a known offset**, for **one** workflow. H5 claims **no**
+generality across protocols and defines **no** adapter: a second protocol would need its own
+pre-registration, and saying so is the whole point. H4 died because, with only two binaries and no
+declared intent, **no ground truth existed** to say whether a state difference mattered. H5 supplies
+that ground truth from **the agent's own stated intent** — which is available precisely because H5
+tests an agent, not a protocol. **If deciding `F` ever needs a rule that generalises beyond `W`, that
+is `KILL-3` and not a scope change.**
+
+### What the founder is being asked to rule on
+
+Ratify, amend, or reject: `W`, `F`+`P`, the agent rule, the two baselines (**especially whether
+`S-generous` governs**), and the entrypoint contract. **Until then §8 remains open and nothing runs.**
+
 ## 9. Predictions, recorded before measurement
 
 Wrong predictions are **not** a kill; refusing to record them would be.
@@ -153,10 +292,10 @@ Wrong predictions are **not** a kill; refusing to record them would be.
 | condition | prediction | confidence |
 |---|---|---|
 | A — reproducible multi-transaction episode | **holds** — H4 already produced a deterministic offline replay on this fixture set | medium–high |
-| B — a failure both baselines miss | **open.** This is the hypothesis and the most likely place H5 dies, most plausibly to `KILL-1` | — |
+| B — a failure both baselines miss | **open, and now sharper.** Against `S-strict` and `Pol` (§8.1) CC expects `F` to survive. Against **`S-generous`** — one simulation *plus* inspection of the state it returns — CC expects `KILL-1`, unless the agent's declared intent is admitted as the oracle. **This single choice is where H5 most likely dies**, which is why §8.1 pre-registers `S-generous` as governing | low |
 | C — the failure changes the agent's next action | **holds if B holds**, since a scripted agent reading state must branch on it | medium |
 | D — assets usable as fixtures, fully recorded | **holds** — the recording discipline already exists | high |
-| **overall** | **open, leaning `KILL-1`** | low |
+| **overall** | **open, leaning `KILL-1`** — and the candidate failure `F` itself is *not* a prediction: it is already observed in H4's frozen evidence. What is unpredicted is whether any baseline also catches it | low |
 
 ## 10. On reaching the gate
 
