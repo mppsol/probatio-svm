@@ -161,9 +161,17 @@ leg** to make ordering matter, and **klend's own clamping reaches the solvency l
 transaction**, so a cumulative walk has nowhere further to go. What remains is a **single capital
 action**, whose failure is by construction witnessed inside one transaction's post-state.
 
-That selects **branch A: H5 is proposed `KILLED`** — *not-proven is a KILL*. **No kill commit is made
-without a founder ruling.** The basis, the three excluded candidates and the two-part resume
-condition are in `H5-CANDIDATES.md` §6–§7.
+That selected **branch A: H5 proposed `KILLED`** — **which the independent review then overturned.**
+[`reviews/H5-G0-candidates.md`](../reviews/H5-G0-candidates.md) returned **`DISSENT — a candidate
+survives: C3`** with two P0s, CC concurs, and **branch A is withdrawn. H5 is not killed and no kill
+commit was made.** `H5-CANDIDATES.md` **§8 governs**; its §6–§7 are superseded.
+
+**What now blocks everything is a single founder ruling**, stated by the review: `simulateTransaction`
+cannot advance chain state, so a baseline that carries post-state across transactions **is** the
+local-fork executor H5 proposes. Define the baseline as **one non-persistent RPC simulation** and
+`C1`/`C3` are live; allow it to **carry cloned state** and no candidate can ever clear condition 2, so
+**H5 is dead in general**. It must be settled **before** any freeze, measurement or kill — settling it
+afterwards would be the post-hoc criterion change this gate forbids.
 
 ## 8.1 PROPOSED freeze of the five open items — **REJECTED at the design gate**
 

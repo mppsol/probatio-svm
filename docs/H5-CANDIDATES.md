@@ -1,5 +1,15 @@
 # H5 G0 — candidate search for a sequence-only failure — **design investigation, no measurement**
 
+> ⛔ **BRANCH A IS WITHDRAWN. H5 IS NOT KILLED. No kill commit was made.**
+> The independent review this document asked for — [`reviews/H5-G0-candidates.md`](../reviews/H5-G0-candidates.md),
+> Codex, read-only, run once by founder ruling — returned **`DISSENT — a candidate survives: C3`**,
+> with **two P0s against this document's own reasoning**. Per the founder's instruction, a dissent
+> naming a viable surviving candidate means **report, do not kill**. §6 and §7 below are therefore
+> **superseded by §8**, which records what the review overturned and what it did not.
+>
+> **Nothing below is rewritten.** It is kept as the argument the review is read against.
+
+
 **Date:** 2026-08-22 · **Founder ruling:** continue H5 as a *design investigation only*; H5 itself is
 **not** killed; the first candidate (klend `withdraw(u64::MAX)` balance mismatch) is **finished as
 `KILL-1`** and **may not be repaired, rescued or re-measured**; no post-hoc change of criteria.
@@ -33,13 +43,33 @@ transaction's post-state**, it is marked `KILL-1` **here**, and is neither imple
 
 This bounds the search, so it is established first — from bytes, not from memory.
 
-```sh
-# deposits: base 96, 8 slots of 136 B; borrows: base 1208, 5 slots of 200 B
-python3 - <<'PY'
+**Corrected 2026-08-22 after review P2** — the snippet first published here defined helpers and
+printed nothing, so it did not reproduce the table below. Save this as `read_obligation.py` and run
+`python3 read_obligation.py` from the repo root; it does:
+
+```python
 import json, base64
 ob = base64.b64decode(json.load(open('fixtures/h4/accounts/obligation.json'))['data_b64'])
-u64=lambda o:int.from_bytes(ob[o:o+8],'little'); u128=lambda o:int.from_bytes(ob[o:o+16],'little')
-PY
+u64  = lambda o: int.from_bytes(ob[o:o+8],  'little')
+u128 = lambda o: int.from_bytes(ob[o:o+16], 'little')
+B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+def b58(b):
+    n = int.from_bytes(b, 'big'); s = ''
+    while n:
+        n, r = divmod(n, 58); s = B58[r] + s
+    return '1' * (len(b) - len(b.lstrip(b'\x00'))) + s
+
+for i in range(8):                      # deposits: base 96, 8 slots of 136 B
+    o = 96 + 136 * i
+    if any(ob[o:o+136]):
+        print('deposit', i, b58(ob[o:o+32]), u64(o + 32))
+for i in range(5):                      # borrows: base 1208, 5 slots of 200 B
+    o = 1208 + 200 * i
+    if any(ob[o:o+200]):
+        print('borrow ', i, b58(ob[o:o+32]))
+for name, o in (('deposited_value', 1192), ('bf_adjusted_debt', 2208),
+                ('allowed_borrow_value', 2240), ('unhealthy_borrow_value', 2256)):
+    print(f'{name:24} {u128(o) / (1 << 60):.6f}')
 ```
 
 | field | value |
@@ -50,6 +80,11 @@ PY
 | `borrow_factor_adjusted_debt_value_sf` @2208 | ≈ **$1,343.59** |
 | `allowed_borrow_value_sf` @2240 | ≈ **$2,152.28** |
 | `unhealthy_borrow_value_sf` @2256 | ≈ **$2,421.31** |
+
+**Unit caveat, added after review Q9:** the `$` labels are an inference. The bytes establish the
+`2^60` fixed-point *magnitudes*; that the unit is USD is corroborated by H4's frozen token deltas and
+by USDC's 6 decimals, **not** by the obligation bytes alone. Nothing below depends on the unit — only
+on the ratios, which are unitless.
 
 **The `_sf` fields are fixed-point at `2^60`, and the layout is confirmed by four independent
 consistency checks landing on exact round numbers** — this is the proof the derivation above is not
@@ -247,3 +282,76 @@ this order:
   used as evidence here; H4's evidence is used **only** as a measured fact about klend's clamping.
 - **Not proposed:** any replacement candidate. §8.1 pre-registered that a substitute requires a new
   founder ruling and a new G0 row. That binds CC, and CC has proposed none.
+
+---
+
+## 8. What the review overturned — **this section governs**
+
+One round, read-only, from the payload committed at
+[`reviews/H5-G0-candidates.codex-prompt.md`](../reviews/H5-G0-candidates.codex-prompt.md).
+Verdict **`DISSENT — a candidate survives: C3`**. Full text:
+[`reviews/H5-G0-candidates.md`](../reviews/H5-G0-candidates.md).
+
+### The revised standing of each candidate
+
+| candidate | §3–§5 said | review says | stands as |
+|---|---|---|---|
+| **C1** | `KILL-1` | **P0 — unsupported.** Dismissing it by inspecting `T4`'s post-state *"silently grants the baseline a state-carrying local executor. That is H5's distinguishing machinery, not one RPC `simulateTransaction`."* | **not killed**; also **not frozen** — the review notes `R` and the exit rule are still unspecified |
+| **C2** | `KILL-1` | **assumes the disputed capability.** A production agent can simulate `T4` against real post-`T3` state; **pre-release CI cannot produce that state through RPC simulation alone**. *"The gate must choose explicitly."* | **undecided**, pending the baseline definition |
+| **C3** | `KILL-2` | **P0 — wrong premise.** *"A dropped confirmation is not a fabricated chain fact; it is an explicit client/transport fault input to the agent under test."* Both withdrawals remain real BPF on cloned state. | **survives** |
+
+**CC concurs with both P0s.** They are not close calls:
+
+- **C3.** `KILL-2` as pre-registered fires when *"a stateful failure cannot be reproduced on real
+  BPF"*. The stateful failure in C3 is the **cumulative double withdrawal**, and that **is** reproduced
+  on real BPF. CC's §5 argument conflated the *trigger* with the *failure*. **The system under test is
+  the agent, not the chain**, and injecting a transport fault into the agent is ordinary fault
+  injection, not fabricating chain state. The kill was wrong.
+- **C1.** CC's §3 argued the construction barrier "protects the construction of `T4`, not the
+  observation of the failure" — but observing `T4`'s post-state **requires having executed `T1`–`T3`**,
+  which is precisely the episode executor H5 proposes. CC granted the baseline H5's own machinery and
+  then found H5 redundant. The kill was circular.
+
+### The one thing that must be ruled on before anything else
+
+Both P0s, `C2`'s undecided status, and the `KILL-1` that closed §8.1 all reduce to **one unresolved
+definition**, which the review states directly (Q6, Q10):
+
+> `simulateTransaction` does not commit or advance mainnet state. A baseline that persists post-state
+> across simulations **is a local-fork episode executor — the machinery H5 proposes.**
+
+**So the baseline must be defined operationally, and it decides H5 either way:**
+
+| if the baseline is… | consequence |
+|---|---|
+| **one non-persistent RPC simulation** (cannot advance chain state) | multi-transaction failures are genuinely outside its reach; `C1` and `C3` are live and H5 has a real claim |
+| **allowed to carry cloned post-state across transactions** | it *is* H5, no candidate can ever clear condition 2, and **H5 is dead in general, not per-candidate** |
+
+**This is a founder ruling, not an agent's call**, and it must be made **before** any freeze,
+measurement or kill. Choosing it after seeing a result would be the post-hoc criterion change the
+ruling forbids.
+
+### Disclosed, and explicitly *not* acted on
+
+The review's Q6 states that the §8.1 review's grant of a *"post-`T1` state"* **was not a valid
+bare-single-simulation baseline** — i.e. the same argument now cuts against the `KILL-1` that closed
+the **first** candidate. **CC is not reopening §8.1**: the founder ruled it finished and forbade
+repairing or rescuing it, and that ruling stands regardless of this review. It is recorded here
+because the founder should know the reasoning has been undermined, **not** as a proposal to revive it.
+
+### What is still true from §2
+
+The review **independently re-derived** the fixture bound and confirmed it: exactly one live deposit
+slot (`D6q6…gJ59`, 2,248,785,777) and exactly one live borrow slot (`d4A2…Bc4Q`), and the four `_sf`
+values. So **the two-collateral ordering shape remains unavailable** — but the review notes this
+*"excludes a two-collateral ordering case, but not C3's duplicate-execution case."*
+
+The flagged cumulative-walk bound (§2, §6) is confirmed as **not established** (review P1), and the
+review adds that *"the claim that case E reaches the protocol's ultimate solvency boundary is not
+supported by committed post-state bytes."* **§7's resume condition is therefore too narrow**: the
+review states **C3 needs neither a second capital leg nor a partial fill.** §7 does not govern.
+
+### Status
+
+**H5 is not killed and not frozen.** No replacement candidate was searched for, no fetch was made, no
+code written, no measurement run. Awaiting a founder ruling on the baseline definition above.

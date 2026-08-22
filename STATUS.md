@@ -1,15 +1,15 @@
 # STATUS — Probatio SVM
 
 Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
-**G0 — pre-registration only, nothing measured. Four candidates have now died at the design gate
-(§8.1 plus C1–C3), and H5 is `PROPOSED KILLED` awaiting a founder ruling; no kill commit is made
-without one.** The four earlier gates are closed and none is
+**G0 — pre-registration only, nothing measured. The proposal to kill H5 was `DISSENT`ed by
+independent review: candidate `C3` survives, and the whole question now reduces to one unresolved
+baseline definition that only the founder can settle. No kill commit was made.** The four earlier gates are closed and none is
 reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
 `docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
 (KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H5 — Agent Release Tests for Solana — **proposed `KILLED`; all three follow-up candidates died at the design gate**
+## H5 — Agent Release Tests for Solana — **NOT killed; the review dissented and candidate `C3` survives**
 
 Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · review:
 [Codex, `KILL AT DESIGN GATE — KILL-1`](reviews/H5-G0-agent-release-tests.md) · **no measurement has
@@ -113,16 +113,42 @@ make ordering matter, and **klend's clamping already reaches the solvency limit 
 a **single capital action**, whose failure is by construction witnessed in a single transaction's
 post-state.
 
-**Branch A selected: H5 is proposed `KILLED`** — not-proven is a KILL. **No kill commit without a
-founder ruling.** Reopening requires a new founder ruling and a new G0 that satisfies **both**: (1) a
-fixture expressing **≥2 independent capital legs** or a genuine **partial fill** — the committed set
-has neither, and acquiring one is a **new fetch not authorised today**; and (2) the candidate's
-**non-observability demonstrated *before* measurement**, naming which transaction would witness it if
-the argument is wrong. **Three candidates in a row died to that check applied late.**
+**Branch A was proposed — and then WITHDRAWN by the review it asked for.**
+[`reviews/H5-G0-candidates.md`](reviews/H5-G0-candidates.md) (Codex, read-only, one round, run by
+founder ruling from the committed payload) returned **`DISSENT — a candidate survives: C3`** with
+**two P0s against CC's own reasoning**, and **CC concurs with both**:
 
-**Not claimed:** that no sequence-only failure exists on Solana — only that none could be built on the
-committed fixture. **Not claimed:** that any past hypothesis supports H5's demand. **Not proposed:**
-any replacement candidate.
+- **`C3` was killed on a wrong premise.** `KILL-2` fires when *a stateful failure cannot be reproduced
+  on real BPF*. C3's stateful failure is the **cumulative double withdrawal**, and that **is**
+  reproduced on real BPF; CC conflated the *trigger* with the *failure*. A dropped confirmation is
+  *"an explicit client/transport fault input to the agent under test"* — **the system under test is
+  the agent, not the chain**, so injecting a transport fault is ordinary fault injection, not
+  fabricating chain state. **`C3` survives.**
+- **`C1`'s `KILL-1` was circular.** Observing `T4`'s post-state requires having executed `T1`–`T3` —
+  *"that is H5's distinguishing machinery, not one RPC `simulateTransaction`."* CC granted the
+  baseline H5's own executor and then found H5 redundant. **`C1` is not killed** (nor frozen — `R` and
+  the exit rule are still unspecified). **`C2` is undecided**, for the same reason.
+
+**Everything reduces to one unresolved definition, and it is a founder ruling:** `simulateTransaction`
+**cannot advance chain state**, so a baseline that carries post-state across transactions **is** a
+local-fork episode executor — i.e. H5 itself. **If the baseline is one non-persistent RPC simulation**,
+multi-transaction failures are genuinely beyond it and `C1`/`C3` are live. **If it may carry cloned
+state**, no candidate can ever clear condition 2 and **H5 is dead in general, not per-candidate.**
+Choosing this *after* seeing a result would be the post-hoc criterion change the ruling forbids, so it
+must be settled **before** any freeze, measurement or kill.
+
+**Disclosed, not acted on:** the review also finds that §8.1's kill rested on the same invalid grant
+(*"post-`T1` state"*). **§8.1 stays finished** — the founder ruled it so and forbade rescuing it, and
+that stands. It is recorded because the reasoning has been undermined, not as a proposal to revive it.
+
+**Confirmed by independent re-derivation:** exactly one live deposit slot and one live borrow slot, and
+the four `_sf` values. The two-collateral ordering shape stays unavailable — but the review notes that
+**`C3` needs neither a second capital leg nor a partial fill**, so §7's resume condition **does not
+govern**. The cumulative-walk bound is confirmed **unproven**.
+
+**Not claimed:** that no sequence-only failure exists on Solana. **Not claimed:** that any past
+hypothesis supports H5's demand. **Not proposed:** any replacement candidate — none was searched for,
+no fetch made, no code written, no measurement run.
 
 **Prediction on the record, made before the review: overall open, leaning `KILL-1`** — and `KILL-1`
 is what the design gate returned, on the exact baseline CC named as the likely cause of death.
