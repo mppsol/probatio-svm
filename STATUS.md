@@ -1,15 +1,67 @@
-# STATUS — Probatio SVM
-
-Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
-**G0 — pre-registration only, nothing measured. The baseline is now RULED and CLOSED (founder,
-2026-08-22, before measurement), and the surviving candidate `C3` is pre-registered as its own G0 row
-at [`docs/H5-C3-G0.md`](docs/H5-C3-G0.md), awaiting independent review. H5 was never killed.** The four earlier gates are closed and none is
-reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
-`docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
-(KILL-2 + KILL-3), 2026-08-22**.
+Binding gate: **none — no hypothesis is live.** All five are closed and **none is reopened**:
+`docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` (H2) **FROZEN UNEXECUTED** ·
+`docs/H3-GATE.md` (H3) **`KILLED` at the design gate** · `docs/H4-GATE.md` (H4) **`KILLED` at G0
+(KILL-2 + KILL-3)** · `docs/H5-GATE.md` (H5) **CLOSED, 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H5 · C3 — duplicate execution after a lost confirmation — **reviewed `KILL AT DESIGN GATE`; NOT measured**
+## H5 — Agent Release Tests for Solana — **CLOSED**
+
+> `CLOSED — all authorised candidates failed at the design gate; H5 remains unproven.`
+
+**Verdict:** [`docs/decisions/H5-closed.md`](docs/decisions/H5-closed.md) · founder ruling
+**2026-08-22** · gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) (closed) · reviews:
+[§8.1 `KILL-1`](reviews/H5-G0-agent-release-tests.md) ·
+[search `DISSENT`](reviews/H5-G0-candidates.md) · [C3 `KILL AT DESIGN GATE`](reviews/H5-C3-G0.md) ·
+artifacts `891a321` · `174fff2` · `f0f7ca5` · `d8eb10a` · `bb97f2d` · `cf34764` · `6fdcf1d`
+
+**Four authorised candidates, four design-gate failures, ZERO measurements and zero lines of product
+code.** §8.1 (`withdraw(u64::MAX)` balance mismatch) → **`KILL-1`**, the failure was fully witnessed in
+one transaction's post-state. `C1` and `C2` → **lapsed unpursued** once the ruling authorised `C3`
+alone; recorded as lapsed rather than refuted, and **being unrefuted does not make either live**.
+`C3` (duplicate execution after a lost confirmation) → **`KILL AT DESIGN GATE`**, four P0s.
+
+**Why `C3` died.** Its three "meaningful" capital actions were **件数合わせ**: *"no concrete
+operational reason justifies splitting a 200,000,000-atom withdrawal into two 100,000,000-atom calls
+when the cited fixture admits a single 486,657,686-atom call."* Calling chunking "ordinary agent
+behaviour" was **assertion, not constraint**, and the design-time kill `C3` had pre-registered in its
+own §9 fired on itself. **No repair existed:** removing the split leaves two actions, and every route
+to a genuine third was closed — **no second collateral**, **no SOL held** with which to repay the
+single borrow (a repay leg would mean fabricating a balance), and *"withdraw the maximum, iterating"*
+is **not iterative**, because H4 measured `u64::MAX` reaching the maximum **in one call**. Three
+further P0s: **post-run freedoms** left unpinned (slot schedule, further mutations, the agent-rule
+input contract); a **non-concrete CI entrypoint** (`KILL-4` risk); and **unproven sequential headroom**
+— the same path-dependence gap flagged a round earlier, repeated.
+
+**The structural reason H5 closes, not just a candidate.** `C3`'s failure **is** a duplicate spend, and
+a **cumulative spend cap set at the agent's own declared intent total catches a duplicate spend by
+definition**. Under the founder's pre-measurement baseline ruling (`Pol` = allowlist + per-transaction
+cap; `Sim` = **non-persistent** single `simulateTransaction`; neither may chain post-state; an executor
+that carries cloned state **is not a baseline but the mechanism under test**) `C3` does evade both —
+**but H5's hypothesis names its competitor as *"a runtime wallet policy"*, and a real one has memory.**
+`C3` could be given a passing baseline **only by keeping the comparator weaker than the one the
+hypothesis itself names**. **`C3` was not differentiable from a runtime wallet policy at all**, and a
+`GO` obtained that way would have been unearned.
+
+**`unproven`, NOT `refuted`.** **Nothing here says sequence-only failures do not exist on Solana —
+that was never tested and is not claimed.** What failed is this formulation, against these baselines,
+on the assets G0 was given.
+
+**Reopening requires all three, and no agent may waive or soften any:** a **new founder ruling** · a
+**new, independent hypothesis** — not a repair or rewording of H5, and not resting on §8.1, `C1`, `C2`
+or `C3`, all finished · a **new pre-registration** that answers the above head-on by naming the
+comparator **the hypothesis itself names, at full strength**, and showing the candidate survives it.
+**Not authorised and not to be started:** a new fixture, a new candidate search, implementation,
+measurement, UI, token, deploy.
+
+**Carried forward as input, not as a hypothesis:** the design gate is the cheapest place to fail, and
+it worked in **both** directions here — one review round (`DISSENT`) **overturned CC's own proposal to
+kill early**. A comparator chosen for winnability is worse than a losing comparison. And **a hypothesis
+about sequences needs a fixture that can express one**, established before committing to it, not
+discovered at the fourth candidate.
+
+### The four candidates, kept for the record — all finished, none revivable
+
+#### `C3` — duplicate execution after a lost confirmation — **DESIGN-GATE KILL; never measured** *(historical row, finished)*
 
 Row: [`docs/H5-C3-G0.md`](docs/H5-C3-G0.md) · gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) §8.3–§8.4 ·
 founder ruling **2026-08-22** · review payload committed, **not run**:
@@ -64,7 +116,7 @@ result can repair that.
 
 **Not revived:** the §8.1 first candidate, `C1`, `C2`. **Nothing here depends on them.**
 
-### Review outcome — `KILL AT DESIGN GATE`, and measurement did not proceed
+##### Review outcome — `KILL AT DESIGN GATE`, and measurement did not proceed
 
 [`reviews/H5-C3-G0.md`](reviews/H5-C3-G0.md) — Codex, read-only, one round, run by founder ruling with
 a directive to attack six points **in the kill direction first**. **Four P0s, three P1s.** Per the
@@ -81,7 +133,7 @@ every P0.** C3 is **not** declared dead by CC — that is a founder ruling.
 | **P1** | the agent rule is **undefined off the intended path** — no rule for `Err`, an unexpected status, or a repeated timeout; a refused `W3` leaves no defined transition | **concur** |
 | **P1** | **`P3` contradicts "state-bytes-only"** — it requires knowing each transaction *returned `Ok`*, which is execution metadata, not state bytes | **concur — a real internal inconsistency in CC's own predicate** |
 
-### Remediation: CC finds none available on the committed fixture
+##### Remediation: none was available on the committed fixture
 
 **P0-1 has no fix here.** Removing the artificial split leaves **one planned action plus one
 duplicate = two**, below the required three. Every way to obtain a genuine third planned action is
@@ -99,7 +151,7 @@ misses — which is close to a contradiction in terms.
 searched for, per the standing instruction. **Awaiting a founder ruling.** No measurement,
 implementation, fetch, UI, token or deploy was performed.
 
-## H5 — Agent Release Tests for Solana — **NOT killed; the review dissented and candidate `C3` survives**
+#### The candidate search and the `DISSENT` that kept `C3` alive *(historical row, superseded by the closure above)*
 
 Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · review:
 [Codex, `KILL AT DESIGN GATE — KILL-1`](reviews/H5-G0-agent-release-tests.md) · **no measurement has

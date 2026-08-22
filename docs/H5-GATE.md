@@ -1,4 +1,31 @@
-# H5 — Agent Release Tests for Solana — kill gate and G0 pre-registration (binding)
+# H5 — Agent Release Tests for Solana — **CLOSED (2026-08-22)**
+
+> ⛔ **This gate is closed.** `CLOSED — all authorised candidates failed at the design gate; H5 remains unproven.`
+> Verdict and reasoning: [`docs/decisions/H5-closed.md`](./decisions/H5-closed.md).
+>
+> **Four authorised candidates, four design-gate failures, ZERO measurements and zero lines of
+> product code.** §8.1 → `KILL-1`; `C1` and `C2` → lapsed unpursued after the ruling authorised `C3`
+> alone; `C3` → `KILL AT DESIGN GATE` with four P0s ([`docs/H5-C3-G0.md`](./H5-C3-G0.md),
+> [review](../reviews/H5-C3-G0.md)). **None may be revived, repaired or re-measured.**
+>
+> **The structural reason, and what a successor must answer:** C3's failure *is* a duplicate spend,
+> and a cumulative spend cap set at the agent's own intent total catches a duplicate spend **by
+> definition**. C3 could be given a passing baseline **only by keeping the comparator weaker than the
+> one this hypothesis itself names** — *"a runtime wallet policy"*. **C3 was not differentiable from a
+> runtime wallet policy at all.**
+>
+> **H5 is `unproven`, NOT `refuted`.** Nothing here says sequence-only failures do not exist on
+> Solana — **that was never tested and is not claimed.**
+>
+> **Reopening requires all three:** a new founder ruling · a **new, independent hypothesis** (not a
+> repair or rewording of H5, and not resting on §8.1/`C1`/`C2`/`C3`) · a new pre-registration that
+> names the comparator **the hypothesis itself names, at full strength**. Not authorised and not to be
+> started: a new fixture, a new candidate search, implementation, measurement, UI, token, deploy.
+>
+> **Nothing below is rewritten.** It is kept as the pre-registration the verdict is read against.
+
+## The pre-registration, as committed before measuring
+
 
 **Status: G0 pre-registration. Written and committed BEFORE any measurement.**
 Founder ruling, 2026-08-22. This is the binding gate; `STATUS.md` records the phase.
