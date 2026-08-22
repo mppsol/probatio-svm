@@ -146,15 +146,46 @@ open, and must be frozen — by a founder ruling, in this document, before anyth
 policy is exactly (destination allowlist plus per-transaction cap, with its values). Writing them
 after seeing the failure would make `B` unfalsifiable.
 
-**A concrete proposal for all five, plus both baselines, is in §8.1 — `PROPOSED`, not in force.**
-It is written so the founder rules on something falsifiable. Until it is ratified, §8 is open and
-nothing runs.
+**The first concrete proposal for all five is in §8.1. It was independently reviewed and is
+`REJECTED at the design gate — KILL-1`.** §8 is therefore still open, nothing has been ratified, and
+**nothing runs**. A replacement candidate requires a **new founder ruling and a new G0 row** — it may
+not be swapped in by an agent.
 
-## 8.1 PROPOSED freeze of the five open items — **NOT IN FORCE**
+## 8.1 PROPOSED freeze of the five open items — **REJECTED at the design gate**
 
-> ⚠️ **This section is a proposal by CC, not a ruling.** Nothing here is frozen until the founder
-> ratifies it. **No measurement may run against it in its current state.** It exists so the founder
-> is ruling on something concrete and falsifiable rather than on a blank.
+> ⛔ **This proposal is dead. Do not revive it, do not measure against it, do not adapt it.**
+> Independent review — [`reviews/H5-G0-agent-release-tests.md`](../reviews/H5-G0-agent-release-tests.md),
+> Codex, read-only against `174fff2` — returned **`KILL AT DESIGN GATE — KILL-1`**, one P0:
+>
+> > `F` is `P1 && P2`. Both are knowable after a **single** simulation of T2 from post-T1 state if
+> > returned account data is available. … The proposed escape — that the simulator "does not know
+> > intent" — **is not structural.** The intent is the scripted agent source, available to the same
+> > developer invoking simulation. A simulator-side regression assertion can simply state: "after
+> > `withdraw(u64::MAX)`, `deposited_amount == 0`". **No third transaction or new oracle is required.**
+>
+> `S-generous` — which this section deliberately pre-registered as **governing** — catches `F` at T2.
+> `KILL-1` is *"H5 turns out to be equivalent to a single simulation"*, and on this candidate it is.
+> The reviewer also found T3 to be **theatre** (P1: `F` is fully witnessed by T2's own post-state, so
+> the multi-transaction differentiator does no work here), the `Pol` cap **beatable by construction**
+> (P1: 1,000,000,000 sits above the *already known* realized 582,271,854, and a real pre-sign policy
+> reading the *requested* value would reject the `u64::MAX` sentinel outright), the CI entrypoint a
+> **placeholder** (P1), and the proposal missing a pinned BPF hash and the required H4 mutations (P2).
+>
+> **Cost of this kill: zero implementation.** No code was written, no measurement run, no fetch made.
+> That is the design gate working as intended, and it is the cheapest place H5 could have died.
+>
+> **What this does and does not decide.** It kills **this candidate**, not H5 by fiat: §8.1 was never
+> in force, and this section itself pre-registered that **no substitute failure may be swapped in
+> after the fact — a replacement candidate requires a new founder ruling and a new G0 row.** That
+> constraint binds CC too, and CC has not proposed a replacement. **Whether H5 itself is closed is a
+> founder ruling.** The reviewer's P0 is structural, not candidate-specific: it defeats *any*
+> candidate whose failure is fully witnessed inside one transaction's post-state. The only door it
+> leaves is a failure that **no single transaction's post-state witnesses** — a defect in the
+> *sequence*, where each transaction's own end state looks correct. **Nothing here shows such a
+> failure exists**, and under this repo's rules not-proven is a KILL, so that door is not a plan and
+> must not be treated as one.
+>
+> **Nothing below is rewritten.** It is kept as the refuted proposal the verdict is read against.
 
 ### Provenance of the candidate, disclosed first
 
@@ -292,7 +323,8 @@ Wrong predictions are **not** a kill; refusing to record them would be.
 | condition | prediction | confidence |
 |---|---|---|
 | A — reproducible multi-transaction episode | **holds** — H4 already produced a deterministic offline replay on this fixture set | medium–high |
-| B — a failure both baselines miss | **open, and now sharper.** Against `S-strict` and `Pol` (§8.1) CC expects `F` to survive. Against **`S-generous`** — one simulation *plus* inspection of the state it returns — CC expects `KILL-1`, unless the agent's declared intent is admitted as the oracle. **This single choice is where H5 most likely dies**, which is why §8.1 pre-registers `S-generous` as governing | low |
+| B — a failure both baselines miss | **RESOLVED AGAINST H5 for the §8.1 candidate, before any measurement** — the review found `S-generous` catches `F` at T2. The prediction below is what CC recorded beforehand, and it was right. | — |
+| ~~B (as predicted 2026-08-22, kept on the record)~~ | **open, and now sharper.** Against `S-strict` and `Pol` (§8.1) CC expects `F` to survive. Against **`S-generous`** — one simulation *plus* inspection of the state it returns — CC expects `KILL-1`, unless the agent's declared intent is admitted as the oracle. **This single choice is where H5 most likely dies**, which is why §8.1 pre-registers `S-generous` as governing | low |
 | C — the failure changes the agent's next action | **holds if B holds**, since a scripted agent reading state must branch on it | medium |
 | D — assets usable as fixtures, fully recorded | **holds** — the recording discipline already exists | high |
 | **overall** | **open, leaning `KILL-1`** — and the candidate failure `F` itself is *not* a prediction: it is already observed in H4's frozen evidence. What is unpredicted is whether any baseline also catches it | low |

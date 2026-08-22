@@ -1,16 +1,19 @@
 # STATUS — Probatio SVM
 
 Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
-**G0 — pre-registration only, nothing measured**. The four earlier gates are closed and none is
+**G0 — pre-registration only, nothing measured; its first concrete candidate was `KILL-1`'d at the
+design gate and no replacement is proposed**. The four earlier gates are closed and none is
 reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
 `docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
 (KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H5 — Agent Release Tests for Solana — **G0 pre-registered; nothing measured**
+## H5 — Agent Release Tests for Solana — **G0 open; first candidate `KILL-1` at the design gate**
 
-Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · **no measurement has
-been run, and no implementation exists, at the time this row was written**
+Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · review:
+[Codex, `KILL AT DESIGN GATE — KILL-1`](reviews/H5-G0-agent-release-tests.md) · **no measurement has
+been run and no implementation exists.** Nothing is ratified; **awaiting a founder ruling on whether
+H5 itself is closed.**
 
 > A Solana AI agent that moves capital in production should be regression-tested before release
 > against adversarial scenarios spanning **real program BPF, real cloned state, and multiple
@@ -57,26 +60,42 @@ a founder ruling before anything runs**: the one workflow · the candidate failu
 predicate · the scripted agent's decision rule · the CI entrypoint command · and the exact definition
 of both baselines in B.
 
-**A concrete proposal for all five is on the table — [`H5-GATE.md` §8.1](docs/H5-GATE.md), marked
-`PROPOSED`, NOT IN FORCE. Awaiting a founder ruling; nothing runs until then.** In outline: workflow
-`W` = klend USDC withdraw on the already-committed `fixtures/h4/` set (17 cloned accounts, slot
-**440,477,781**, real BPF, no new fetch), as **three** transactions carrying state forward.
-Candidate failure `F` is **read off H4's own frozen evidence, not hunted inside H5**: case E requested
-`u64::MAX` collateral, received **`Ok`**, and moved **486,657,686** of **2,248,785,777** — leaving
-**1,762,128,091 atoms (78%) still deposited after a call the caller reads as "I exited"**, with no
-error and no log line saying "partial". Detector `P` is state-bytes-only. The scripted agent's rule is
-written out in full, and **both baselines are pinned, including the generous one** (`S-generous`: one
-`simulateTransaction` **plus** inspection of the state it returns).
+**The first concrete proposal for all five was written, independently reviewed, and is
+`REJECTED at the design gate` — [`H5-GATE.md` §8.1](docs/H5-GATE.md),
+[review](reviews/H5-G0-agent-release-tests.md) (Codex, read-only, `174fff2`):
+**`KILL AT DESIGN GATE — KILL-1`**, one P0.**
 
-**`S-generous` is pre-registered as governing, deliberately, and it is where CC expects H5 to die.**
-An `err`-only baseline is a strawman. The narrow surviving claim, if any: a single simulation returns
-*a state*, but does not know **what the agent intended across transactions**, so it cannot tell that
-`deposited_amount = 1,762,128,091` contradicts an intent to exit — **the oracle is the agent's
-declared intent, not the chain.** That is also the structural answer to `KILL-3`: H4 had two binaries
-and no intent, hence no ground truth; H5 tests an agent, so intent exists. If `S-generous` plus any
-fixed rule catches `F` without that intent, **`KILL-1` fires and H5 is dead.**
+The proposal was: workflow `W` = klend USDC withdraw on the committed `fixtures/h4/` set as **three**
+transactions; candidate failure `F` = the agent believes it exited while **1,762,128,091 atoms (78%)
+are still deposited** — read off **H4's own frozen evidence** (case E requested `u64::MAX`, got
+**`Ok`**, moved **486,657,686** of **2,248,785,777**, no error, no "partial" in any log). Both
+baselines were pinned, with the **generous** one (`S-generous`: one `simulateTransaction` **plus**
+inspection of the state it returns) pre-registered as **governing**.
 
-**Prediction on the record: overall open, leaning `KILL-1`.**
+**`S-generous` catches `F` at T2, so `KILL-1` fires on this candidate.** CC's "the simulator does not
+know the agent's intent" argument was found **not structural**: the intent is the scripted agent's own
+source, available to the same developer running the simulation, who can simply assert *"after
+`withdraw(u64::MAX)`, `deposited_amount == 0`"* — no third transaction and no new oracle needed. The
+reviewer also found **T3 to be theatre** (`F` is fully witnessed by T2's post-state, so the
+multi-transaction differentiator does no work), the **`Pol` cap beatable by construction** (fixed at
+1,000,000,000 above the *already known* realized 582,271,854; a real pre-sign policy reading the
+*requested* value would reject the `u64::MAX` sentinel outright), the **CI entrypoint a placeholder**,
+and the freeze missing a pinned BPF hash and the required mutations.
+
+**Cost of this kill: zero implementation.** No code, no measurement, no fetch. CC's own §9 prediction
+had named `S-generous` as where H5 would most likely die, and it did — before anything was built.
+
+**This kills the candidate, not H5 by fiat.** §8.1 was never in force, and it pre-registered that **no
+substitute failure may be swapped in after the fact — a replacement needs a new founder ruling and a
+new G0 row.** That binds CC too; **CC has not proposed a replacement.** The P0 is structural, not
+candidate-specific: it defeats *any* candidate whose failure is fully witnessed inside one
+transaction's post-state. The only door left is a failure **no single transaction's post-state
+witnesses** — a defect in the *sequence*. **Nothing shows such a failure exists**, and not-proven is a
+KILL, so that door is not a plan. **Whether H5 is closed is a founder ruling. Awaiting it; nothing
+runs.**
+
+**Prediction on the record, made before the review: overall open, leaning `KILL-1`** — and `KILL-1`
+is what the design gate returned, on the exact baseline CC named as the likely cause of death.
 
 **G0 authorises this document and this row — nothing else.** No implementation, UI, token, deploy,
 wallet, policy engine, second protocol, LLM in the loop, or measurement.
