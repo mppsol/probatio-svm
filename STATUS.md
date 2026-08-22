@@ -1,14 +1,15 @@
 # STATUS — Probatio SVM
 
 Binding gate: **[`docs/H5-GATE.md`](docs/H5-GATE.md)** — H5, *Agent Release Tests for Solana*, at
-**G0 — pre-registration only, nothing measured; its first concrete candidate was `KILL-1`'d at the
-design gate and no replacement is proposed**. The four earlier gates are closed and none is
+**G0 — pre-registration only, nothing measured. Four candidates have now died at the design gate
+(§8.1 plus C1–C3), and H5 is `PROPOSED KILLED` awaiting a founder ruling; no kill commit is made
+without one.** The four earlier gates are closed and none is
 reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECUTED** ·
 `docs/H3-GATE.md` **`KILLED` at the design gate** · `docs/H4-GATE.md` **`KILLED` at G0
 (KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H5 — Agent Release Tests for Solana — **G0 open; first candidate `KILL-1` at the design gate**
+## H5 — Agent Release Tests for Solana — **proposed `KILLED`; all three follow-up candidates died at the design gate**
 
 Gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) · founder ruling **2026-08-22** · review:
 [Codex, `KILL AT DESIGN GATE — KILL-1`](reviews/H5-G0-agent-release-tests.md) · **no measurement has
@@ -93,6 +94,35 @@ transaction's post-state. The only door left is a failure **no single transactio
 witnesses** — a defect in the *sequence*. **Nothing shows such a failure exists**, and not-proven is a
 KILL, so that door is not a plan. **Whether H5 is closed is a founder ruling. Awaiting it; nothing
 runs.**
+
+**The candidate search that followed (founder ruling 2026-08-22, *design investigation only*):**
+[`docs/H5-CANDIDATES.md`](docs/H5-CANDIDATES.md). Three candidates, **all dead at the design gate,
+none implemented and none measured** — `C1` (failing transaction's bytes derived from earlier
+results) **`KILL-1`**, because the failure is still fully witnessed in that transaction's own
+post-state, the identical shape §8.1 died of; `C2` (a plan invalidated by slot advance and accrued
+interest) **`KILL-1`**, because its last transaction is constructible in advance and one simulation of
+it at submission time determines the failure; `C3` (wrong retry after an apparent revert, double
+execution) **`KILL-2`**, because the trigger is a **client-side** event — an RPC timeout or a lost
+confirmation — that real BPF on cloned state cannot produce, and only harness fabrication supplies.
+
+**The reason is the fixture, and it was read from bytes.** The committed obligation holds **exactly
+one deposit** (USDC, 2,248,785,777 atoms, ≈$2,690.34) against **exactly one borrow** (SOL, BF-adjusted
+debt ≈$1,343.59; allowed ≈$2,152.28, unhealthy ≈$2,421.31). So there is **no second capital leg** to
+make ordering matter, and **klend's clamping already reaches the solvency limit in one transaction**
+(H4 case E: `u64::MAX` → 486,657,686 moved), leaving a cumulative walk nowhere to go. What remains is
+a **single capital action**, whose failure is by construction witnessed in a single transaction's
+post-state.
+
+**Branch A selected: H5 is proposed `KILLED`** — not-proven is a KILL. **No kill commit without a
+founder ruling.** Reopening requires a new founder ruling and a new G0 that satisfies **both**: (1) a
+fixture expressing **≥2 independent capital legs** or a genuine **partial fill** — the committed set
+has neither, and acquiring one is a **new fetch not authorised today**; and (2) the candidate's
+**non-observability demonstrated *before* measurement**, naming which transaction would witness it if
+the argument is wrong. **Three candidates in a row died to that check applied late.**
+
+**Not claimed:** that no sequence-only failure exists on Solana — only that none could be built on the
+committed fixture. **Not claimed:** that any past hypothesis supports H5's demand. **Not proposed:**
+any replacement candidate.
 
 **Prediction on the record, made before the review: overall open, leaning `KILL-1`** — and `KILL-1`
 is what the design gate returned, on the exact baseline CC named as the likely cause of death.

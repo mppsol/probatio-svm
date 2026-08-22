@@ -151,6 +151,20 @@ after seeing the failure would make `B` unfalsifiable.
 **nothing runs**. A replacement candidate requires a **new founder ruling and a new G0 row** — it may
 not be swapped in by an agent.
 
+**§8.2 — the candidate search that followed.** By founder ruling (2026-08-22) a *design investigation
+only* was run to ask whether **any** qualifying candidate exists:
+[`docs/H5-CANDIDATES.md`](./H5-CANDIDATES.md). Three candidates were enumerated and **all three died
+at the design gate** — `C1` and `C2` to `KILL-1`, `C3` to `KILL-2` — **without implementation or
+measurement**. The decisive finding is about the fixture, not about the candidates: the committed
+`fixtures/h4/` obligation holds **one collateral against one borrow**, so there is **no second capital
+leg** to make ordering matter, and **klend's own clamping reaches the solvency limit in a single
+transaction**, so a cumulative walk has nowhere further to go. What remains is a **single capital
+action**, whose failure is by construction witnessed inside one transaction's post-state.
+
+That selects **branch A: H5 is proposed `KILLED`** — *not-proven is a KILL*. **No kill commit is made
+without a founder ruling.** The basis, the three excluded candidates and the two-part resume
+condition are in `H5-CANDIDATES.md` §6–§7.
+
 ## 8.1 PROPOSED freeze of the five open items — **REJECTED at the design gate**
 
 > ⛔ **This proposal is dead. Do not revive it, do not measure against it, do not adapt it.**
