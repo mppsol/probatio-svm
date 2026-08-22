@@ -9,7 +9,7 @@ reopened: `docs/GATE.md` (H1) **`KILLED`** · `docs/H2-GATE.md` **FROZEN UNEXECU
 (KILL-2 + KILL-3), 2026-08-22**.
 A verdict is a number or a reproducible experiment. Not-proven is a KILL.
 
-## H5 · C3 — duplicate execution after a lost confirmation — **G0 pre-registered; nothing measured**
+## H5 · C3 — duplicate execution after a lost confirmation — **reviewed `KILL AT DESIGN GATE`; NOT measured**
 
 Row: [`docs/H5-C3-G0.md`](docs/H5-C3-G0.md) · gate: [`docs/H5-GATE.md`](docs/H5-GATE.md) §8.3–§8.4 ·
 founder ruling **2026-08-22** · review payload committed, **not run**:
@@ -63,6 +63,41 @@ rests entirely on the §0 baseline ruling; if that definition is wrong, C3 falls
 result can repair that.
 
 **Not revived:** the §8.1 first candidate, `C1`, `C2`. **Nothing here depends on them.**
+
+### Review outcome — `KILL AT DESIGN GATE`, and measurement did not proceed
+
+[`reviews/H5-C3-G0.md`](reviews/H5-C3-G0.md) — Codex, read-only, one round, run by founder ruling with
+a directive to attack six points **in the kill direction first**. **Four P0s, three P1s.** Per the
+founder's rule a non-`PASS` verdict means **no measurement**, and none was run. **CC concurs with
+every P0.** C3 is **not** declared dead by CC — that is a founder ruling.
+
+| # | finding | CC |
+|---|---|---|
+| **P0-1** | the `W1`/`W2` split is **件数合わせ** — *"no concrete operational reason justifies splitting a 200,000,000-atom withdrawal into two 100,000,000-atom calls when the cited fixture admits a single 486,657,686-atom call"*. "Ordinary agent behaviour" was **assertion, not constraint** | **concur** — CC's own §2 disclosed the split was what made three actions available, and could name no operational driver. The design-time kill C3 pre-registered fires on itself |
+| **P0-2** | **`Pol` is too weak to carry condition B.** With no cumulative cap, no intent total and no transaction history it misses by construction, but the hypothesis's competitor is *"a runtime wallet policy"*, and a real one **catches a duplicate ordinary withdrawal** | **concur, and this is the deeper one** — a duplicate spend is the **canonical** target of a cumulative limit |
+| **P0-3** | **post-run freedoms remain**: the slot schedule is only *"recorded by the run"*, further mutations are permitted if disclosed, and no input contract exists for the developer's agent rule | **concur** — slot progression can change lending state and `W3`'s result, so it must be pinned, not observed |
+| **P0-4** | the **CI entrypoint takes only an episode JSON**, not a rule artifact or invocation contract, so it does not yet meet the gate's own-agent requirement — a live **`KILL-4`** risk | **concur** |
+| **P1** | **sequential headroom is still unproven** — H4's case A and case E are single calls **from the initial fixture**; they do not establish that the post-`W1`/post-`W2` solvency envelopes admit another 100,000,000. The same path-dependence gap flagged a round earlier | **concur** — CC used a single-call ceiling as headroom for a *sequence*, which is precisely what was already flagged |
+| **P1** | the agent rule is **undefined off the intended path** — no rule for `Err`, an unexpected status, or a repeated timeout; a refused `W3` leaves no defined transition | **concur** |
+| **P1** | **`P3` contradicts "state-bytes-only"** — it requires knowing each transaction *returned `Ok`*, which is execution metadata, not state bytes | **concur — a real internal inconsistency in CC's own predicate** |
+
+### Remediation: CC finds none available on the committed fixture
+
+**P0-1 has no fix here.** Removing the artificial split leaves **one planned action plus one
+duplicate = two**, below the required three. Every way to obtain a genuine third planned action is
+closed by the fixture: there is **no second collateral** to withdraw; the agent **holds no SOL** with
+which to repay the one borrow, so a repay leg would mean fabricating a balance; and "withdraw the
+maximum, iterating" is not iterative here because **H4 measured that `u64::MAX` reaches the maximum in
+a single call**.
+
+**P0-2 may be unfixable in principle, not just here.** C3's failure *is* a duplicate spend, and a
+cumulative spend cap set at the agent's own intent total catches it by definition. For C3 to clear
+condition B against a fair runtime policy it would have to be a duplicate that a cumulative cap
+misses — which is close to a contradiction in terms.
+
+**Both P0s point the same way, and CC does not have a repair to offer.** No replacement candidate was
+searched for, per the standing instruction. **Awaiting a founder ruling.** No measurement,
+implementation, fetch, UI, token or deploy was performed.
 
 ## H5 — Agent Release Tests for Solana — **NOT killed; the review dissented and candidate `C3` survives**
 
